@@ -2,95 +2,117 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Forest Green CRM Theme */
+    --background: 0 0% 98%;
+    --foreground: 220 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 20% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Deep Forest Green */
+    --primary: 142 76% 20%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Light Green Tint */
+    --secondary: 140 30% 94%;
+    --secondary-foreground: 142 76% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted Sage */
+    --muted: 140 15% 92%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent Green */
+    --accent: 142 50% 88%;
+    --accent-foreground: 142 76% 20%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 142 76% 20%;
 
-    --radius: 0.5rem;
+    --radius: 0.375rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* CRM Specific */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Status Colors */
+    --status-new: 199 89% 48%;
+    --status-contacted: 38 92% 50%;
+    --status-qualified: 262 83% 58%;
+    --status-proposal: 142 71% 45%;
+    --status-won: 142 76% 20%;
+    --status-lost: 0 72% 51%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Table styling */
+    --table-header: 140 20% 96%;
+    --table-row-hover: 140 20% 98%;
+    --table-border: 220 15% 90%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 12%;
+    --sidebar-primary: 142 76% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 140 30% 94%;
+    --sidebar-accent-foreground: 142 76% 20%;
+    --sidebar-border: 220 15% 90%;
+    --sidebar-ring: 142 76% 20%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 20% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 20% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 142 60% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 20% 15%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 20% 15%;
+    --muted-foreground: 220 10% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 20% 18%;
+    --accent-foreground: 142 60% 45%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 142 60% 45%;
+
+    --table-header: 220 20% 12%;
+    --table-row-hover: 220 20% 14%;
+    --table-border: 220 20% 18%;
+
+    --sidebar-background: 220 20% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 142 60% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 142 60% 45%;
   }
 }
 
@@ -100,6 +122,117 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* CRM Table Styles */
+  .crm-table {
+    @apply w-full border-collapse;
+  }
+
+  .crm-table th {
+    @apply bg-table-header text-left px-4 py-3 text-sm font-medium text-muted-foreground border-b border-table-border;
+  }
+
+  .crm-table td {
+    @apply px-4 py-3 text-sm border-b border-table-border;
+  }
+
+  .crm-table tr:hover td {
+    @apply bg-table-row-hover;
+  }
+
+  /* Status Badge Styles */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-new {
+    @apply bg-info/10 text-info;
+  }
+
+  .status-contacted {
+    @apply bg-warning/10 text-warning;
+  }
+
+  .status-qualified {
+    @apply bg-purple-100 text-purple-700;
+  }
+
+  .status-proposal {
+    @apply bg-success/10 text-success;
+  }
+
+  .status-won {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .status-lost {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  /* Quotation Styles */
+  .quotation-preview {
+    @apply bg-white shadow-lg rounded-lg overflow-hidden;
+  }
+
+  .quotation-header {
+    @apply border-b-2 border-primary p-6;
+  }
+
+  .quotation-table th {
+    @apply bg-primary text-primary-foreground px-4 py-3 text-left text-sm font-medium;
+  }
+
+  .quotation-table td {
+    @apply px-4 py-3 text-sm border-b border-border;
+  }
+
+  /* Form Field Styles */
+  .form-field {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .form-input {
+    @apply w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Card Stat */
+  .stat-card {
+    @apply bg-card rounded-lg border border-border p-6;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold text-foreground;
+  }
+
+  .stat-label {
+    @apply text-sm text-muted-foreground mt-1;
+  }
+}
+
+/* Print Styles for Quotation */
+@media print {
+  body {
+    @apply bg-white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .quotation-preview {
+    @apply shadow-none rounded-none;
   }
 }
