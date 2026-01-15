@@ -11,6 +11,13 @@ export interface CompanySettings {
   tax_rate: number | null;
   terms: string | null;
   theme_color: string;
+  bank_name: string | null;
+  account_number: string | null;
+  ifsc_code: string | null;
+  account_holder_name: string | null;
+  invoice_prefix: string;
+  default_due_days: number;
+  invoice_terms: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -24,15 +31,63 @@ export interface Lead {
   address: string | null;
   status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
   notes: string | null;
+  is_qualified: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Deal {
+  id: string;
+  lead_id: string;
+  deal_value: number | null;
+  stage: 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
+  probability: number;
+  expected_close_date: string | null;
+  won_date: string | null;
+  lost_date: string | null;
+  lost_reason: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  lead?: Lead;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  description: string | null;
+  category_id: string | null;
+  unit_price: number;
+  cost_price: number | null;
+  unit: string;
+  tax_rate: number | null;
+  stock_quantity: number;
+  low_stock_threshold: number;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  category?: ProductCategory;
 }
 
 export interface Quotation {
   id: string;
   quote_number: string;
   lead_id: string;
+  deal_id: string | null;
+  invoice_id: string | null;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
   quote_date: string;
   valid_until: string | null;
@@ -44,6 +99,7 @@ export interface Quotation {
   created_at: string;
   updated_at: string;
   lead?: Lead;
+  deal?: Deal;
 }
 
 export interface QuotationItem {
@@ -56,6 +112,48 @@ export interface QuotationItem {
   line_total: number;
   sort_order: number;
   created_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  deal_id: string | null;
+  quotation_id: string | null;
+  lead_id: string;
+  invoice_date: string;
+  due_date: string;
+  subtotal: number;
+  tax_enabled: boolean;
+  tax_rate: number;
+  tax_amount: number;
+  grand_total: number;
+  payment_status: 'unpaid' | 'partial' | 'paid';
+  amount_paid: number;
+  payment_notes: string | null;
+  terms_conditions: string | null;
+  notes: string | null;
+  is_locked: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  lead?: Lead;
+  deal?: Deal;
+  quotation?: Quotation;
+}
+
+export interface InvoiceItem {
+  id: string;
+  invoice_id: string;
+  product_id: string | null;
+  item_title: string;
+  description: string | null;
+  hsn_sac_code: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  sort_order: number;
+  created_at: string;
+  product?: Product;
 }
 
 export interface Profile {

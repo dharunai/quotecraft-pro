@@ -50,6 +50,8 @@ export default function LeadDetail() {
       createQuotation.mutate({
         quote_number: quoteNumber,
         lead_id: id,
+        deal_id: null,
+        invoice_id: null,
         status: 'draft',
         quote_date: new Date().toISOString().split('T')[0],
         valid_until: null,

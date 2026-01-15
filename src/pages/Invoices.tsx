@@ -1,63 +1,83 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useQuotations, useCreateQuotation, useDeleteQuotation, useGenerateQuoteNumber } from '@/hooks/useQuotations';
+import { useInvoices, useDeleteInvoice, useGenerateInvoiceNumber, useCreateInvoice } from '@/hooks/useInvoices';
 import { useLeads } from '@/hooks/useLeads';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
-import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
-import { Plus, Eye, Trash2 } from 'lucide-react';
+import { format, addDays } from 'date-fns';
+import { Plus, Eye, Trash2, FileText } from 'lucide-react';
 
-export default function Quotations() {
+export default function Invoices() {
   const navigate = useNavigate();
-  const { data: quotations = [], isLoading } = useQuotations();
+  const { data: invoices = [], isLoading } = useInvoices();
   const { data: leads = [] } = useLeads();
   const { data: settings } = useCompanySettings();
-  const createQuotation = useCreateQuotation();
-  const deleteQuotation = useDeleteQuotation();
-  const generateQuoteNumber = useGenerateQuoteNumber();
+  const deleteInvoice = useDeleteInvoice();
+  const createInvoice = useCreateInvoice();
+  const generateInvoiceNumber = useGenerateInvoiceNumber();
 
   const [isSelectingLead, setIsSelectingLead] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleCreateQuotation = async () => {
+  const handleCreateInvoice = async () => {
     if (!selectedLeadId) return;
     try {
-      const quoteNumber = await generateQuoteNumber.mutateAsync();
-      createQuotation.mutate({
-        quote_number: quoteNumber,
+      const invoiceNumber = await generateInvoiceNumber.mutateAsync();
+      const dueDays = settings?.default_due_days || 30;
+      createInvoice.mutate({
+        invoice_number: invoiceNumber,
         lead_id: selectedLeadId,
         deal_id: null,
-        invoice_id: null,
-        status: 'draft',
-        quote_date: new Date().toISOString().split('T')[0],
-        valid_until: null,
+        quotation_id: null,
+        invoice_date: new Date().toISOString().split('T')[0],
+        due_date: addDays(new Date(), dueDays).toISOString().split('T')[0],
         subtotal: 0,
-        tax: 0,
-        total: 0,
+        tax_enabled: true,
+        tax_rate: settings?.tax_rate || 18,
+        tax_amount: 0,
+        grand_total: 0,
+        payment_status: 'unpaid',
+        amount_paid: 0,
+        payment_notes: null,
+        terms_conditions: settings?.invoice_terms || settings?.terms || null,
         notes: null,
+        is_locked: false,
+        created_by: null,
       }, {
         onSuccess: (data) => {
           setIsSelectingLead(false);
           setSelectedLeadId('');
-          navigate(`/quotations/${data.id}`);
+          navigate(`/invoices/${data.id}`);
         },
       });
     } catch (error) {
-      console.error('Failed to create quotation:', error);
+      console.error('Failed to create invoice:', error);
     }
   };
 
   const handleDelete = () => {
     if (deleteId) {
-      deleteQuotation.mutate(deleteId, {
+      const invoice = invoices.find(i => i.id === deleteId);
+      if (invoice?.is_locked || invoice?.payment_status === 'paid') {
+        return;
+      }
+      deleteInvoice.mutate(deleteId, {
         onSuccess: () => setDeleteId(null),
       });
+    }
+  };
+
+  const getPaymentBadge = (status: string) => {
+    switch (status) {
+      case 'paid': return <Badge className="bg-success/20 text-success border-success/30">Paid</Badge>;
+      case 'partial': return <Badge className="bg-warning/20 text-warning-foreground border-warning/30">Partial</Badge>;
+      default: return <Badge variant="destructive">Unpaid</Badge>;
     }
   };
 
@@ -67,21 +87,22 @@ export default function Quotations() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Quotations</h1>
+          <h1 className="text-2xl font-bold">Invoices</h1>
           <Button onClick={() => setIsSelectingLead(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            New Quotation
+            New Invoice
           </Button>
         </div>
 
         {isLoading ? (
-          <p className="text-muted-foreground">Loading quotations...</p>
-        ) : quotations.length === 0 ? (
+          <p className="text-muted-foreground">Loading invoices...</p>
+        ) : invoices.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-lg border border-border">
-            <p className="text-muted-foreground mb-4">No quotations yet</p>
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">No invoices yet</p>
             <Button onClick={() => setIsSelectingLead(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Your First Quotation
+              Create Your First Invoice
             </Button>
           </div>
         ) : (
@@ -89,43 +110,47 @@ export default function Quotations() {
             <table className="crm-table">
               <thead>
                 <tr>
-                  <th>Quote No.</th>
-                  <th>Client</th>
+                  <th>Invoice No.</th>
+                  <th>Customer</th>
                   <th>Date</th>
+                  <th>Due Date</th>
                   <th>Total</th>
                   <th>Status</th>
                   <th className="w-24">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {quotations.map((quotation) => (
-                  <tr key={quotation.id}>
-                    <td className="font-medium">{quotation.quote_number}</td>
-                    <td>{quotation.lead?.company_name || 'Unknown'}</td>
+                {invoices.map((invoice) => (
+                  <tr key={invoice.id}>
+                    <td className="font-medium">{invoice.invoice_number}</td>
+                    <td>{invoice.lead?.company_name || 'Unknown'}</td>
                     <td className="text-muted-foreground">
-                      {format(new Date(quotation.quote_date), 'dd MMM yyyy')}
+                      {format(new Date(invoice.invoice_date), 'dd MMM yyyy')}
+                    </td>
+                    <td className="text-muted-foreground">
+                      {format(new Date(invoice.due_date), 'dd MMM yyyy')}
                     </td>
                     <td className="font-medium">
-                      {currency}{quotation.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {currency}{invoice.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
-                    <td>
-                      <QuotationStatusBadge status={quotation.status} />
-                    </td>
+                    <td>{getPaymentBadge(invoice.payment_status)}</td>
                     <td>
                       <div className="flex items-center gap-1">
-                        <Link to={`/quotations/${quotation.id}`}>
+                        <Link to={`/invoices/${invoice.id}`}>
                           <Button variant="ghost" size="sm">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteId(quotation.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {!invoice.is_locked && invoice.payment_status !== 'paid' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteId(invoice.id)}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -139,14 +164,14 @@ export default function Quotations() {
         <Dialog open={isSelectingLead} onOpenChange={setIsSelectingLead}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Quotation</DialogTitle>
+              <DialogTitle>Create New Invoice</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Select Lead</label>
+                <label className="text-sm font-medium">Select Customer</label>
                 <Select value={selectedLeadId} onValueChange={setSelectedLeadId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a lead..." />
+                    <SelectValue placeholder="Choose a customer..." />
                   </SelectTrigger>
                   <SelectContent>
                     {leads.map((lead) => (
@@ -157,23 +182,12 @@ export default function Quotations() {
                   </SelectContent>
                 </Select>
               </div>
-              {leads.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No leads available.{' '}
-                  <Link to="/leads" className="text-primary hover:underline">
-                    Create a lead first
-                  </Link>
-                </p>
-              )}
               <div className="flex justify-end gap-3 pt-4">
                 <Button variant="outline" onClick={() => setIsSelectingLead(false)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleCreateQuotation}
-                  disabled={!selectedLeadId || createQuotation.isPending}
-                >
-                  {createQuotation.isPending ? 'Creating...' : 'Create Quotation'}
+                <Button onClick={handleCreateInvoice} disabled={!selectedLeadId || createInvoice.isPending}>
+                  {createInvoice.isPending ? 'Creating...' : 'Create Invoice'}
                 </Button>
               </div>
             </div>
@@ -184,9 +198,9 @@ export default function Quotations() {
         <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Quotation</AlertDialogTitle>
+              <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this quotation? This action cannot be undone.
+                Are you sure you want to delete this invoice? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

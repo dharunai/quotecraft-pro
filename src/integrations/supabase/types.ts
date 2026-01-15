@@ -16,13 +16,20 @@ export type Database = {
     Tables: {
       company_settings: {
         Row: {
+          account_holder_name: string | null
+          account_number: string | null
           address: string | null
+          bank_name: string | null
           company_name: string
           created_at: string
           currency: string
+          default_due_days: number
           email: string | null
           gst_number: string | null
           id: string
+          ifsc_code: string | null
+          invoice_prefix: string
+          invoice_terms: string | null
           logo_url: string | null
           pan: string | null
           phone: string | null
@@ -32,13 +39,20 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address?: string | null
+          bank_name?: string | null
           company_name?: string
           created_at?: string
           currency?: string
+          default_due_days?: number
           email?: string | null
           gst_number?: string | null
           id?: string
+          ifsc_code?: string | null
+          invoice_prefix?: string
+          invoice_terms?: string | null
           logo_url?: string | null
           pan?: string | null
           phone?: string | null
@@ -48,13 +62,20 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
           address?: string | null
+          bank_name?: string | null
           company_name?: string
           created_at?: string
           currency?: string
+          default_due_days?: number
           email?: string | null
           gst_number?: string | null
           id?: string
+          ifsc_code?: string | null
+          invoice_prefix?: string
+          invoice_terms?: string | null
           logo_url?: string | null
           pan?: string | null
           phone?: string | null
@@ -65,6 +86,213 @@ export type Database = {
         }
         Relationships: []
       }
+      deals: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deal_value: number | null
+          expected_close_date: string | null
+          id: string
+          lead_id: string
+          lost_date: string | null
+          lost_reason: string | null
+          notes: string | null
+          probability: number
+          stage: string
+          updated_at: string
+          won_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deal_value?: number | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id: string
+          lost_date?: string | null
+          lost_reason?: string | null
+          notes?: string | null
+          probability?: number
+          stage?: string
+          updated_at?: string
+          won_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deal_value?: number | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string
+          lost_date?: string | null
+          lost_reason?: string | null
+          notes?: string | null
+          probability?: number
+          stage?: string
+          updated_at?: string
+          won_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          hsn_sac_code: string | null
+          id: string
+          invoice_id: string
+          item_title: string
+          line_total: number
+          product_id: string | null
+          quantity: number
+          sort_order: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          hsn_sac_code?: string | null
+          id?: string
+          invoice_id: string
+          item_title: string
+          line_total?: number
+          product_id?: string | null
+          quantity?: number
+          sort_order?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          hsn_sac_code?: string | null
+          id?: string
+          invoice_id?: string
+          item_title?: string
+          line_total?: number
+          product_id?: string | null
+          quantity?: number
+          sort_order?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          due_date: string
+          grand_total: number
+          id: string
+          invoice_date: string
+          invoice_number: string
+          is_locked: boolean
+          lead_id: string
+          notes: string | null
+          payment_notes: string | null
+          payment_status: string
+          quotation_id: string | null
+          subtotal: number
+          tax_amount: number
+          tax_enabled: boolean
+          tax_rate: number
+          terms_conditions: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          due_date: string
+          grand_total?: number
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          is_locked?: boolean
+          lead_id: string
+          notes?: string | null
+          payment_notes?: string | null
+          payment_status?: string
+          quotation_id?: string | null
+          subtotal?: number
+          tax_amount?: number
+          tax_enabled?: boolean
+          tax_rate?: number
+          terms_conditions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          due_date?: string
+          grand_total?: number
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          is_locked?: boolean
+          lead_id?: string
+          notes?: string | null
+          payment_notes?: string | null
+          payment_status?: string
+          quotation_id?: string | null
+          subtotal?: number
+          tax_amount?: number
+          tax_enabled?: boolean
+          tax_rate?: number
+          terms_conditions?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           address: string | null
@@ -74,6 +302,7 @@ export type Database = {
           created_by: string | null
           email: string | null
           id: string
+          is_qualified: boolean
           notes: string | null
           phone: string | null
           status: string
@@ -87,6 +316,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           id?: string
+          is_qualified?: boolean
           notes?: string | null
           phone?: string | null
           status?: string
@@ -100,12 +330,102 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           id?: string
+          is_qualified?: boolean
           notes?: string | null
           phone?: string | null
           status?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      product_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category_id: string | null
+          cost_price: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          low_stock_threshold: number
+          name: string
+          sku: string
+          stock_quantity: number
+          tax_rate: number | null
+          unit: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          low_stock_threshold?: number
+          name: string
+          sku: string
+          stock_quantity?: number
+          tax_rate?: number | null
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          low_stock_threshold?: number
+          name?: string
+          sku?: string
+          stock_quantity?: number
+          tax_rate?: number | null
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -182,7 +502,9 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          deal_id: string | null
           id: string
+          invoice_id: string | null
           lead_id: string
           notes: string | null
           quote_date: string
@@ -197,7 +519,9 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          deal_id?: string | null
           id?: string
+          invoice_id?: string | null
           lead_id: string
           notes?: string | null
           quote_date?: string
@@ -212,7 +536,9 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          deal_id?: string | null
           id?: string
+          invoice_id?: string | null
           lead_id?: string
           notes?: string | null
           quote_date?: string
@@ -226,6 +552,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "quotations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quotations_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -234,15 +574,45 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_invoice_number: { Args: never; Returns: string }
       generate_quote_number: { Args: never; Returns: string }
+      generate_sku: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -369,6 +739,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
