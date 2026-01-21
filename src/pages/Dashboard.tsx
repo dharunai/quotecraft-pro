@@ -3,20 +3,57 @@ import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useLeads } from '@/hooks/useLeads';
 import { useQuotations } from '@/hooks/useQuotations';
+import { useDeals } from '@/hooks/useDeals';
+import { useProducts } from '@/hooks/useProducts';
+import { useInvoices } from '@/hooks/useInvoices';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
 import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
   const { data: leads = [], isLoading: leadsLoading } = useLeads();
   const { data: quotations = [], isLoading: quotationsLoading } = useQuotations();
+  const { data: deals = [] } = useDeals();
+  const { data: products = [] } = useProducts();
+  const { data: invoices = [] } = useInvoices();
+  const { data: settings } = useCompanySettings();
+
+  const currency = settings?.currency || '₹';
+
+  // Pipeline metrics
+  const pipelineValue = deals
+    .filter(d => d.stage !== 'lost')
+    .reduce((sum, d) => sum + (d.deal_value || 0), 0);
+  
+  const wonDeals = deals.filter(d => d.stage === 'won');
+  const lostDeals = deals.filter(d => d.stage === 'lost');
+  const winRate = (wonDeals.length + lostDeals.length) > 0 
+    ? Math.round((wonDeals.length / (wonDeals.length + lostDeals.length)) * 100)
+    : 0;
+
+  // Product metrics
+  const lowStockProducts = products.filter(p => p.is_active && p.stock_quantity <= p.low_stock_threshold);
+  const outOfStockProducts = products.filter(p => p.is_active && p.stock_quantity === 0);
+
+  // Invoice metrics
+  const unpaidInvoices = invoices.filter(i => i.payment_status === 'unpaid' || i.payment_status === 'partial');
+  const outstandingAmount = unpaidInvoices.reduce((sum, i) => sum + (i.grand_total - i.amount_paid), 0);
+  const overdueInvoices = invoices.filter(i => 
+    (i.payment_status === 'unpaid' || i.payment_status === 'partial') && 
+    new Date(i.due_date) < new Date()
+  );
+  const paidThisMonth = invoices
+    .filter(i => i.payment_status === 'paid')
+    .reduce((sum, i) => sum + i.amount_paid, 0);
 
   const stats = {
     totalLeads: leads.length,
     newLeads: leads.filter(l => l.status === 'new').length,
-    wonLeads: leads.filter(l => l.status === 'won').length,
+    qualifiedLeads: leads.filter(l => l.is_qualified).length,
     totalQuotations: quotations.length,
     draftQuotations: quotations.filter(q => q.status === 'draft').length,
     acceptedQuotations: quotations.filter(q => q.status === 'accepted').length,
@@ -24,6 +61,7 @@ export default function Dashboard() {
 
   const recentLeads = leads.slice(0, 5);
   const recentQuotations = quotations.slice(0, 5);
+  const recentDeals = deals.slice(0, 5);
 
   return (
     <AppLayout>
@@ -32,8 +70,68 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold">Dashboard</h1>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Pipeline Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold text-primary">
+                {currency}{pipelineValue.toLocaleString('en-IN')}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Pipeline Value</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold">{deals.length}</div>
+              <p className="text-sm text-muted-foreground mt-1">Active Deals</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold text-success">{wonDeals.length}</div>
+              <p className="text-sm text-muted-foreground mt-1">Won Deals</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold">{winRate}%</div>
+              <p className="text-sm text-muted-foreground mt-1">Win Rate</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Invoice & Product Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold text-destructive">
+                {currency}{outstandingAmount.toLocaleString('en-IN')}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Outstanding</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold text-warning">{overdueInvoices.length}</div>
+              <p className="text-sm text-muted-foreground mt-1">Overdue Invoices</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold">{products.length}</div>
+              <p className="text-sm text-muted-foreground mt-1">Products</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold text-warning">{lowStockProducts.length}</div>
+              <p className="text-sm text-muted-foreground mt-1">Low Stock</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lead & Quotation Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold">{stats.totalLeads}</div>
@@ -48,20 +146,8 @@ export default function Dashboard() {
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-success">{stats.wonLeads}</div>
-              <p className="text-sm text-muted-foreground mt-1">Won Leads</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
               <div className="text-3xl font-bold">{stats.totalQuotations}</div>
               <p className="text-sm text-muted-foreground mt-1">Quotations</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-muted-foreground">{stats.draftQuotations}</div>
-              <p className="text-sm text-muted-foreground mt-1">Drafts</p>
             </CardContent>
           </Card>
           <Card>
@@ -73,7 +159,40 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Recent Deals */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Recent Deals</CardTitle>
+              <Link to="/pipeline">
+                <Button variant="ghost" size="sm">View All</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {recentDeals.length === 0 ? (
+                <p className="text-muted-foreground">No deals yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentDeals.map((deal) => (
+                    <Link
+                      key={deal.id}
+                      to={`/deals/${deal.id}`}
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors"
+                    >
+                      <div>
+                        <p className="font-medium">{deal.lead?.company_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {currency}{(deal.deal_value || 0).toLocaleString('en-IN')}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="capitalize">{deal.stage}</Badge>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Recent Leads */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -131,7 +250,7 @@ export default function Dashboard() {
                       <div>
                         <p className="font-medium">{quotation.quote_number}</p>
                         <p className="text-sm text-muted-foreground">
-                          {quotation.lead?.company_name || 'Unknown'} - {format(new Date(quotation.quote_date), 'dd MMM yyyy')}
+                          {quotation.lead?.company_name || 'Unknown'}
                         </p>
                       </div>
                       <QuotationStatusBadge status={quotation.status} />
