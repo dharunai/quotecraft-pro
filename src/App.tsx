@@ -14,6 +14,11 @@ import LeadDetail from "./pages/LeadDetail";
 import Quotations from "./pages/Quotations";
 import QuotationEditor from "./pages/QuotationEditor";
 import Settings from "./pages/Settings";
+import Pipeline from "./pages/Pipeline";
+import Products from "./pages/Products";
+import ProductCategories from "./pages/ProductCategories";
+import Invoices from "./pages/Invoices";
+import DealDetail from "./pages/DealDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +39,11 @@ const App = () => (
             <Route path="/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
             <Route path="/quotations" element={<ProtectedRoute><Quotations /></ProtectedRoute>} />
             <Route path="/quotations/:id" element={<ProtectedRoute><QuotationEditor /></ProtectedRoute>} />
+            <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
+            <Route path="/deals/:id" element={<ProtectedRoute><DealDetail /></ProtectedRoute>} />
+            <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+            <Route path="/products/categories" element={<ProtectedRoute><ProductCategories /></ProtectedRoute>} />
+            <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
