@@ -3,25 +3,29 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useQuotation, useQuotationItems, useUpdateQuotation, useCreateQuotationItem, useUpdateQuotationItem, useDeleteQuotationItem } from '@/hooks/useQuotations';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useProducts } from '@/hooks/useProducts';
 import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
 import { QuotationItemRow } from '@/components/quotations/QuotationItemRow';
 import { QuotationPreview } from '@/components/quotations/QuotationPreview';
+import { ProductBrowserDialog } from '@/components/products/ProductBrowserDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Download, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Save, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { Product } from '@/types/database';
 
 export default function QuotationEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: quotation, isLoading } = useQuotation(id);
-  const { data: items = [] } = useQuotationItems(id);
+  const { data: items = [], refetch: refetchItems } = useQuotationItems(id);
   const { data: settings } = useCompanySettings();
+  const { data: products = [] } = useProducts();
   const updateQuotation = useUpdateQuotation();
   const createItem = useCreateQuotationItem();
   const updateItem = useUpdateQuotationItem();
@@ -31,6 +35,7 @@ export default function QuotationEditor() {
   const [quoteDate, setQuoteDate] = useState('');
   const [validUntil, setValidUntil] = useState('');
   const [notes, setNotes] = useState('');
+  const [showProductBrowser, setShowProductBrowser] = useState(false);
 
   useEffect(() => {
     if (quotation) {
@@ -73,6 +78,23 @@ export default function QuotationEditor() {
       unit_price: 0,
       line_total: 0,
       sort_order: items.length,
+    }, {
+      onSuccess: () => refetchItems(),
+    });
+  };
+
+  const handleAddProduct = (product: Product) => {
+    if (!id) return;
+    createItem.mutate({
+      quotation_id: id,
+      title: product.name,
+      description: product.description || null,
+      quantity: 1,
+      unit_price: product.unit_price,
+      line_total: product.unit_price,
+      sort_order: items.length,
+    }, {
+      onSuccess: () => refetchItems(),
     });
   };
 
@@ -257,10 +279,16 @@ export default function QuotationEditor() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Line Items</CardTitle>
-                <Button size="sm" onClick={handleAddItem} disabled={createItem.isPending}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowProductBrowser(true)}>
+                    <Package className="h-4 w-4 mr-2" />
+                    Add Product
+                  </Button>
+                  <Button size="sm" onClick={handleAddItem} disabled={createItem.isPending}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {items.length === 0 ? (
@@ -308,6 +336,13 @@ export default function QuotationEditor() {
             />
           </TabsContent>
         </Tabs>
+
+        {/* Product Browser Dialog */}
+        <ProductBrowserDialog
+          open={showProductBrowser}
+          onOpenChange={setShowProductBrowser}
+          onSelectProduct={handleAddProduct}
+        />
       </div>
 
       {/* Print-only content */}

@@ -3,15 +3,18 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads';
 import { useQuotations, useCreateQuotation, useGenerateQuoteNumber } from '@/hooks/useQuotations';
+import { useCreateDeal } from '@/hooks/useDeals';
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
 import { LeadForm } from '@/components/leads/LeadForm';
 import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { format } from 'date-fns';
-import { ArrowLeft, Edit, Trash2, Plus } from 'lucide-react';
+import { format, addDays } from 'date-fns';
+import { ArrowLeft, Edit, Trash2, Plus, TrendingUp } from 'lucide-react';
 import { Lead } from '@/types/database';
 
 export default function LeadDetail() {
@@ -23,9 +26,15 @@ export default function LeadDetail() {
   const deleteLead = useDeleteLead();
   const createQuotation = useCreateQuotation();
   const generateQuoteNumber = useGenerateQuoteNumber();
+  const createDeal = useCreateDeal();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isQualifying, setIsQualifying] = useState(false);
+  const [dealValue, setDealValue] = useState('');
+  const [expectedCloseDate, setExpectedCloseDate] = useState(
+    addDays(new Date(), 30).toISOString().split('T')[0]
+  );
 
   const leadQuotations = quotations.filter(q => q.lead_id === id);
 
@@ -69,6 +78,30 @@ export default function LeadDetail() {
     }
   };
 
+  const handleQualifyLead = () => {
+    if (!id) return;
+    
+    createDeal.mutate({
+      lead_id: id,
+      deal_value: dealValue ? parseFloat(dealValue) : null,
+      stage: 'qualified',
+      probability: 25,
+      expected_close_date: expectedCloseDate || null,
+      won_date: null,
+      lost_date: null,
+      lost_reason: null,
+      notes: null,
+      created_by: null,
+    }, {
+      onSuccess: (deal) => {
+        // Update lead as qualified
+        updateLead.mutate({ id, is_qualified: true });
+        setIsQualifying(false);
+        navigate(`/deals/${deal.id}`);
+      },
+    });
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -107,8 +140,17 @@ export default function LeadDetail() {
               <p className="text-muted-foreground">{lead.contact_name}</p>
             </div>
             <LeadStatusBadge status={lead.status} />
+            {lead.is_qualified && (
+              <Badge variant="secondary" className="bg-success/20 text-success">Qualified</Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
+            {!lead.is_qualified && (
+              <Button onClick={() => setIsQualifying(true)} className="bg-success hover:bg-success/90">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Qualify Lead
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setIsEditing(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
@@ -198,6 +240,51 @@ export default function LeadDetail() {
               onCancel={() => setIsEditing(false)}
               isLoading={updateLead.isPending}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Qualify Lead Dialog */}
+        <Dialog open={isQualifying} onOpenChange={setIsQualifying}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Qualify Lead</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Convert this lead into a deal in your sales pipeline.
+              </p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Expected Deal Value</label>
+                <Input
+                  type="number"
+                  value={dealValue}
+                  onChange={(e) => setDealValue(e.target.value)}
+                  placeholder="Enter estimated value..."
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Expected Close Date</label>
+                <Input
+                  type="date"
+                  value={expectedCloseDate}
+                  onChange={(e) => setExpectedCloseDate(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={() => setIsQualifying(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleQualifyLead} 
+                  disabled={createDeal.isPending}
+                  className="bg-success hover:bg-success/90"
+                >
+                  {createDeal.isPending ? 'Creating Deal...' : 'Create Deal'}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 

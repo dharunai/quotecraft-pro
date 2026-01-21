@@ -18,6 +18,7 @@ import Pipeline from "./pages/Pipeline";
 import Products from "./pages/Products";
 import ProductCategories from "./pages/ProductCategories";
 import Invoices from "./pages/Invoices";
+import InvoiceEditor from "./pages/InvoiceEditor";
 import DealDetail from "./pages/DealDetail";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +45,8 @@ const App = () => (
             <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
             <Route path="/products/categories" element={<ProtectedRoute><ProductCategories /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+            <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceEditor /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

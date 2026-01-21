@@ -25,6 +25,13 @@ export default function Settings() {
     tax_rate: 18,
     terms: '',
     theme_color: '#166534',
+    bank_name: '',
+    account_number: '',
+    ifsc_code: '',
+    account_holder_name: '',
+    invoice_prefix: 'INV',
+    default_due_days: 30,
+    invoice_terms: '',
   });
 
   useEffect(() => {
@@ -40,6 +47,13 @@ export default function Settings() {
         tax_rate: settings.tax_rate || 18,
         terms: settings.terms || '',
         theme_color: settings.theme_color || '#166534',
+        bank_name: settings.bank_name || '',
+        account_number: settings.account_number || '',
+        ifsc_code: settings.ifsc_code || '',
+        account_holder_name: settings.account_holder_name || '',
+        invoice_prefix: settings.invoice_prefix || 'INV',
+        default_due_days: settings.default_due_days || 30,
+        invoice_terms: settings.invoice_terms || '',
       });
     }
   }, [settings]);
@@ -268,6 +282,95 @@ export default function Settings() {
                   onChange={(e) => handleChange('terms', e.target.value)}
                   placeholder="Enter your default terms and conditions..."
                   rows={5}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Banking Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Banking Details</CardTitle>
+              <CardDescription>
+                Bank account information for invoices
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Bank Name</label>
+                  <Input
+                    value={formData.bank_name}
+                    onChange={(e) => handleChange('bank_name', e.target.value)}
+                    placeholder="State Bank of India"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Account Holder Name</label>
+                  <Input
+                    value={formData.account_holder_name}
+                    onChange={(e) => handleChange('account_holder_name', e.target.value)}
+                    placeholder="Your Company Pvt Ltd"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Account Number</label>
+                  <Input
+                    value={formData.account_number}
+                    onChange={(e) => handleChange('account_number', e.target.value)}
+                    placeholder="1234567890"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">IFSC Code</label>
+                  <Input
+                    value={formData.ifsc_code}
+                    onChange={(e) => handleChange('ifsc_code', e.target.value)}
+                    placeholder="SBIN0001234"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Invoice Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Invoice Settings</CardTitle>
+              <CardDescription>
+                Configure invoice numbering and default terms
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Invoice Prefix</label>
+                  <Input
+                    value={formData.invoice_prefix}
+                    onChange={(e) => handleChange('invoice_prefix', e.target.value)}
+                    placeholder="INV"
+                    className="w-32"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Default Due Days</label>
+                  <Input
+                    type="number"
+                    value={formData.default_due_days}
+                    onChange={(e) => handleChange('default_due_days', parseInt(e.target.value) || 30)}
+                    placeholder="30"
+                    min="0"
+                    className="w-32"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Invoice Terms & Conditions</label>
+                <Textarea
+                  value={formData.invoice_terms}
+                  onChange={(e) => handleChange('invoice_terms', e.target.value)}
+                  placeholder="Enter default invoice terms and conditions..."
+                  rows={4}
                 />
               </div>
             </CardContent>
