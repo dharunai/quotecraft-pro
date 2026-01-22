@@ -240,14 +240,14 @@ export default function Products() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">SKU</label>
+                  <label className="text-sm font-medium font-sans text-center">SKU</label>
                   <Input value={formData.sku} onChange={e => setFormData(prev => ({
                   ...prev,
                   sku: e.target.value
                 }))} placeholder="PROD-0001" required />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Product Name</label>
+                  <label className="text-sm font-medium font-sans">Product Name</label>
                   <Input value={formData.name} onChange={e => setFormData(prev => ({
                   ...prev,
                   name: e.target.value
@@ -256,7 +256,7 @@ export default function Products() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
+                <label className="text-sm font-medium font-sans">Description</label>
                 <Textarea value={formData.description} onChange={e => setFormData(prev => ({
                 ...prev,
                 description: e.target.value
@@ -265,7 +265,7 @@ export default function Products() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Category</label>
+                  <label className="text-sm font-medium font-sans">Category</label>
                   <Select value={formData.category_id} onValueChange={v => setFormData(prev => ({
                   ...prev,
                   category_id: v
@@ -279,7 +279,7 @@ export default function Products() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Unit</label>
+                  <label className="text-sm font-medium font-sans">Unit</label>
                   <Select value={formData.unit} onValueChange={v => setFormData(prev => ({
                   ...prev,
                   unit: v
@@ -296,7 +296,7 @@ export default function Products() {
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Unit Price ({currency})</label>
+                  <label className="text-sm font-medium font-sans">Unit Price ({currency})</label>
                   <Input type="number" value={formData.unit_price} onChange={e => setFormData(prev => ({
                   ...prev,
                   unit_price: parseFloat(e.target.value) || 0
