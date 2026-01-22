@@ -75,7 +75,7 @@ export default function Dashboard() {
               <div className="text-3xl font-bold text-primary">
                 {currency}{pipelineValue.toLocaleString('en-IN')}
               </div>
-              <p className="text-sm text-muted-foreground mt-1 font-serif">Pipeline Value</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Pipeline Value</p>
             </CardContent>
           </Card>
           <Card>
@@ -87,13 +87,13 @@ export default function Dashboard() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-success">{wonDeals.length}</div>
-              <p className="text-sm text-muted-foreground mt-1">Won Deals</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Won Deals</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold">{winRate}%</div>
-              <p className="text-sm text-muted-foreground mt-1">Win Rate</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Win Rate</p>
             </CardContent>
           </Card>
         </div>
@@ -117,13 +117,13 @@ export default function Dashboard() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold">{products.length}</div>
-              <p className="text-sm text-muted-foreground mt-1">Products</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Products</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-warning">{lowStockProducts.length}</div>
-              <p className="text-sm text-muted-foreground mt-1">Low Stock</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Low Stock</p>
             </CardContent>
           </Card>
         </div>
@@ -139,19 +139,19 @@ export default function Dashboard() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-info">{stats.newLeads}</div>
-              <p className="text-sm text-muted-foreground mt-1">New Leads</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">New Leads</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold">{stats.totalQuotations}</div>
-              <p className="text-sm text-muted-foreground mt-1">Quotations</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Quotations</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-success">{stats.acceptedQuotations}</div>
-              <p className="text-sm text-muted-foreground mt-1">Accepted</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Accepted</p>
             </CardContent>
           </Card>
         </div>
@@ -194,7 +194,7 @@ export default function Dashboard() {
                   {recentLeads.map(lead => <Link key={lead.id} to={`/leads/${lead.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
                       <div>
                         <p className="font-medium font-sans">{lead.company_name}</p>
-                        <p className="text-sm text-muted-foreground">{lead.contact_name}</p>
+                        <p className="text-sm text-muted-foreground font-sans">{lead.contact_name}</p>
                       </div>
                       <LeadStatusBadge status={lead.status} />
                     </Link>)}
@@ -215,7 +215,7 @@ export default function Dashboard() {
                   {recentQuotations.map(quotation => <Link key={quotation.id} to={`/quotations/${quotation.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
                       <div>
                         <p className="font-medium font-sans">{quotation.quote_number}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground font-sans">
                           {quotation.lead?.company_name || 'Unknown'}
                         </p>
                       </div>
