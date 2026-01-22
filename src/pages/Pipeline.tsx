@@ -106,7 +106,7 @@ export default function Pipeline() {
       </AppLayout>;
   }
   return <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 font-sans">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold font-sans">Sales Pipeline</h1>
