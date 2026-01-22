@@ -133,7 +133,7 @@ export default function Dashboard() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-3xl font-bold">{stats.totalLeads}</div>
-              <p className="text-sm text-muted-foreground mt-1">Total Leads</p>
+              <p className="text-sm text-muted-foreground mt-1 font-sans">Total Leads</p>
             </CardContent>
           </Card>
           <Card>
@@ -167,7 +167,7 @@ export default function Dashboard() {
               </Link>
             </CardHeader>
             <CardContent>
-              {recentDeals.length === 0 ? <p className="text-muted-foreground">No deals yet</p> : <div className="space-y-3">
+              {recentDeals.length === 0 ? <p className="text-muted-foreground font-sans">No deals yet</p> : <div className="space-y-3">
                   {recentDeals.map(deal => <Link key={deal.id} to={`/deals/${deal.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
                       <div>
                         <p className="font-medium">{deal.lead?.company_name}</p>
