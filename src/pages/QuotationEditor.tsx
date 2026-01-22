@@ -18,30 +18,40 @@ import { ArrowLeft, Plus, Download, Save, Package, FileText } from 'lucide-react
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Product } from '@/types/database';
-
 export default function QuotationEditor() {
-  const { id } = useParams<{ id: string }>();
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
   const navigate = useNavigate();
-  const { data: quotation, isLoading } = useQuotation(id);
-  const { data: items = [], refetch: refetchItems } = useQuotationItems(id);
-  const { data: settings } = useCompanySettings();
-  const { data: products = [] } = useProducts();
+  const {
+    data: quotation,
+    isLoading
+  } = useQuotation(id);
+  const {
+    data: items = [],
+    refetch: refetchItems
+  } = useQuotationItems(id);
+  const {
+    data: settings
+  } = useCompanySettings();
+  const {
+    data: products = []
+  } = useProducts();
   const updateQuotation = useUpdateQuotation();
   const createItem = useCreateQuotationItem();
   const updateItem = useUpdateQuotationItem();
   const deleteItem = useDeleteQuotationItem();
-
   const [status, setStatus] = useState<'draft' | 'sent' | 'accepted' | 'rejected'>('draft');
   const [quoteDate, setQuoteDate] = useState('');
   const [validUntil, setValidUntil] = useState('');
   const [notes, setNotes] = useState('');
   const [showProductBrowser, setShowProductBrowser] = useState(false);
-
   const handleConvertToInvoice = () => {
     if (!quotation) return;
     navigate(`/invoices/new?quotation_id=${quotation.id}&lead_id=${quotation.lead_id}${quotation.deal_id ? `&deal_id=${quotation.deal_id}` : ''}`);
   };
-
   useEffect(() => {
     if (quotation) {
       setStatus(quotation.status);
@@ -50,15 +60,12 @@ export default function QuotationEditor() {
       setNotes(quotation.notes || '');
     }
   }, [quotation]);
-
   const handleSave = () => {
     if (!id) return;
-    
     const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
     const taxRate = settings?.tax_rate || 0;
-    const tax = (subtotal * taxRate) / 100;
+    const tax = subtotal * taxRate / 100;
     const total = subtotal + tax;
-
     updateQuotation.mutate({
       id,
       status,
@@ -67,12 +74,11 @@ export default function QuotationEditor() {
       notes: notes || null,
       subtotal,
       tax,
-      total,
+      total
     }, {
-      onSuccess: () => toast.success('Quotation saved'),
+      onSuccess: () => toast.success('Quotation saved')
     });
   };
-
   const handleAddItem = () => {
     if (!id) return;
     createItem.mutate({
@@ -82,12 +88,11 @@ export default function QuotationEditor() {
       quantity: 1,
       unit_price: 0,
       line_total: 0,
-      sort_order: items.length,
+      sort_order: items.length
     }, {
-      onSuccess: () => refetchItems(),
+      onSuccess: () => refetchItems()
     });
   };
-
   const handleAddProduct = (product: Product) => {
     if (!id) return;
     createItem.mutate({
@@ -97,55 +102,51 @@ export default function QuotationEditor() {
       quantity: 1,
       unit_price: product.unit_price,
       line_total: product.unit_price,
-      sort_order: items.length,
+      sort_order: items.length
     }, {
-      onSuccess: () => refetchItems(),
+      onSuccess: () => refetchItems()
     });
   };
-
-  const handleUpdateItem = (data: { id: string } & Record<string, unknown>) => {
+  const handleUpdateItem = (data: {
+    id: string;
+  } & Record<string, unknown>) => {
     if (!id) return;
-    updateItem.mutate({ ...data, quotation_id: id } as Parameters<typeof updateItem.mutate>[0]);
+    updateItem.mutate({
+      ...data,
+      quotation_id: id
+    } as Parameters<typeof updateItem.mutate>[0]);
   };
-
   const handleDeleteItem = (itemId: string) => {
     if (!id) return;
-    deleteItem.mutate({ id: itemId, quotation_id: id });
+    deleteItem.mutate({
+      id: itemId,
+      quotation_id: id
+    });
   };
-
   const handleDownloadPDF = () => {
     window.print();
   };
-
   if (isLoading || !settings) {
-    return (
-      <AppLayout>
+    return <AppLayout>
         <p className="text-muted-foreground">Loading...</p>
-      </AppLayout>
-    );
+      </AppLayout>;
   }
-
   if (!quotation || !quotation.lead) {
-    return (
-      <AppLayout>
+    return <AppLayout>
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">Quotation not found</p>
           <Link to="/quotations">
             <Button variant="outline">Back to Quotations</Button>
           </Link>
         </div>
-      </AppLayout>
-    );
+      </AppLayout>;
   }
-
   const currency = settings.currency || '₹';
   const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
   const taxRate = settings.tax_rate || 0;
-  const taxAmount = (subtotal * taxRate) / 100;
+  const taxAmount = subtotal * taxRate / 100;
   const total = subtotal + taxAmount;
-
-  return (
-    <AppLayout>
+  return <AppLayout>
       <div className="space-y-6 no-print">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -157,18 +158,16 @@ export default function QuotationEditor() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold">{quotation.quote_number}</h1>
+              <h1 className="text-2xl font-bold font-sans">{quotation.quote_number}</h1>
               <p className="text-muted-foreground">{quotation.lead.company_name}</p>
             </div>
             <QuotationStatusBadge status={status} />
           </div>
           <div className="flex items-center gap-2">
-            {status === 'accepted' && !quotation.invoice_id && (
-              <Button onClick={handleConvertToInvoice} className="bg-success hover:bg-success/90">
+            {status === 'accepted' && !quotation.invoice_id && <Button onClick={handleConvertToInvoice} className="bg-success hover:bg-success/90">
                 <FileText className="h-4 w-4 mr-2" />
                 Convert to Invoice
-              </Button>
-            )}
+              </Button>}
             <Button variant="outline" onClick={handleDownloadPDF}>
               <Download className="h-4 w-4 mr-2" />
               Download PDF
@@ -210,28 +209,15 @@ export default function QuotationEditor() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Quote Date</label>
-                    <Input
-                      type="date"
-                      value={quoteDate}
-                      onChange={(e) => setQuoteDate(e.target.value)}
-                    />
+                    <Input type="date" value={quoteDate} onChange={e => setQuoteDate(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Valid Until</label>
-                    <Input
-                      type="date"
-                      value={validUntil}
-                      onChange={(e) => setValidUntil(e.target.value)}
-                    />
+                    <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Notes</label>
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={4}
-                      placeholder="Add notes..."
-                    />
+                    <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Add notes..." />
                   </div>
                 </CardContent>
               </Card>
@@ -244,15 +230,9 @@ export default function QuotationEditor() {
                 <CardContent className="space-y-2">
                   <p className="font-medium">{quotation.lead.company_name}</p>
                   <p className="text-sm text-muted-foreground">{quotation.lead.contact_name}</p>
-                  {quotation.lead.email && (
-                    <p className="text-sm text-muted-foreground">{quotation.lead.email}</p>
-                  )}
-                  {quotation.lead.phone && (
-                    <p className="text-sm text-muted-foreground">{quotation.lead.phone}</p>
-                  )}
-                  {quotation.lead.address && (
-                    <p className="text-sm text-muted-foreground">{quotation.lead.address}</p>
-                  )}
+                  {quotation.lead.email && <p className="text-sm text-muted-foreground">{quotation.lead.email}</p>}
+                  {quotation.lead.phone && <p className="text-sm text-muted-foreground">{quotation.lead.phone}</p>}
+                  {quotation.lead.address && <p className="text-sm text-muted-foreground">{quotation.lead.address}</p>}
                 </CardContent>
               </Card>
 
@@ -265,21 +245,25 @@ export default function QuotationEditor() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-medium">
-                      {currency}{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {currency}{subtotal.toLocaleString('en-IN', {
+                      minimumFractionDigits: 2
+                    })}
                     </span>
                   </div>
-                  {taxRate > 0 && (
-                    <div className="flex justify-between">
+                  {taxRate > 0 && <div className="flex justify-between">
                       <span className="text-muted-foreground">GST ({taxRate}%)</span>
                       <span className="font-medium">
-                        {currency}{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {currency}{taxAmount.toLocaleString('en-IN', {
+                      minimumFractionDigits: 2
+                    })}
                       </span>
-                    </div>
-                  )}
+                    </div>}
                   <div className="flex justify-between pt-3 border-t text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary">
-                      {currency}{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {currency}{total.toLocaleString('en-IN', {
+                      minimumFractionDigits: 2
+                    })}
                     </span>
                   </div>
                 </CardContent>
@@ -302,16 +286,13 @@ export default function QuotationEditor() {
                 </div>
               </CardHeader>
               <CardContent>
-                {items.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                {items.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                     <p>No items yet</p>
                     <Button variant="outline" className="mt-2" onClick={handleAddItem}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add First Item
                     </Button>
-                  </div>
-                ) : (
-                  <table className="w-full">
+                  </div> : <table className="w-full">
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left p-3 text-sm font-medium text-muted-foreground">Item</th>
@@ -322,51 +303,33 @@ export default function QuotationEditor() {
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((item) => (
-                        <QuotationItemRow
-                          key={item.id}
-                          item={item}
-                          currency={currency}
-                          onUpdate={handleUpdateItem}
-                          onDelete={handleDeleteItem}
-                        />
-                      ))}
+                      {items.map(item => <QuotationItemRow key={item.id} item={item} currency={currency} onUpdate={handleUpdateItem} onDelete={handleDeleteItem} />)}
                     </tbody>
-                  </table>
-                )}
+                  </table>}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="preview">
-            <QuotationPreview
-              quotation={{ ...quotation, status, notes }}
-              items={items}
-              settings={settings}
-              lead={quotation.lead}
-            />
+            <QuotationPreview quotation={{
+            ...quotation,
+            status,
+            notes
+          }} items={items} settings={settings} lead={quotation.lead} />
           </TabsContent>
         </Tabs>
 
         {/* Product Browser Dialog */}
-        <ProductBrowserDialog
-          open={showProductBrowser}
-          onOpenChange={setShowProductBrowser}
-          onSelectProduct={handleAddProduct}
-        />
+        <ProductBrowserDialog open={showProductBrowser} onOpenChange={setShowProductBrowser} onSelectProduct={handleAddProduct} />
       </div>
 
       {/* Print-only content */}
       <div className="hidden print:block">
-        {quotation.lead && (
-          <QuotationPreview
-            quotation={{ ...quotation, status, notes }}
-            items={items}
-            settings={settings}
-            lead={quotation.lead}
-          />
-        )}
+        {quotation.lead && <QuotationPreview quotation={{
+        ...quotation,
+        status,
+        notes
+      }} items={items} settings={settings} lead={quotation.lead} />}
       </div>
-    </AppLayout>
-  );
+    </AppLayout>;
 }
