@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Download, Save, Package } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Save, Package, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Product } from '@/types/database';
@@ -36,6 +36,11 @@ export default function QuotationEditor() {
   const [validUntil, setValidUntil] = useState('');
   const [notes, setNotes] = useState('');
   const [showProductBrowser, setShowProductBrowser] = useState(false);
+
+  const handleConvertToInvoice = () => {
+    if (!quotation) return;
+    navigate(`/invoices/new?quotation_id=${quotation.id}&lead_id=${quotation.lead_id}${quotation.deal_id ? `&deal_id=${quotation.deal_id}` : ''}`);
+  };
 
   useEffect(() => {
     if (quotation) {
@@ -158,6 +163,12 @@ export default function QuotationEditor() {
             <QuotationStatusBadge status={status} />
           </div>
           <div className="flex items-center gap-2">
+            {status === 'accepted' && !quotation.invoice_id && (
+              <Button onClick={handleConvertToInvoice} className="bg-success hover:bg-success/90">
+                <FileText className="h-4 w-4 mr-2" />
+                Convert to Invoice
+              </Button>
+            )}
             <Button variant="outline" onClick={handleDownloadPDF}>
               <Download className="h-4 w-4 mr-2" />
               Download PDF

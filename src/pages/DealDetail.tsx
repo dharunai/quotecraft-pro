@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Trash2, Plus, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 const STAGES = [
   { id: 'qualified', label: 'Qualified', probability: 25 },
@@ -67,6 +68,12 @@ export default function DealDetail() {
 
   const handleSave = () => {
     if (!id) return;
+    
+    // Require lost_reason when marking as lost
+    if (stage === 'lost' && !lostReason.trim()) {
+      toast.error('Please provide a reason for losing this deal');
+      return;
+    }
     
     updateDeal.mutate({
       id,

@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useProducts } from '@/hooks/useProducts';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { Product } from '@/types/database';
+import { AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ProductBrowserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectProduct: (product: Product) => void;
+  showOutOfStockWarning?: boolean;
 }
 
-export function ProductBrowserDialog({ open, onOpenChange, onSelectProduct }: ProductBrowserDialogProps) {
+export function ProductBrowserDialog({ open, onOpenChange, onSelectProduct, showOutOfStockWarning = true }: ProductBrowserDialogProps) {
   const { data: products = [] } = useProducts();
   const { data: settings } = useCompanySettings();
   const [search, setSearch] = useState('');
@@ -27,6 +30,15 @@ export function ProductBrowserDialog({ open, onOpenChange, onSelectProduct }: Pr
   );
 
   const handleSelect = (product: Product) => {
+    if (showOutOfStockWarning && product.stock_quantity === 0) {
+      toast.warning(`Warning: "${product.name}" is out of stock`, {
+        description: 'The product was added but stock quantity is zero.',
+      });
+    } else if (showOutOfStockWarning && product.stock_quantity <= product.low_stock_threshold) {
+      toast.warning(`Warning: "${product.name}" has low stock (${product.stock_quantity} remaining)`, {
+        description: 'Consider checking inventory before finalizing.',
+      });
+    }
     onSelectProduct(product);
     onOpenChange(false);
     setSearch('');
@@ -34,12 +46,12 @@ export function ProductBrowserDialog({ open, onOpenChange, onSelectProduct }: Pr
 
   const getStockBadge = (product: Product) => {
     if (product.stock_quantity === 0) {
-      return <Badge variant="destructive" className="text-xs">Out of Stock</Badge>;
+      return <Badge variant="destructive" className="text-xs gap-1"><AlertTriangle className="h-3 w-3" />Out of Stock</Badge>;
     }
     if (product.stock_quantity <= product.low_stock_threshold) {
-      return <Badge variant="secondary" className="text-xs">Low Stock</Badge>;
+      return <Badge className="bg-warning/20 text-warning-foreground border-warning/30 text-xs gap-1"><AlertTriangle className="h-3 w-3" />Low Stock ({product.stock_quantity})</Badge>;
     }
-    return <Badge variant="outline" className="text-xs">In Stock</Badge>;
+    return <Badge className="bg-success/20 text-success border-success/30 text-xs">In Stock ({product.stock_quantity})</Badge>;
   };
 
   return (
@@ -47,6 +59,9 @@ export function ProductBrowserDialog({ open, onOpenChange, onSelectProduct }: Pr
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Browse Products</DialogTitle>
+          <DialogDescription>
+            Select a product to add to your document. Stock levels are shown for each item.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Input
@@ -64,7 +79,9 @@ export function ProductBrowserDialog({ open, onOpenChange, onSelectProduct }: Pr
               filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted cursor-pointer transition-colors"
+                  className={`flex items-center justify-between p-3 rounded-lg border hover:bg-muted cursor-pointer transition-colors ${
+                    product.stock_quantity === 0 ? 'border-destructive/50 bg-destructive/5' : 'border-border'
+                  }`}
                   onClick={() => handleSelect(product)}
                 >
                   <div className="flex-1">

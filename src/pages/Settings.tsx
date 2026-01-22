@@ -62,12 +62,36 @@ export default function Settings() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const validateBankDetails = () => {
+    const errors: string[] = [];
+    
+    // IFSC code format: 4 letters + 0 + 6 alphanumeric
+    if (formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(formData.ifsc_code)) {
+      errors.push('IFSC code format is invalid (should be like SBIN0001234)');
+    }
+    
+    // Account number: 9-18 digits
+    if (formData.account_number && !/^\d{9,18}$/.test(formData.account_number)) {
+      errors.push('Account number should be 9-18 digits');
+    }
+    
+    return errors;
+  };
+
   const handleSave = () => {
     if (!settings?.id) return;
+    
+    const validationErrors = validateBankDetails();
+    if (validationErrors.length > 0) {
+      validationErrors.forEach(err => toast.error(err));
+      return;
+    }
+    
     updateSettings.mutate({
       id: settings.id,
       ...formData,
       tax_rate: Number(formData.tax_rate),
+      ifsc_code: formData.ifsc_code.toUpperCase() || null,
     });
   };
 
