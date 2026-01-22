@@ -40,7 +40,7 @@ export function AppLayout({
     await signOut();
     navigate('/login');
   };
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background shadow-sm">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between h-16 px-6">
