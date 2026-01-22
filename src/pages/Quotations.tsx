@@ -11,20 +11,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { Plus, Eye, Trash2 } from 'lucide-react';
-
 export default function Quotations() {
   const navigate = useNavigate();
-  const { data: quotations = [], isLoading } = useQuotations();
-  const { data: leads = [] } = useLeads();
-  const { data: settings } = useCompanySettings();
+  const {
+    data: quotations = [],
+    isLoading
+  } = useQuotations();
+  const {
+    data: leads = []
+  } = useLeads();
+  const {
+    data: settings
+  } = useCompanySettings();
   const createQuotation = useCreateQuotation();
   const deleteQuotation = useDeleteQuotation();
   const generateQuoteNumber = useGenerateQuoteNumber();
-
   const [isSelectingLead, setIsSelectingLead] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
   const handleCreateQuotation = async () => {
     if (!selectedLeadId) return;
     try {
@@ -40,52 +44,43 @@ export default function Quotations() {
         subtotal: 0,
         tax: 0,
         total: 0,
-        notes: null,
+        notes: null
       }, {
-        onSuccess: (data) => {
+        onSuccess: data => {
           setIsSelectingLead(false);
           setSelectedLeadId('');
           navigate(`/quotations/${data.id}`);
-        },
+        }
       });
     } catch (error) {
       console.error('Failed to create quotation:', error);
     }
   };
-
   const handleDelete = () => {
     if (deleteId) {
       deleteQuotation.mutate(deleteId, {
-        onSuccess: () => setDeleteId(null),
+        onSuccess: () => setDeleteId(null)
       });
     }
   };
-
   const currency = settings?.currency || '₹';
-
-  return (
-    <AppLayout>
+  return <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Quotations</h1>
+          <h1 className="text-2xl font-bold font-sans">Quotations</h1>
           <Button onClick={() => setIsSelectingLead(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Quotation
           </Button>
         </div>
 
-        {isLoading ? (
-          <p className="text-muted-foreground">Loading quotations...</p>
-        ) : quotations.length === 0 ? (
-          <div className="text-center py-12 bg-card rounded-lg border border-border">
+        {isLoading ? <p className="text-muted-foreground">Loading quotations...</p> : quotations.length === 0 ? <div className="text-center py-12 bg-card rounded-lg border border-border">
             <p className="text-muted-foreground mb-4">No quotations yet</p>
             <Button onClick={() => setIsSelectingLead(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create Your First Quotation
             </Button>
-          </div>
-        ) : (
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
+          </div> : <div className="bg-card rounded-lg border border-border overflow-hidden">
             <table className="crm-table">
               <thead>
                 <tr>
@@ -98,15 +93,16 @@ export default function Quotations() {
                 </tr>
               </thead>
               <tbody>
-                {quotations.map((quotation) => (
-                  <tr key={quotation.id}>
+                {quotations.map(quotation => <tr key={quotation.id}>
                     <td className="font-medium">{quotation.quote_number}</td>
                     <td>{quotation.lead?.company_name || 'Unknown'}</td>
                     <td className="text-muted-foreground">
                       {format(new Date(quotation.quote_date), 'dd MMM yyyy')}
                     </td>
                     <td className="font-medium">
-                      {currency}{quotation.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {currency}{quotation.total.toLocaleString('en-IN', {
+                  minimumFractionDigits: 2
+                })}
                     </td>
                     <td>
                       <QuotationStatusBadge status={quotation.status} />
@@ -118,22 +114,15 @@ export default function Quotations() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteId(quotation.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(quotation.id)} className="text-muted-foreground hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
-                  </tr>
-                ))}
+                  </tr>)}
               </tbody>
             </table>
-          </div>
-        )}
+          </div>}
 
         {/* Select Lead Dialog */}
         <Dialog open={isSelectingLead} onOpenChange={setIsSelectingLead}>
@@ -149,30 +138,23 @@ export default function Quotations() {
                     <SelectValue placeholder="Choose a lead..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {leads.map((lead) => (
-                      <SelectItem key={lead.id} value={lead.id}>
+                    {leads.map(lead => <SelectItem key={lead.id} value={lead.id}>
                         {lead.company_name} - {lead.contact_name}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              {leads.length === 0 && (
-                <p className="text-sm text-muted-foreground">
+              {leads.length === 0 && <p className="text-sm text-muted-foreground">
                   No leads available.{' '}
                   <Link to="/leads" className="text-primary hover:underline">
                     Create a lead first
                   </Link>
-                </p>
-              )}
+                </p>}
               <div className="flex justify-end gap-3 pt-4">
                 <Button variant="outline" onClick={() => setIsSelectingLead(false)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleCreateQuotation}
-                  disabled={!selectedLeadId || createQuotation.isPending}
-                >
+                <Button onClick={handleCreateQuotation} disabled={!selectedLeadId || createQuotation.isPending}>
                   {createQuotation.isPending ? 'Creating...' : 'Create Quotation'}
                 </Button>
               </div>
@@ -198,6 +180,5 @@ export default function Quotations() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </AppLayout>
-  );
+    </AppLayout>;
 }
