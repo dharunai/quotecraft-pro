@@ -52,7 +52,7 @@ export default function Leads() {
               <thead>
                 <tr>
                   <th className="">Company</th>
-                  <th>Contact</th>
+                  <th>Contact name</th>
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Status</th>
@@ -62,7 +62,7 @@ export default function Leads() {
               </thead>
               <tbody>
                 {leads.map(lead => <tr key={lead.id}>
-                    <td className="font-medium">{lead.company_name}</td>
+                    <td className="font-medium shadow-md">{lead.company_name}</td>
                     <td>{lead.contact_name}</td>
                     <td className="text-muted-foreground">{lead.email || '-'}</td>
                     <td className="text-muted-foreground">{lead.phone || '-'}</td>
