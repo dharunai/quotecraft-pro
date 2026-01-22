@@ -193,7 +193,7 @@ export default function QuotationEditor() {
                   <CardTitle className="text-lg">Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2 font-sans">
                     <label className="text-sm font-medium">Status</label>
                     <Select value={status} onValueChange={(v: typeof status) => setStatus(v)}>
                       <SelectTrigger>
@@ -207,11 +207,11 @@ export default function QuotationEditor() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 font-sans">
                     <label className="text-sm font-medium">Quote Date</label>
                     <Input type="date" value={quoteDate} onChange={e => setQuoteDate(e.target.value)} />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 font-sans">
                     <label className="text-sm font-medium">Valid Until</label>
                     <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
                   </div>
@@ -229,10 +229,10 @@ export default function QuotationEditor() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="font-medium">{quotation.lead.company_name}</p>
-                  <p className="text-sm text-muted-foreground">{quotation.lead.contact_name}</p>
+                  <p className="text-sm text-muted-foreground font-sans">{quotation.lead.contact_name}</p>
                   {quotation.lead.email && <p className="text-sm text-muted-foreground">{quotation.lead.email}</p>}
                   {quotation.lead.phone && <p className="text-sm text-muted-foreground">{quotation.lead.phone}</p>}
-                  {quotation.lead.address && <p className="text-sm text-muted-foreground">{quotation.lead.address}</p>}
+                  {quotation.lead.address && <p className="text-sm text-muted-foreground font-sans">{quotation.lead.address}</p>}
                 </CardContent>
               </Card>
 
