@@ -45,7 +45,7 @@ export function AppLayout({
       <header className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between h-16 px-6">
           <div className="flex items-center gap-8">
-            <Link to="/dashboard" className="text-xl font-semibold text-primary">Mikrogreenz Global</Link>
+            <Link to="/dashboard" className="text-xl text-primary font-sans font-bold">Mikrogreenz Global</Link>
             <nav className="hidden md:flex items-center gap-1">
               {navigation.map(item => <Link key={item.name} to={item.href} className={cn("px-3 py-2 text-sm font-medium rounded-md transition-colors font-sans", location.pathname.startsWith(item.href) ? 'bg-secondary text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}>
                   {item.name}
