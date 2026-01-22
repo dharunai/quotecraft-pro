@@ -303,14 +303,14 @@ export default function Products() {
                 }))} min="0" step="0.01" required />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Cost Price ({currency})</label>
+                  <label className="text-sm font-medium font-sans">Cost Price ({currency})</label>
                   <Input type="number" value={formData.cost_price} onChange={e => setFormData(prev => ({
                   ...prev,
                   cost_price: parseFloat(e.target.value) || 0
                 }))} min="0" step="0.01" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Tax Rate (%)</label>
+                  <label className="text-sm font-medium font-sans">Tax Rate (%)</label>
                   <Input type="number" value={formData.tax_rate || ''} onChange={e => setFormData(prev => ({
                   ...prev,
                   tax_rate: e.target.value ? parseFloat(e.target.value) : null
@@ -320,14 +320,14 @@ export default function Products() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Stock Quantity</label>
+                  <label className="text-sm font-medium font-sans">Stock Quantity</label>
                   <Input type="number" value={formData.stock_quantity} onChange={e => setFormData(prev => ({
                   ...prev,
                   stock_quantity: parseInt(e.target.value) || 0
                 }))} min="0" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Low Stock Threshold</label>
+                  <label className="text-sm font-medium font-sans">Low Stock Threshold</label>
                   <Input type="number" value={formData.low_stock_threshold} onChange={e => setFormData(prev => ({
                   ...prev,
                   low_stock_threshold: parseInt(e.target.value) || 10
