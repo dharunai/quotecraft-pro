@@ -159,7 +159,7 @@ export default function QuotationEditor() {
             </Link>
             <div>
               <h1 className="text-2xl font-bold font-sans">{quotation.quote_number}</h1>
-              <p className="text-muted-foreground">{quotation.lead.company_name}</p>
+              <p className="text-muted-foreground font-sans">{quotation.lead.company_name}</p>
             </div>
             <QuotationStatusBadge status={status} />
           </div>
