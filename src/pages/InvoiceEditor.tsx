@@ -12,8 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Download, Save, Lock, Unlock, Package } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ProductBrowserDialog } from '@/components/products/ProductBrowserDialog';
+import { ArrowLeft, Plus, Download, Save, Lock, Unlock, Package, AlertTriangle } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { Product } from '@/types/database';
@@ -32,7 +33,6 @@ export default function InvoiceEditor() {
   const { data: items = [], refetch: refetchItems } = useInvoiceItems(isNew ? undefined : id);
   const { data: settings } = useCompanySettings();
   const { data: leads = [] } = useLeads();
-  const { data: products = [] } = useProducts();
   const { data: sourceQuotation } = useQuotation(quotationId || undefined);
   const { data: sourceQuotationItems = [] } = useQuotationItems(quotationId || undefined);
   
@@ -56,7 +56,6 @@ export default function InvoiceEditor() {
   const [termsConditions, setTermsConditions] = useState('');
   const [isLocked, setIsLocked] = useState(false);
   const [showProductBrowser, setShowProductBrowser] = useState(false);
-  const [productSearch, setProductSearch] = useState('');
 
   useEffect(() => {
     if (invoice) {
@@ -212,7 +211,6 @@ export default function InvoiceEditor() {
       onSuccess: () => {
         refetchItems();
         setShowProductBrowser(false);
-        setProductSearch('');
       },
     });
   };
@@ -274,12 +272,6 @@ export default function InvoiceEditor() {
   };
 
   const paymentStatus = getPaymentStatus();
-
-  const filteredProducts = products.filter(p => 
-    p.is_active && 
-    (p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-     p.sku.toLowerCase().includes(productSearch.toLowerCase()))
-  );
 
   if (!isNew && isLoading) {
     return (
@@ -663,45 +655,22 @@ export default function InvoiceEditor() {
           </Card>
         </div>
 
-        {/* Product Browser Modal */}
-        <Dialog open={showProductBrowser} onOpenChange={setShowProductBrowser}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add Product</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                placeholder="Search products..."
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-              />
-              <div className="max-h-96 overflow-y-auto space-y-2">
-                {filteredProducts.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No products found</p>
-                ) : (
-                  filteredProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted cursor-pointer transition-colors"
-                      onClick={() => handleAddProduct(product)}
-                    >
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">{product.sku}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">{currency}{product.unit_price.toLocaleString('en-IN')}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Stock: {product.stock_quantity} {product.unit}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Product Browser */}
+        <ProductBrowserDialog
+          open={showProductBrowser}
+          onOpenChange={setShowProductBrowser}
+          onSelectProduct={handleAddProduct}
+        />
+
+        {/* Locked Invoice Warning */}
+        {isLocked && (
+          <Alert className="border-warning/50 bg-warning/10">
+            <AlertTriangle className="h-4 w-4 text-warning-foreground" />
+            <AlertDescription className="text-warning-foreground">
+              This invoice is locked and cannot be edited. Unlock it to make changes.
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     </AppLayout>
   );

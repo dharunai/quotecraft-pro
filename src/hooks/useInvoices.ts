@@ -9,7 +9,7 @@ export function useInvoices() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('*, lead:leads(*), deal:deals(*), quotation:quotations(*)')
+        .select('*, lead:leads(*), deal:deals(*), quotation:quotations!invoices_quotation_id_fkey(*)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as (Invoice & { lead: Lead; deal: Deal | null; quotation: Quotation | null })[];
@@ -24,7 +24,7 @@ export function useInvoice(id: string | undefined) {
       if (!id) return null;
       const { data, error } = await supabase
         .from('invoices')
-        .select('*, lead:leads(*), deal:deals(*), quotation:quotations(*)')
+        .select('*, lead:leads(*), deal:deals(*), quotation:quotations!invoices_quotation_id_fkey(*)')
         .eq('id', id)
         .maybeSingle();
       if (error) throw error;
