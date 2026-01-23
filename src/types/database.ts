@@ -45,6 +45,8 @@ export interface Lead {
   status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
   notes: string | null;
   is_qualified: boolean;
+  score: number;
+  score_updated_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -167,6 +169,20 @@ export interface InvoiceItem {
   sort_order: number;
   created_at: string;
   product?: Product;
+}
+
+export interface TeamMember {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  role: 'admin' | 'sales' | 'viewer';
+  is_active: boolean;
+  invited_by: string | null;
+  invited_at: string;
+  last_login: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Profile {

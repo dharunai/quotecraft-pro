@@ -30,8 +30,13 @@ interface InvoicePDFData {
   termsConditions: string | null;
 }
 
-function formatCurrency(amount: number, currency = '₹'): string {
-  return currency + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function formatCurrency(amount: number, currency = 'Rs. '): string {
+  // Ensure strict Indian currency formatting without extra spaces
+  // Using 'Rs. ' as default to ensure compatibility with standard fonts
+  return currency + amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function formatDate(dateStr: string): string {
@@ -66,7 +71,7 @@ export async function generateQuotationPDF(
   const pageWidth = doc.internal.pageSize.width;
   const margin = 15;
   let yPos = margin;
-  const currency = settings.currency || '₹';
+  const currency = settings.currency === '₹' ? 'Rs. ' : (settings.currency || 'Rs. ');
   const themeColor = settings.theme_color || '#166534';
 
   // Header with logo
@@ -75,12 +80,14 @@ export async function generateQuotationPDF(
   doc.setFont('helvetica', 'bold');
   doc.text('QUOTATION', margin, yPos + 8);
 
-  // Company logo (if available)
+  // Company logo (if available) - Right ALigned
   if (settings.logo_url && settings.show_logo_on_pdf !== false) {
     try {
       const logoBase64 = await loadImageAsBase64(settings.logo_url);
       if (logoBase64) {
-        doc.addImage(logoBase64, 'PNG', pageWidth - margin - 40, yPos, 40, 20);
+        const logoSize = 22; // Reduced size, still square
+        const logoX = pageWidth - margin - logoSize;
+        doc.addImage(logoBase64, 'PNG', logoX, yPos - 5, logoSize, logoSize);
       }
     } catch (e) {
       console.log('Could not load logo');
@@ -285,7 +292,7 @@ export async function generateInvoicePDF(
   const pageWidth = doc.internal.pageSize.width;
   const margin = 15;
   let yPos = margin;
-  const currency = settings.currency || '₹';
+  const currency = settings.currency === '₹' ? 'Rs. ' : (settings.currency || 'Rs. ');
   const themeColor = settings.theme_color || '#166534';
 
   // Header
@@ -294,12 +301,14 @@ export async function generateInvoicePDF(
   doc.setFont('helvetica', 'bold');
   doc.text('TAX INVOICE', pageWidth / 2, yPos + 8, { align: 'center' });
 
-  // Company logo
+  // Company logo - Right Aligned
   if (settings.logo_url && settings.show_logo_on_pdf !== false) {
     try {
       const logoBase64 = await loadImageAsBase64(settings.logo_url);
       if (logoBase64) {
-        doc.addImage(logoBase64, 'PNG', pageWidth - margin - 40, yPos, 40, 20);
+        const logoSize = 22; // Reduced size, still square
+        const logoX = pageWidth - margin - logoSize;
+        doc.addImage(logoBase64, 'PNG', logoX, yPos, logoSize, logoSize);
       }
     } catch (e) {
       console.log('Could not load logo');
@@ -415,76 +424,87 @@ export async function generateInvoicePDF(
       fillColor: themeColor,
       fontSize: 9,
       fontStyle: 'bold',
+      halign: 'left', // Default align left for headers
+    },
+    styles: {
+      font: 'helvetica', // Ensure consistent font
     },
     bodyStyles: {
       fontSize: 8,
     },
     columnStyles: showHsn
       ? {
-          0: { cellWidth: 10 },
-          1: { cellWidth: 55 },
-          2: { cellWidth: 20 },
-          3: { cellWidth: 15, halign: 'right' },
-          4: { cellWidth: 25, halign: 'right' },
-          5: { cellWidth: 28, halign: 'right' },
-        }
+        0: { cellWidth: 10, halign: 'center' }, // #
+        1: { cellWidth: 55, halign: 'left' },   // Item
+        2: { cellWidth: 20, halign: 'center' }, // HSN
+        3: { cellWidth: 15, halign: 'right' },  // Qty
+        4: { cellWidth: 25, halign: 'right' },  // Rate
+        5: { cellWidth: 28, halign: 'right' },  // Amount
+      }
       : {
-          0: { cellWidth: 10 },
-          1: { cellWidth: 75 },
-          2: { cellWidth: 15, halign: 'right' },
-          3: { cellWidth: 25, halign: 'right' },
-          4: { cellWidth: 28, halign: 'right' },
-        },
+        0: { cellWidth: 10, halign: 'center' }, // #
+        1: { cellWidth: 70, halign: 'left' },   // Item
+        2: { cellWidth: 20, halign: 'right' },  // Qty
+        3: { cellWidth: 25, halign: 'right' },  // Rate
+        4: { cellWidth: 28, halign: 'right' },  // Amount
+      },
     margin: { left: margin, right: margin },
   });
 
   yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // Totals section
-  const totalsX = pageWidth - margin - 70;
+  const rightMargin = margin;
+  // Align labels with table columns (Rate + Amount ~ 55mm space)
+  const labelX = pageWidth - margin - 65;
+  const valueX = pageWidth - margin;     // Values end at right margin
+
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Taxable Value:', totalsX, yPos);
-  doc.text(formatCurrency(data.subtotal, currency), pageWidth - margin, yPos, { align: 'right' });
-  yPos += 8;
+
+  // Helper to draw a totals row
+  const drawTotalRow = (label: string, value: number, isBold = false, isGst = false) => {
+    if (isBold) doc.setFont('helvetica', 'bold');
+    else doc.setFont('helvetica', 'normal');
+
+    doc.text(label, labelX, yPos);
+    doc.text(formatCurrency(value, currency), valueX, yPos, { align: 'right' });
+    yPos += isGst ? 5 : 6;
+  };
+
+  drawTotalRow('Taxable Value:', data.subtotal);
+  yPos += 2; // Extra space
 
   // GST Breakdown
   if (data.taxEnabled && data.taxRate > 0) {
     doc.setFont('helvetica', 'bold');
-    doc.text('GST BREAKDOWN:', totalsX, yPos);
+    doc.text('GST BREAKDOWN:', labelX, yPos);
     yPos += 5;
-    doc.setFont('helvetica', 'normal');
 
-    // For simplicity, assume intra-state (CGST + SGST)
     const halfRate = data.taxRate / 2;
     const halfTax = data.taxAmount / 2;
 
-    doc.text(`CGST @ ${halfRate}%:`, totalsX, yPos);
-    doc.text(formatCurrency(halfTax, currency), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 5;
+    drawTotalRow(`CGST @ ${halfRate}%`, halfTax, false, true);
+    drawTotalRow(`SGST @ ${halfRate}%`, halfTax, false, true);
 
-    doc.text(`SGST @ ${halfRate}%:`, totalsX, yPos);
-    doc.text(formatCurrency(halfTax, currency), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 5;
-
+    // Separator line
+    const lineY = yPos - 3; // Adjust to be between text
     doc.setLineWidth(0.3);
-    doc.line(totalsX, yPos, pageWidth - margin, yPos);
-    yPos += 5;
+    doc.line(labelX, lineY, valueX, lineY);
 
-    doc.text('Total Tax:', totalsX, yPos);
-    doc.text(formatCurrency(data.taxAmount, currency), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 8;
+    drawTotalRow('Total Tax:', data.taxAmount, false);
+    yPos += 2;
   }
 
+  // Grand Total Line
   doc.setLineWidth(0.5);
-  doc.line(totalsX, yPos, pageWidth - margin, yPos);
-  yPos += 6;
+  doc.line(labelX, yPos - 4, valueX, yPos - 4);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('Grand Total:', totalsX, yPos);
+  doc.text('Grand Total:', labelX, yPos);
   doc.setTextColor(themeColor);
-  doc.text(formatCurrency(data.grandTotal, currency), pageWidth - margin, yPos, { align: 'right' });
+  doc.text(formatCurrency(data.grandTotal, currency), valueX, yPos, { align: 'right' });
 
   yPos += 8;
   doc.setTextColor(0, 0, 0);

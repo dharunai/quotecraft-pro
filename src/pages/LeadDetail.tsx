@@ -7,6 +7,7 @@ import { useCreateDeal } from '@/hooks/useDeals';
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
 import { LeadForm } from '@/components/leads/LeadForm';
 import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
+import { handleAutomationEvent } from '@/lib/automationEngine';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,6 +98,14 @@ export default function LeadDetail() {
       onSuccess: (deal) => {
         // Update lead as qualified
         updateLead.mutate({ id, is_qualified: true });
+
+        // Trigger automation
+        handleAutomationEvent('lead_qualified', 'lead', id!, {
+          ...lead,
+          is_qualified: true,
+          deal_value: dealValue ? parseFloat(dealValue) : null
+        });
+
         setIsQualifying(false);
         navigate(`/deals/${deal.id}`);
       },

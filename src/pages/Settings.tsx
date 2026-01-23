@@ -9,6 +9,9 @@ import { Save, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PermissionGuard } from '@/components/PermissionGuard';
+import { useNavigate } from 'react-router-dom';
+import { Users } from 'lucide-react';
 
 export default function Settings() {
   const {
@@ -140,6 +143,7 @@ export default function Settings() {
       settingsId: settings.id
     });
   };
+  const navigate = useNavigate();
   if (isLoading) {
     return <AppLayout>
       <p className="text-muted-foreground">Loading settings...</p>
@@ -156,6 +160,26 @@ export default function Settings() {
       </div>
 
       <div className="grid gap-6">
+        {/* Team Management - Admin Only */}
+        <PermissionGuard requireAdmin>
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                Team Management
+              </CardTitle>
+              <CardDescription>
+                Manage team members, roles, and access permissions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/settings/team')}>
+                Manage Team
+              </Button>
+            </CardContent>
+          </Card>
+        </PermissionGuard>
+
         {/* Branding */}
         <Card>
           <CardHeader>
