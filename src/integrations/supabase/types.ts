@@ -14,25 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          action: string
+          created_at: string
+          description: string
+          entity_id: string
+          entity_type: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           account_holder_name: string | null
           account_number: string | null
           address: string | null
+          alert_on_low_stock: boolean
+          alert_on_out_of_stock: boolean
           bank_name: string | null
           company_name: string
           created_at: string
           currency: string
           default_due_days: number
           email: string | null
+          email_signature: string | null
+          enable_stock_alerts: boolean
           gst_number: string | null
           id: string
           ifsc_code: string | null
+          include_hsn_sac: boolean
+          invoice_email_body: string | null
+          invoice_email_subject: string | null
           invoice_prefix: string
           invoice_terms: string | null
           logo_url: string | null
           pan: string | null
+          pdf_footer_text: string | null
           phone: string | null
+          quotation_email_body: string | null
+          quotation_email_subject: string | null
+          show_logo_on_pdf: boolean
+          stock_alert_email: string | null
           tax_rate: number | null
           terms: string | null
           theme_color: string
@@ -42,20 +93,32 @@ export type Database = {
           account_holder_name?: string | null
           account_number?: string | null
           address?: string | null
+          alert_on_low_stock?: boolean
+          alert_on_out_of_stock?: boolean
           bank_name?: string | null
           company_name?: string
           created_at?: string
           currency?: string
           default_due_days?: number
           email?: string | null
+          email_signature?: string | null
+          enable_stock_alerts?: boolean
           gst_number?: string | null
           id?: string
           ifsc_code?: string | null
+          include_hsn_sac?: boolean
+          invoice_email_body?: string | null
+          invoice_email_subject?: string | null
           invoice_prefix?: string
           invoice_terms?: string | null
           logo_url?: string | null
           pan?: string | null
+          pdf_footer_text?: string | null
           phone?: string | null
+          quotation_email_body?: string | null
+          quotation_email_subject?: string | null
+          show_logo_on_pdf?: boolean
+          stock_alert_email?: string | null
           tax_rate?: number | null
           terms?: string | null
           theme_color?: string
@@ -65,20 +128,32 @@ export type Database = {
           account_holder_name?: string | null
           account_number?: string | null
           address?: string | null
+          alert_on_low_stock?: boolean
+          alert_on_out_of_stock?: boolean
           bank_name?: string | null
           company_name?: string
           created_at?: string
           currency?: string
           default_due_days?: number
           email?: string | null
+          email_signature?: string | null
+          enable_stock_alerts?: boolean
           gst_number?: string | null
           id?: string
           ifsc_code?: string | null
+          include_hsn_sac?: boolean
+          invoice_email_body?: string | null
+          invoice_email_subject?: string | null
           invoice_prefix?: string
           invoice_terms?: string | null
           logo_url?: string | null
           pan?: string | null
+          pdf_footer_text?: string | null
           phone?: string | null
+          quotation_email_body?: string | null
+          quotation_email_subject?: string | null
+          show_logo_on_pdf?: boolean
+          stock_alert_email?: string | null
           tax_rate?: number | null
           terms?: string | null
           theme_color?: string
@@ -141,6 +216,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_logs: {
+        Row: {
+          body: string
+          created_at: string
+          email_type: string
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          email_type: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          email_type?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: []
       }
       invoice_items: {
         Row: {
@@ -570,6 +693,47 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          notified_at: string | null
+          product_id: string
+          resolved_at: string | null
+          stock_quantity: number
+          threshold: number
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          product_id: string
+          resolved_at?: string | null
+          stock_quantity: number
+          threshold: number
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          product_id?: string
+          resolved_at?: string | null
+          stock_quantity?: number
+          threshold?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
