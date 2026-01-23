@@ -20,6 +20,19 @@ export interface CompanySettings {
   invoice_terms: string | null;
   created_at: string;
   updated_at: string;
+  // Phase 3 additions
+  email_signature: string | null;
+  quotation_email_subject: string | null;
+  quotation_email_body: string | null;
+  invoice_email_subject: string | null;
+  invoice_email_body: string | null;
+  enable_stock_alerts: boolean;
+  stock_alert_email: string | null;
+  alert_on_low_stock: boolean;
+  alert_on_out_of_stock: boolean;
+  show_logo_on_pdf: boolean;
+  include_hsn_sac: boolean;
+  pdf_footer_text: string | null;
 }
 
 export interface Lead {

@@ -32,7 +32,22 @@ export default function Settings() {
     account_holder_name: '',
     invoice_prefix: 'INV',
     default_due_days: 30,
-    invoice_terms: ''
+    invoice_terms: '',
+    // Email settings
+    email_signature: '',
+    quotation_email_subject: 'Quotation #{quote_number} from {company_name}',
+    quotation_email_body: 'Dear {contact_name},\n\nPlease find attached quotation #{quote_number} for your review.\n\nIf you have any questions, feel free to reach out.\n\nBest regards,\n{company_name}',
+    invoice_email_subject: 'Invoice #{invoice_number} from {company_name}',
+    invoice_email_body: 'Dear {contact_name},\n\nPlease find attached invoice #{invoice_number}.\n\nPayment is due by {due_date}.\n\nThank you for your business!\n\nBest regards,\n{company_name}',
+    // Stock alerts
+    enable_stock_alerts: true,
+    stock_alert_email: '',
+    alert_on_low_stock: true,
+    alert_on_out_of_stock: true,
+    // PDF settings
+    show_logo_on_pdf: true,
+    include_hsn_sac: true,
+    pdf_footer_text: ''
   });
   useEffect(() => {
     if (settings) {
@@ -53,11 +68,26 @@ export default function Settings() {
         account_holder_name: settings.account_holder_name || '',
         invoice_prefix: settings.invoice_prefix || 'INV',
         default_due_days: settings.default_due_days || 30,
-        invoice_terms: settings.invoice_terms || ''
+        invoice_terms: settings.invoice_terms || '',
+        // Email settings
+        email_signature: settings.email_signature || '',
+        quotation_email_subject: settings.quotation_email_subject || 'Quotation #{quote_number} from {company_name}',
+        quotation_email_body: settings.quotation_email_body || '',
+        invoice_email_subject: settings.invoice_email_subject || 'Invoice #{invoice_number} from {company_name}',
+        invoice_email_body: settings.invoice_email_body || '',
+        // Stock alerts
+        enable_stock_alerts: settings.enable_stock_alerts ?? true,
+        stock_alert_email: settings.stock_alert_email || '',
+        alert_on_low_stock: settings.alert_on_low_stock ?? true,
+        alert_on_out_of_stock: settings.alert_on_out_of_stock ?? true,
+        // PDF settings
+        show_logo_on_pdf: settings.show_logo_on_pdf ?? true,
+        include_hsn_sac: settings.include_hsn_sac ?? true,
+        pdf_footer_text: settings.pdf_footer_text || ''
       });
     }
   }, [settings]);
-  const handleChange = (field: string, value: string | number) => {
+  const handleChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
