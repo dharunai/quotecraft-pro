@@ -21,7 +21,7 @@ import Invoices from "./pages/Invoices";
 import InvoiceEditor from "./pages/InvoiceEditor";
 import DealDetail from "./pages/DealDetail";
 import NotFound from "./pages/NotFound";
-
+import EmailLogs from "./pages/EmailLogs";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -47,7 +47,7 @@ const App = () => (
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
             <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceEditor /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
