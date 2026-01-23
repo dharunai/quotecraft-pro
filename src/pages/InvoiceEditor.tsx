@@ -14,28 +14,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProductBrowserDialog } from '@/components/products/ProductBrowserDialog';
-import { ArrowLeft, Plus, Download, Save, Lock, Unlock, Package, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Save, Lock, Unlock, Package, AlertTriangle, Mail } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { Product } from '@/types/database';
+import { EmailDialog } from '@/components/email/EmailDialog';
+import { generateInvoicePDF, getPDFBase64 } from '@/lib/pdfGenerator';
 
 export default function InvoiceEditor() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isNew = id === 'new';
-  
+
   const quotationId = searchParams.get('quotation_id');
   const dealId = searchParams.get('deal_id');
   const leadIdParam = searchParams.get('lead_id');
-  
+
   const { data: invoice, isLoading } = useInvoice(isNew ? undefined : id);
   const { data: items = [], refetch: refetchItems } = useInvoiceItems(isNew ? undefined : id);
   const { data: settings } = useCompanySettings();
   const { data: leads = [] } = useLeads();
   const { data: sourceQuotation } = useQuotation(quotationId || undefined);
   const { data: sourceQuotationItems = [] } = useQuotationItems(quotationId || undefined);
-  
+
   const generateInvoiceNumber = useGenerateInvoiceNumber();
   const createInvoice = useCreateInvoice();
   const updateInvoice = useUpdateInvoice();
@@ -56,6 +58,8 @@ export default function InvoiceEditor() {
   const [termsConditions, setTermsConditions] = useState('');
   const [isLocked, setIsLocked] = useState(false);
   const [showProductBrowser, setShowProductBrowser] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [pdfData, setPdfData] = useState<string>('');
 
   useEffect(() => {
     if (invoice) {
@@ -79,7 +83,7 @@ export default function InvoiceEditor() {
       setDueDate(addDays(new Date(), defaultDueDays).toISOString().split('T')[0]);
       setTaxRate(settings.tax_rate || 18);
       setTermsConditions(settings.invoice_terms || settings.terms || '');
-      
+
       if (leadIdParam) {
         setLeadId(leadIdParam);
       } else if (sourceQuotation) {
@@ -96,7 +100,7 @@ export default function InvoiceEditor() {
 
     try {
       const newInvoiceNumber = await generateInvoiceNumber.mutateAsync();
-      
+
       const subtotal = sourceQuotationItems.reduce((sum, item) => sum + item.line_total, 0);
       const taxAmount = taxEnabled ? (subtotal * taxRate) / 100 : 0;
       const grandTotal = subtotal + taxAmount;
@@ -135,7 +139,7 @@ export default function InvoiceEditor() {
           line_total: item.line_total,
           sort_order: index,
         }));
-        
+
         await bulkCreateItems.mutateAsync(invoiceItems);
       }
 
@@ -147,7 +151,7 @@ export default function InvoiceEditor() {
 
   const handleSave = () => {
     if (!id || isNew) return;
-    
+
     const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
     const taxAmount = taxEnabled ? (subtotal * taxRate) / 100 : 0;
     const grandTotal = subtotal + taxAmount;
@@ -221,7 +225,7 @@ export default function InvoiceEditor() {
     if (!item) return;
 
     const updateData: Record<string, unknown> = { [field]: value };
-    
+
     if (field === 'quantity' || field === 'unit_price') {
       const quantity = field === 'quantity' ? Number(value) : item.quantity;
       const unitPrice = field === 'unit_price' ? Number(value) : item.unit_price;
@@ -244,12 +248,44 @@ export default function InvoiceEditor() {
     window.print();
   };
 
+  const handleSendEmail = async () => {
+    if (!invoice || !settings || !selectedLead || !id) return;
+
+    try {
+      // Calculate totals for PDF
+      const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
+      const taxAmount = taxEnabled ? (subtotal * taxRate) / 100 : 0;
+      const grandTotal = subtotal + taxAmount;
+
+      const doc = await generateInvoicePDF({
+        invoiceNumber: invoiceNumber,
+        invoiceDate: invoiceDate,
+        dueDate: dueDate,
+        items: items,
+        subtotal: subtotal,
+        taxEnabled: taxEnabled,
+        taxRate: taxRate,
+        taxAmount: taxAmount,
+        grandTotal: grandTotal,
+        notes: notes || null,
+        termsConditions: termsConditions || null
+      }, settings, selectedLead);
+
+      const base64 = getPDFBase64(doc);
+      setPdfData(base64);
+      setShowEmailDialog(true);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF for email');
+    }
+  };
+
   const handleMarkAsPaid = () => {
     if (!id || isNew) return;
     const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
     const taxAmount = taxEnabled ? (subtotal * taxRate) / 100 : 0;
     const grandTotal = subtotal + taxAmount;
-    
+
     updateInvoice.mutate({
       id,
       amount_paid: grandTotal,
@@ -336,6 +372,10 @@ export default function InvoiceEditor() {
                 <Button variant="outline" onClick={handleDownloadPDF}>
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
+                </Button>
+                <Button variant="outline" onClick={handleSendEmail}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Email
                 </Button>
                 <Button variant="outline" onClick={handleLockToggle}>
                   {isLocked ? (
@@ -661,6 +701,34 @@ export default function InvoiceEditor() {
           onOpenChange={setShowProductBrowser}
           onSelectProduct={handleAddProduct}
         />
+
+        {/* Email Dialog */}
+        {invoice && settings && selectedLead && (
+          <EmailDialog
+            open={showEmailDialog}
+            onClose={() => setShowEmailDialog(false)}
+            type="invoice"
+            entityId={id!}
+            defaultRecipient={{
+              email: selectedLead.email || '',
+              name: selectedLead.company_name
+            }}
+            defaultSubject={settings.invoice_email_subject
+              ?.replace('{invoice_number}', invoiceNumber)
+              .replace('{company_name}', settings.company_name) || `Invoice ${invoiceNumber}`}
+            defaultBody={settings.invoice_email_body
+              ?.replace('{contact_name}', selectedLead.contact_name)
+              .replace('{invoice_number}', invoiceNumber)
+              .replace('{due_date}', dueDate ? format(new Date(dueDate), 'dd MMM yyyy') : '')
+              .replace('{total}', grandTotal.toFixed(2))
+              .replace('{company_name}', settings.company_name) || "Please find attached invoice."}
+            pdfData={pdfData}
+            pdfFilename={`Invoice-${invoiceNumber}.pdf`}
+            onSuccess={() => {
+              // Optionally update invoice status or log
+            }}
+          />
+        )}
 
         {/* Locked Invoice Warning */}
         {isLocked && (

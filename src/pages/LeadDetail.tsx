@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { format, addDays } from 'date-fns';
 import { ArrowLeft, Edit, Trash2, Plus, TrendingUp } from 'lucide-react';
 import { Lead } from '@/types/database';
+import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -80,7 +81,7 @@ export default function LeadDetail() {
 
   const handleQualifyLead = () => {
     if (!id) return;
-    
+
     createDeal.mutate({
       lead_id: id,
       deal_value: dealValue ? parseFloat(dealValue) : null,
@@ -228,6 +229,9 @@ export default function LeadDetail() {
           </Card>
         </div>
 
+        {/* Timeline */}
+        <ActivityTimeline entityType="lead" entityId={id!} />
+
         {/* Edit Dialog */}
         <Dialog open={isEditing} onOpenChange={setIsEditing}>
           <DialogContent className="max-w-2xl">
@@ -276,8 +280,8 @@ export default function LeadDetail() {
                 <Button variant="outline" onClick={() => setIsQualifying(false)}>
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleQualifyLead} 
+                <Button
+                  onClick={handleQualifyLead}
                   disabled={createDeal.isPending}
                   className="bg-success hover:bg-success/90"
                 >

@@ -14,10 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Download, Save, Package, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Save, Package, FileText, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Product } from '@/types/database';
+import { EmailDialog } from '@/components/email/EmailDialog';
+import { generateQuotationPDF, getPDFBase64 } from '@/lib/pdfGenerator';
 export default function QuotationEditor() {
   const {
     id
@@ -48,6 +50,8 @@ export default function QuotationEditor() {
   const [validUntil, setValidUntil] = useState('');
   const [notes, setNotes] = useState('');
   const [showProductBrowser, setShowProductBrowser] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [pdfData, setPdfData] = useState<string>('');
   const handleConvertToInvoice = () => {
     if (!quotation) return;
     navigate(`/invoices/new?quotation_id=${quotation.id}&lead_id=${quotation.lead_id}${quotation.deal_id ? `&deal_id=${quotation.deal_id}` : ''}`);
@@ -126,20 +130,51 @@ export default function QuotationEditor() {
   const handleDownloadPDF = () => {
     window.print();
   };
+
+  const handleSendEmail = async () => {
+    if (!quotation || !settings || !quotation.lead || !id) return;
+
+    try {
+      // Calculate totals for PDF
+      const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
+      const taxRate = settings.tax_rate || 0;
+      const taxAmount = (subtotal * taxRate) / 100;
+      const total = subtotal + taxAmount;
+
+      const doc = await generateQuotationPDF({
+        quoteNumber: quotation.quote_number,
+        quoteDate: quoteDate,
+        validUntil: validUntil || null,
+        items: items,
+        subtotal: subtotal,
+        taxRate: taxRate,
+        taxAmount: taxAmount,
+        total: total,
+        notes: notes || null
+      }, settings, quotation.lead);
+
+      const base64 = getPDFBase64(doc);
+      setPdfData(base64);
+      setShowEmailDialog(true);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF for email');
+    }
+  };
   if (isLoading || !settings) {
     return <AppLayout>
-        <p className="text-muted-foreground">Loading...</p>
-      </AppLayout>;
+      <p className="text-muted-foreground">Loading...</p>
+    </AppLayout>;
   }
   if (!quotation || !quotation.lead) {
     return <AppLayout>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">Quotation not found</p>
-          <Link to="/quotations">
-            <Button variant="outline">Back to Quotations</Button>
-          </Link>
-        </div>
-      </AppLayout>;
+      <div className="text-center py-12">
+        <p className="text-muted-foreground mb-4">Quotation not found</p>
+        <Link to="/quotations">
+          <Button variant="outline">Back to Quotations</Button>
+        </Link>
+      </div>
+    </AppLayout>;
   }
   const currency = settings.currency || '₹';
   const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
@@ -147,189 +182,219 @@ export default function QuotationEditor() {
   const taxAmount = subtotal * taxRate / 100;
   const total = subtotal + taxAmount;
   return <AppLayout>
-      <div className="space-y-6 no-print">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/quotations">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold font-sans">{quotation.quote_number}</h1>
-              <p className="text-muted-foreground font-sans">{quotation.lead.company_name}</p>
-            </div>
-            <QuotationStatusBadge status={status} />
-          </div>
-          <div className="flex items-center gap-2">
-            {status === 'accepted' && !quotation.invoice_id && <Button onClick={handleConvertToInvoice} className="bg-success hover:bg-success/90">
-                <FileText className="h-4 w-4 mr-2" />
-                Convert to Invoice
-              </Button>}
-            <Button variant="outline" onClick={handleDownloadPDF}>
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
+    <div className="space-y-6 no-print">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link to="/quotations">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
             </Button>
-            <Button onClick={handleSave} disabled={updateQuotation.isPending}>
-              <Save className="h-4 w-4 mr-2" />
-              {updateQuotation.isPending ? 'Saving...' : 'Save'}
-            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold font-sans">{quotation.quote_number}</h1>
+            <p className="text-muted-foreground font-sans">{quotation.lead.company_name}</p>
           </div>
+          <QuotationStatusBadge status={status} />
         </div>
+        <div className="flex items-center gap-2">
+          {status === 'accepted' && !quotation.invoice_id && <Button onClick={handleConvertToInvoice} className="bg-success hover:bg-success/90">
+            <FileText className="h-4 w-4 mr-2" />
+            Convert to Invoice
+          </Button>}
+          <Button variant="outline" onClick={handleDownloadPDF}>
+            <Download className="h-4 w-4 mr-2" />
+            Download PDF
+          </Button>
+          <Button variant="outline" onClick={handleSendEmail}>
+            <Mail className="h-4 w-4 mr-2" />
+            Send Email
+          </Button>
+          <Button onClick={handleSave} disabled={updateQuotation.isPending}>
+            <Save className="h-4 w-4 mr-2" />
+            {updateQuotation.isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </div>
 
-        <Tabs defaultValue="editor" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="editor">Editor</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="editor" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="editor">Editor</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="editor" className="space-y-6">
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Quotation Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2 font-sans">
-                    <label className="text-sm font-medium">Status</label>
-                    <Select value={status} onValueChange={(v: typeof status) => setStatus(v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="sent">Sent</SelectItem>
-                        <SelectItem value="accepted">Accepted</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 font-sans">
-                    <label className="text-sm font-medium">Quote Date</label>
-                    <Input type="date" value={quoteDate} onChange={e => setQuoteDate(e.target.value)} />
-                  </div>
-                  <div className="space-y-2 font-sans">
-                    <label className="text-sm font-medium">Valid Until</label>
-                    <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Notes</label>
-                    <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Add notes..." />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Client Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Client</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="font-medium">{quotation.lead.company_name}</p>
-                  <p className="text-sm text-muted-foreground font-sans">{quotation.lead.contact_name}</p>
-                  {quotation.lead.email && <p className="text-sm text-muted-foreground">{quotation.lead.email}</p>}
-                  {quotation.lead.phone && <p className="text-sm text-muted-foreground">{quotation.lead.phone}</p>}
-                  {quotation.lead.address && <p className="text-sm text-muted-foreground font-sans">{quotation.lead.address}</p>}
-                </CardContent>
-              </Card>
-
-              {/* Totals */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">
-                      {currency}{subtotal.toLocaleString('en-IN', {
-                      minimumFractionDigits: 2
-                    })}
-                    </span>
-                  </div>
-                  {taxRate > 0 && <div className="flex justify-between">
-                      <span className="text-muted-foreground">GST ({taxRate}%)</span>
-                      <span className="font-medium">
-                        {currency}{taxAmount.toLocaleString('en-IN', {
-                      minimumFractionDigits: 2
-                    })}
-                      </span>
-                    </div>}
-                  <div className="flex justify-between pt-3 border-t text-lg font-bold">
-                    <span>Total</span>
-                    <span className="text-primary">
-                      {currency}{total.toLocaleString('en-IN', {
-                      minimumFractionDigits: 2
-                    })}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Line Items */}
+        <TabsContent value="editor" className="space-y-6">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Quotation Details */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Line Items</CardTitle>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowProductBrowser(true)}>
-                    <Package className="h-4 w-4 mr-2" />
-                    Add Product
-                  </Button>
-                  <Button size="sm" onClick={handleAddItem} disabled={createItem.isPending}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
-                </div>
+              <CardHeader>
+                <CardTitle className="text-lg">Details</CardTitle>
               </CardHeader>
-              <CardContent>
-                {items.length === 0 ? <div className="text-center py-8 text-muted-foreground">
-                    <p>No items yet</p>
-                    <Button variant="outline" className="mt-2" onClick={handleAddItem}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Item
-                    </Button>
-                  </div> : <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left p-3 text-sm font-medium text-muted-foreground">Item</th>
-                        <th className="text-right p-3 text-sm font-medium text-muted-foreground w-24">Qty</th>
-                        <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Unit Price</th>
-                        <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Total</th>
-                        <th className="p-3 w-12"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map(item => <QuotationItemRow key={item.id} item={item} currency={currency} onUpdate={handleUpdateItem} onDelete={handleDeleteItem} />)}
-                    </tbody>
-                  </table>}
+              <CardContent className="space-y-4">
+                <div className="space-y-2 font-sans">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={status} onValueChange={(v: typeof status) => setStatus(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="sent">Sent</SelectItem>
+                      <SelectItem value="accepted">Accepted</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 font-sans">
+                  <label className="text-sm font-medium">Quote Date</label>
+                  <Input type="date" value={quoteDate} onChange={e => setQuoteDate(e.target.value)} />
+                </div>
+                <div className="space-y-2 font-sans">
+                  <label className="text-sm font-medium">Valid Until</label>
+                  <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Notes</label>
+                  <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Add notes..." />
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="preview">
-            <QuotationPreview quotation={{
+            {/* Client Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Client</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="font-medium">{quotation.lead.company_name}</p>
+                <p className="text-sm text-muted-foreground font-sans">{quotation.lead.contact_name}</p>
+                {quotation.lead.email && <p className="text-sm text-muted-foreground">{quotation.lead.email}</p>}
+                {quotation.lead.phone && <p className="text-sm text-muted-foreground">{quotation.lead.phone}</p>}
+                {quotation.lead.address && <p className="text-sm text-muted-foreground font-sans">{quotation.lead.address}</p>}
+              </CardContent>
+            </Card>
+
+            {/* Totals */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">
+                    {currency}{subtotal.toLocaleString('en-IN', {
+                      minimumFractionDigits: 2
+                    })}
+                  </span>
+                </div>
+                {taxRate > 0 && <div className="flex justify-between">
+                  <span className="text-muted-foreground">GST ({taxRate}%)</span>
+                  <span className="font-medium">
+                    {currency}{taxAmount.toLocaleString('en-IN', {
+                      minimumFractionDigits: 2
+                    })}
+                  </span>
+                </div>}
+                <div className="flex justify-between pt-3 border-t text-lg font-bold">
+                  <span>Total</span>
+                  <span className="text-primary">
+                    {currency}{total.toLocaleString('en-IN', {
+                      minimumFractionDigits: 2
+                    })}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Line Items */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Line Items</CardTitle>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setShowProductBrowser(true)}>
+                  <Package className="h-4 w-4 mr-2" />
+                  Add Product
+                </Button>
+                <Button size="sm" onClick={handleAddItem} disabled={createItem.isPending}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {items.length === 0 ? <div className="text-center py-8 text-muted-foreground">
+                <p>No items yet</p>
+                <Button variant="outline" className="mt-2" onClick={handleAddItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Item
+                </Button>
+              </div> : <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Item</th>
+                    <th className="text-right p-3 text-sm font-medium text-muted-foreground w-24">Qty</th>
+                    <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Unit Price</th>
+                    <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Total</th>
+                    <th className="p-3 w-12"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map(item => <QuotationItemRow key={item.id} item={item} currency={currency} onUpdate={handleUpdateItem} onDelete={handleDeleteItem} />)}
+                </tbody>
+              </table>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="preview">
+          <QuotationPreview quotation={{
             ...quotation,
             status,
             notes
           }} items={items} settings={settings} lead={quotation.lead} />
-          </TabsContent>
-        </Tabs>
+        </TabsContent>
+      </Tabs>
 
-        {/* Product Browser Dialog */}
-        <ProductBrowserDialog open={showProductBrowser} onOpenChange={setShowProductBrowser} onSelectProduct={handleAddProduct} />
-      </div>
+      {/* Product Browser Dialog */}
+      <ProductBrowserDialog open={showProductBrowser} onOpenChange={setShowProductBrowser} onSelectProduct={handleAddProduct} />
 
-      {/* Print-only content */}
-      <div className="hidden print:block">
-        {quotation.lead && <QuotationPreview quotation={{
+      {/* Email Dialog */}
+      {quotation && settings && quotation.lead && (
+        <EmailDialog
+          open={showEmailDialog}
+          onClose={() => setShowEmailDialog(false)}
+          type="quotation"
+          entityId={id!}
+          defaultRecipient={{
+            email: quotation.lead.email || '',
+            name: quotation.lead.company_name
+          }}
+          defaultSubject={settings.quotation_email_subject
+            ?.replace('{quote_number}', quotation.quote_number)
+            .replace('{company_name}', settings.company_name) || `Quotation ${quotation.quote_number}`}
+          defaultBody={settings.quotation_email_body
+            ?.replace('{contact_name}', quotation.lead.contact_name)
+            .replace('{quote_number}', quotation.quote_number)
+            .replace('{company_name}', settings.company_name) || "Please find attached quotation."}
+          pdfData={pdfData}
+          pdfFilename={`Quotation-${quotation.quote_number}.pdf`}
+          onSuccess={() => {
+            if (status === 'draft') setStatus('sent');
+          }}
+        />
+      )}
+    </div>
+
+    {/* Print-only content */}
+    <div className="hidden print:block">
+      {quotation.lead && <QuotationPreview quotation={{
         ...quotation,
         status,
         notes
       }} items={items} settings={settings} lead={quotation.lead} />}
-      </div>
-    </AppLayout>;
+    </div>
+  </AppLayout>;
 }

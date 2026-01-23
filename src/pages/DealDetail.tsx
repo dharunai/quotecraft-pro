@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowLeft, Trash2, Plus, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 
 const STAGES = [
   { id: 'qualified', label: 'Qualified', probability: 25 },
@@ -68,13 +69,13 @@ export default function DealDetail() {
 
   const handleSave = () => {
     if (!id) return;
-    
+
     // Require lost_reason when marking as lost
     if (stage === 'lost' && !lostReason.trim()) {
       toast.error('Please provide a reason for losing this deal');
       return;
     }
-    
+
     updateDeal.mutate({
       id,
       deal_value: dealValue ? parseFloat(dealValue) : null,
@@ -351,49 +352,7 @@ export default function DealDetail() {
         </Card>
 
         {/* Timeline */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Activity Timeline</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
-                <div>
-                  <p className="text-sm font-medium">Deal created</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(deal.created_at), 'dd MMM yyyy, HH:mm')}
-                  </p>
-                </div>
-              </div>
-              {deal.won_date && (
-                <div className="flex gap-3">
-                  <div className="w-2 h-2 mt-2 rounded-full bg-success" />
-                  <div>
-                    <p className="text-sm font-medium">Deal won</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(deal.won_date), 'dd MMM yyyy')}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {deal.lost_date && (
-                <div className="flex gap-3">
-                  <div className="w-2 h-2 mt-2 rounded-full bg-destructive" />
-                  <div>
-                    <p className="text-sm font-medium">Deal lost</p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(deal.lost_date), 'dd MMM yyyy')}
-                    </p>
-                    {deal.lost_reason && (
-                      <p className="text-sm text-muted-foreground mt-1">{deal.lost_reason}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <ActivityTimeline entityType="deal" entityId={id!} />
 
         {/* Delete Confirmation */}
         <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>

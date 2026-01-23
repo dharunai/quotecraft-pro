@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
 import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
+import { RecentActivityWidget } from '@/components/activity/ActivityTimeline';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 export default function Dashboard() {
@@ -63,168 +64,173 @@ export default function Dashboard() {
   const recentQuotations = quotations.slice(0, 5);
   const recentDeals = deals.slice(0, 5);
   return <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold font-sans">Dashboard</h1>
-        </div>
-
-        {/* Pipeline Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-primary">
-                {currency}{pipelineValue.toLocaleString('en-IN')}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Pipeline Value</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold">{deals.length}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Active Deals</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-success">{wonDeals.length}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Won Deals</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold">{winRate}%</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Win Rate</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Invoice & Product Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-destructive">
-                {currency}{outstandingAmount.toLocaleString('en-IN')}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Outstanding</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-warning">{overdueInvoices.length}</div>
-              <p className="text-sm text-muted-foreground mt-1">Overdue Invoices</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold">{products.length}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Products</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-warning">{lowStockProducts.length}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Low Stock</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Lead & Quotation Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold">{stats.totalLeads}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Total Leads</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-info">{stats.newLeads}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">New Leads</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold">{stats.totalQuotations}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Quotations</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-3xl font-bold text-success">{stats.acceptedQuotations}</div>
-              <p className="text-sm text-muted-foreground mt-1 font-sans">Accepted</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Recent Deals */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Recent Deals</CardTitle>
-              <Link to="/pipeline">
-                <Button variant="ghost" size="sm">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {recentDeals.length === 0 ? <p className="text-muted-foreground font-sans">No deals yet</p> : <div className="space-y-3">
-                  {recentDeals.map(deal => <Link key={deal.id} to={`/deals/${deal.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
-                      <div>
-                        <p className="font-medium">{deal.lead?.company_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {currency}{(deal.deal_value || 0).toLocaleString('en-IN')}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="capitalize">{deal.stage}</Badge>
-                    </Link>)}
-                </div>}
-            </CardContent>
-          </Card>
-
-          {/* Recent Leads */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Recent Leads</CardTitle>
-              <Link to="/leads">
-                <Button variant="ghost" size="sm">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {leadsLoading ? <p className="text-muted-foreground">Loading...</p> : recentLeads.length === 0 ? <p className="text-muted-foreground">No leads yet</p> : <div className="space-y-3">
-                  {recentLeads.map(lead => <Link key={lead.id} to={`/leads/${lead.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
-                      <div>
-                        <p className="font-medium font-sans">{lead.company_name}</p>
-                        <p className="text-sm text-muted-foreground font-sans">{lead.contact_name}</p>
-                      </div>
-                      <LeadStatusBadge status={lead.status} />
-                    </Link>)}
-                </div>}
-            </CardContent>
-          </Card>
-
-          {/* Recent Quotations */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Recent Quotations</CardTitle>
-              <Link to="/quotations">
-                <Button variant="ghost" size="sm">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {quotationsLoading ? <p className="text-muted-foreground">Loading...</p> : recentQuotations.length === 0 ? <p className="text-muted-foreground">No quotations yet</p> : <div className="space-y-3">
-                  {recentQuotations.map(quotation => <Link key={quotation.id} to={`/quotations/${quotation.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
-                      <div>
-                        <p className="font-medium font-sans">{quotation.quote_number}</p>
-                        <p className="text-sm text-muted-foreground font-sans">
-                          {quotation.lead?.company_name || 'Unknown'}
-                        </p>
-                      </div>
-                      <QuotationStatusBadge status={quotation.status} />
-                    </Link>)}
-                </div>}
-            </CardContent>
-          </Card>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold font-sans">Dashboard</h1>
       </div>
-    </AppLayout>;
+
+      {/* Pipeline Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-primary">
+              {currency}{pipelineValue.toLocaleString('en-IN')}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Pipeline Value</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold">{deals.length}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Active Deals</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-success">{wonDeals.length}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Won Deals</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold">{winRate}%</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Win Rate</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Invoice & Product Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-destructive">
+              {currency}{outstandingAmount.toLocaleString('en-IN')}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Outstanding</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-warning">{overdueInvoices.length}</div>
+            <p className="text-sm text-muted-foreground mt-1">Overdue Invoices</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold">{products.length}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Products</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-warning">{lowStockProducts.length}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Low Stock</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lead & Quotation Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold">{stats.totalLeads}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Total Leads</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-info">{stats.newLeads}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">New Leads</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold">{stats.totalQuotations}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Quotations</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-success">{stats.acceptedQuotations}</div>
+            <p className="text-sm text-muted-foreground mt-1 font-sans">Accepted</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity Timeline */}
+      <div className="grid grid-cols-1">
+        <RecentActivityWidget maxItems={5} />
+      </div>
+
+      {/* Recent Items */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Recent Deals */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Recent Deals</CardTitle>
+            <Link to="/pipeline">
+              <Button variant="ghost" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {recentDeals.length === 0 ? <p className="text-muted-foreground font-sans">No deals yet</p> : <div className="space-y-3">
+              {recentDeals.map(deal => <Link key={deal.id} to={`/deals/${deal.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
+                <div>
+                  <p className="font-medium">{deal.lead?.company_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {currency}{(deal.deal_value || 0).toLocaleString('en-IN')}
+                  </p>
+                </div>
+                <Badge variant="outline" className="capitalize">{deal.stage}</Badge>
+              </Link>)}
+            </div>}
+          </CardContent>
+        </Card>
+
+        {/* Recent Leads */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Recent Leads</CardTitle>
+            <Link to="/leads">
+              <Button variant="ghost" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {leadsLoading ? <p className="text-muted-foreground">Loading...</p> : recentLeads.length === 0 ? <p className="text-muted-foreground">No leads yet</p> : <div className="space-y-3">
+              {recentLeads.map(lead => <Link key={lead.id} to={`/leads/${lead.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
+                <div>
+                  <p className="font-medium font-sans">{lead.company_name}</p>
+                  <p className="text-sm text-muted-foreground font-sans">{lead.contact_name}</p>
+                </div>
+                <LeadStatusBadge status={lead.status} />
+              </Link>)}
+            </div>}
+          </CardContent>
+        </Card>
+
+        {/* Recent Quotations */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Recent Quotations</CardTitle>
+            <Link to="/quotations">
+              <Button variant="ghost" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {quotationsLoading ? <p className="text-muted-foreground">Loading...</p> : recentQuotations.length === 0 ? <p className="text-muted-foreground">No quotations yet</p> : <div className="space-y-3">
+              {recentQuotations.map(quotation => <Link key={quotation.id} to={`/quotations/${quotation.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors">
+                <div>
+                  <p className="font-medium font-sans">{quotation.quote_number}</p>
+                  <p className="text-sm text-muted-foreground font-sans">
+                    {quotation.lead?.company_name || 'Unknown'}
+                  </p>
+                </div>
+                <QuotationStatusBadge status={quotation.status} />
+              </Link>)}
+            </div>}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  </AppLayout >;
 }
