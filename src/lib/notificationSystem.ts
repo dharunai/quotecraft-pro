@@ -1,4 +1,7 @@
-import { supabase } from '@/integrations/supabase/client';
+// Notification System - Placeholder
+// This uses the activities table instead of a dedicated notifications table
+
+import { logActivity } from './activityLogger';
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 export type NotificationCategory = 'deal' | 'task' | 'payment' | 'stock' | 'system';
@@ -22,26 +25,19 @@ export async function createNotification({
     category,
     entityType,
     entityId,
-    actionUrl
 }: CreateNotificationParams) {
     try {
-        const { data, error } = await supabase
-            .from('notifications')
-            .insert({
-                user_id: userId,
-                title,
-                message,
-                type,
-                category,
-                entity_type: entityType,
-                entity_id: entityId,
-                action_url: actionUrl
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-        return data;
+        // Log as activity instead
+        if (entityType && entityId) {
+            await logActivity({
+                entityType: entityType as any,
+                entityId,
+                action: category || 'notification',
+                description: `${title}: ${message}`,
+                userId,
+            });
+        }
+        return { success: true };
     } catch (error) {
         console.error('Failed to create notification:', error);
         return null;

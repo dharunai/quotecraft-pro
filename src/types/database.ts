@@ -45,8 +45,6 @@ export interface Lead {
   status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
   notes: string | null;
   is_qualified: boolean;
-  score: number;
-  score_updated_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

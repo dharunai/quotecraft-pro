@@ -1,78 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, X, Info, AlertTriangle, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Bell, CheckCircle2, AlertTriangle, Info, Activity, TrendingUp, FileText, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+
+interface ActivityItem {
+    id: string;
+    entity_type: string;
+    entity_id: string;
+    action: string;
+    description: string;
+    performed_by_name: string | null;
+    created_at: string;
+}
 
 export function NotificationBell() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
 
-    const { data: notifications = [] } = useQuery({
-        queryKey: ['notifications'],
+    const { data: activities = [] } = useQuery({
+        queryKey: ['recent-activities'],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from('notifications')
+                .from('activities')
                 .select('*')
                 .order('created_at', { ascending: false })
-                .limit(20);
+                .limit(10);
             if (error) throw error;
-            return data;
+            return data as ActivityItem[];
         }
     });
 
-    const unreadCount = notifications.filter(n => !n.is_read).length;
-
-    const markAsRead = useMutation({
-        mutationFn: async (id: string) => {
-            const { error } = await supabase
-                .from('notifications')
-                .update({ is_read: true, read_at: new Date().toISOString() })
-                .eq('id', id);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        }
-    });
-
-    const markAllRead = useMutation({
-        mutationFn: async () => {
-            const { error } = await supabase
-                .from('notifications')
-                .update({ is_read: true, read_at: new Date().toISOString() })
-                .eq('is_read', false);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            toast.success('All marked as read');
-        }
-    });
-
-    // Real-time subscription
+    // Real-time subscription for new activities
     useEffect(() => {
         const channel = supabase
-            .channel('schema-db-changes')
+            .channel('activities-changes')
             .on(
                 'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'notifications' },
-                (payload) => {
-                    queryClient.invalidateQueries({ queryKey: ['notifications'] });
-                    toast.info(payload.new.title, {
-                        description: payload.new.message,
-                        action: payload.new.action_url ? {
-                            label: 'View',
-                            onClick: () => navigate(payload.new.action_url)
-                        } : undefined
-                    });
+                { event: 'INSERT', schema: 'public', table: 'activities' },
+                () => {
+                    queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
                 }
             )
             .subscribe();
@@ -80,81 +53,83 @@ export function NotificationBell() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [queryClient, navigate]);
+    }, [queryClient]);
 
-    const getIcon = (type: string) => {
-        switch (type) {
-            case 'success': return <CheckCircle2 className="h-4 w-4 text-success" />;
-            case 'warning': return <AlertTriangle className="h-4 w-4 text-warning" />;
-            case 'error': return <X className="h-4 w-4 text-destructive" />;
-            default: return <Info className="h-4 w-4 text-primary" />;
+    const getIcon = (entityType: string) => {
+        switch (entityType) {
+            case 'lead': return <TrendingUp className="h-4 w-4 text-info" />;
+            case 'deal': return <CheckCircle2 className="h-4 w-4 text-success" />;
+            case 'quotation': return <FileText className="h-4 w-4 text-primary" />;
+            case 'invoice': return <FileText className="h-4 w-4 text-warning" />;
+            case 'product': return <Package className="h-4 w-4 text-muted-foreground" />;
+            default: return <Activity className="h-4 w-4 text-muted-foreground" />;
+        }
+    };
+
+    const getEntityUrl = (entityType: string, entityId: string) => {
+        switch (entityType) {
+            case 'lead': return `/leads/${entityId}`;
+            case 'deal': return `/deals/${entityId}`;
+            case 'quotation': return `/quotations/${entityId}`;
+            case 'invoice': return `/invoices/${entityId}`;
+            case 'product': return `/products`;
+            default: return `/dashboard`;
         }
     };
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
+                <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full hover:bg-accent transition-colors">
                     <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-destructive-foreground">
-                            {unreadCount}
-                        </Badge>
+                    {activities.length > 0 && (
+                        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary animate-pulse" />
                     )}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h4 className="font-semibold">Notifications</h4>
-                    {unreadCount > 0 && (
-                        <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => markAllRead.mutate()}>
-                            Mark all read
-                        </Button>
-                    )}
+                <div className="flex items-center justify-between p-4 border-b border-border">
+                    <h4 className="font-semibold text-foreground">Recent Activity</h4>
                 </div>
                 <ScrollArea className="h-[350px]">
-                    {notifications.length === 0 ? (
+                    {activities.length === 0 ? (
                         <div className="p-8 text-center text-muted-foreground">
-                            <p className="text-sm">No notifications yet</p>
+                            <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No recent activity</p>
                         </div>
                     ) : (
                         <div className="flex flex-col">
-                            {notifications.map((n) => (
+                            {activities.map((activity) => (
                                 <div
-                                    key={n.id}
-                                    className={`p-4 border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors ${!n.is_read ? 'bg-primary/5' : ''}`}
+                                    key={activity.id}
+                                    className="p-4 border-b border-border last:border-0 hover:bg-accent/50 cursor-pointer transition-colors"
                                     onClick={() => {
-                                        if (!n.is_read) markAsRead.mutate(n.id);
-                                        if (n.action_url) navigate(n.action_url);
+                                        navigate(getEntityUrl(activity.entity_type, activity.entity_id));
                                         setOpen(false);
                                     }}
                                 >
                                     <div className="flex gap-3">
-                                        <div className="mt-1">{getIcon(n.type)}</div>
-                                        <div className="flex-1 space-y-1">
-                                            <p className={`text-sm leading-tight ${!n.is_read ? 'font-semibold' : ''}`}>
-                                                {n.title}
+                                        <div className="mt-0.5">{getIcon(activity.entity_type)}</div>
+                                        <div className="flex-1 space-y-1 min-w-0">
+                                            <p className="text-sm leading-tight text-foreground line-clamp-2">
+                                                {activity.description}
                                             </p>
-                                            <p className="text-xs text-muted-foreground line-clamp-2">
-                                                {n.message}
-                                            </p>
-                                            <p className="text-[10px] text-muted-foreground pt-1 uppercase">
-                                                {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                                            </p>
+                                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                                                {activity.performed_by_name && (
+                                                    <span>{activity.performed_by_name}</span>
+                                                )}
+                                                <span>•</span>
+                                                <span>
+                                                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                                                </span>
+                                            </div>
                                         </div>
-                                        {!n.is_read && <div className="h-2 w-2 rounded-full bg-primary mt-2" />}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
                 </ScrollArea>
-                <div className="p-4 border-t text-center">
-                    <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => navigate('/notifications')}>
-                        View all notifications
-                        <ChevronRight className="ml-2 h-3 w-3" />
-                    </Button>
-                </div>
             </PopoverContent>
         </Popover>
     );

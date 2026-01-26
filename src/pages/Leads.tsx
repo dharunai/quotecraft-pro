@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { Plus, Trash2, Eye, Upload, FileDown, TrendingUp } from 'lucide-react';
-import { getScoreLabel } from '@/lib/scoringEngine';
+
 import { Badge } from '@/components/ui/badge';
 import { Lead } from '@/types/database';
 import { PermissionGuard } from '@/components/PermissionGuard';
@@ -218,7 +218,6 @@ export default function Leads() {
               <th>Contact name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Score</th>
               <th>Status</th>
               <th>Created</th>
               <th className="w-24">Actions</th>
@@ -236,11 +235,6 @@ export default function Leads() {
               <td>{lead.contact_name}</td>
               <td className="text-muted-foreground">{lead.email || '-'}</td>
               <td className="text-muted-foreground">{lead.phone || '-'}</td>
-              <td>
-                <Badge variant={getScoreLabel(lead.score || 0).variant}>
-                  {getScoreLabel(lead.score || 0).label}
-                </Badge>
-              </td>
               <td>
                 <LeadStatusBadge status={lead.status} />
               </td>

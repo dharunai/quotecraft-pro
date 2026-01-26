@@ -1,93 +1,157 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { AppSidebar } from './AppSidebar';
 import { cn } from '@/lib/utils';
-const navigation = [{
-  name: 'Dashboard',
-  href: '/dashboard'
-}, {
-  name: 'Tasks',
-  href: '/tasks'
-}, {
-  name: 'Leads',
-  href: '/leads'
-}, {
-  name: 'Deals',
-  href: '/deals'
-}, {
-  name: 'Pipeline',
-  href: '/pipeline'
-}, {
-  name: 'Quotations',
-  href: '/quotations'
-}, {
-  name: 'Products',
-  href: '/products'
-}, {
-  name: 'Invoices',
-  href: '/invoices'
-}, {
-  name: 'Automation',
-  href: '/settings/automation'
-}, {
-  name: 'Settings',
-  href: '/settings'
-}];
-export function AppLayout({
-  children
-}: {
-  children: React.ReactNode;
-}) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const {
-    user,
-    signOut
-  } = useAuth();
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-  };
-  return <div className="min-h-screen bg-background shadow-sm">
-    {/* Header */}
-    <header className="sticky top-0 z-50 bg-card border-b border-border">
-      <div className="flex items-center justify-between h-16 px-6">
-        <div className="flex items-center gap-8">
-          <Link to="/dashboard" className="text-xl text-primary font-sans font-bold">Mikrogreenz Global</Link>
-          <nav className="hidden md:flex items-center gap-1">
-            {navigation.map(item => <Link key={item.name} to={item.href} className={cn("px-3 py-2 text-sm font-medium rounded-md transition-colors font-sans", location.pathname.startsWith(item.href) ? 'bg-secondary text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}>
-              {item.name}
-            </Link>)}
-          </nav>
-        </div>
-        <div className="flex-1 max-w-sm mx-4 hidden md:block">
-          <GlobalSearch />
-        </div>
-        <div className="flex items-center gap-4">
-          <NotificationBell />
-          <span className="text-sm text-muted-foreground hidden sm:block">
-            {user?.email}
-          </span>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            Sign Out
-          </Button>
-        </div>
-      </div>
-    </header>
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { LogOut, Menu, User } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-    {/* Mobile Nav */}
-    <nav className="md:hidden border-b border-border bg-card px-4 py-2 flex gap-2 overflow-x-auto">
-      {navigation.map(item => <Link key={item.name} to={item.href} className={cn('px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors', location.pathname.startsWith(item.href) ? 'bg-secondary text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted')}>
-        {item.name}
-      </Link>)}
-    </nav>
+export function AppLayout({ children }: { children: React.ReactNode }) {
+    const navigate = useNavigate();
+    const { user, signOut } = useAuth();
+    const { data: settings } = useCompanySettings();
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    {/* Main Content */}
-    <main className="p-6">
-      {children}
-    </main>
-  </div>;
+    // Persist sidebar state
+    useEffect(() => {
+        const saved = localStorage.getItem('sidebar-collapsed');
+        if (saved) setSidebarCollapsed(JSON.parse(saved));
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('sidebar-collapsed', JSON.stringify(sidebarCollapsed));
+    }, [sidebarCollapsed]);
+
+    const handleSignOut = async () => {
+        await signOut();
+        navigate('/login');
+    };
+
+    const userInitials = user?.email?.slice(0, 2).toUpperCase() || 'U';
+
+    return (
+        <div className="min-h-screen bg-background">
+            {/* Sidebar - Desktop */}
+            <div className="hidden md:block">
+                <AppSidebar
+                    collapsed={sidebarCollapsed}
+                    onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                />
+            </div>
+
+            {/* Mobile Sidebar Overlay */}
+            {mobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 z-30 bg-black/50 md:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
+
+            {/* Mobile Sidebar */}
+            <div className={cn(
+                "fixed left-0 top-0 z-40 h-screen w-64 bg-card border-r border-border transform transition-transform duration-300 md:hidden",
+                mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            )}>
+                <AppSidebar
+                    collapsed={false}
+                    onToggle={() => setMobileMenuOpen(false)}
+                />
+            </div>
+
+            {/* Main Content Area */}
+            <div className={cn(
+                "transition-all duration-300 ease-in-out",
+                sidebarCollapsed ? "md:ml-16" : "md:ml-64"
+            )}>
+                {/* Top Header Bar */}
+                <header className="sticky top-0 z-30 h-16 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border">
+                    <div className="flex items-center justify-between h-full px-4 md:px-6">
+                        {/* Left - Mobile Menu Button */}
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="md:hidden h-9 w-9"
+                                onClick={() => setMobileMenuOpen(true)}
+                            >
+                                <Menu className="h-5 w-5" />
+                            </Button>
+                            
+                            {/* Company Name on Mobile */}
+                            <span className="font-semibold text-foreground md:hidden truncate max-w-[150px]">
+                                {settings?.company_name || 'CRM'}
+                            </span>
+                        </div>
+
+                        {/* Center - Global Search */}
+                        <div className="flex-1 max-w-md mx-4 hidden sm:block">
+                            <GlobalSearch />
+                        </div>
+
+                        {/* Right - Actions */}
+                        <div className="flex items-center gap-2">
+                            <NotificationBell />
+                            
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                                                {userInitials}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <div className="flex items-center gap-2 p-2">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                                {userInitials}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-sm font-medium truncate">{user?.email}</span>
+                                            <span className="text-xs text-muted-foreground">Account</span>
+                                        </div>
+                                    </div>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                                        <User className="mr-2 h-4 w-4" />
+                                        Settings
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Sign Out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+                </header>
+
+                {/* Mobile Search */}
+                <div className="px-4 py-3 border-b border-border sm:hidden">
+                    <GlobalSearch />
+                </div>
+
+                {/* Main Content */}
+                <main className="p-4 md:p-6 animate-fade-in">
+                    {children}
+                </main>
+            </div>
+        </div>
+    );
 }
