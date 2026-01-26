@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type UserRole = 'admin' | 'sales' | 'viewer';
+export type UserRole = 'admin' | 'user';
 
 export type PermissionAction =
     | 'create'
@@ -19,36 +19,39 @@ const ROLE_PERMISSIONS: Record<UserRole, PermissionAction[]> = {
         'create', 'read', 'update', 'delete',
         'manage_team', 'manage_settings', 'send_email', 'export_data'
     ],
-    sales: [
+    user: [
         'create', 'read', 'update',
         'send_email', 'export_data'
     ],
-    viewer: [
-        'read', 'export_data'
-    ]
 };
 
 export async function checkPermission(userId: string, action: PermissionAction): Promise<boolean> {
     try {
-        const { data: member, error } = await supabase
-            .from('team_members')
-            .select('role, is_active')
+        // Use the user_roles table from the actual schema
+        const { data: userRole, error } = await supabase
+            .from('user_roles')
+            .select('role')
             .eq('user_id', userId)
             .maybeSingle();
 
-        // If no team member record, assume they are not a team member yet or just a raw authenticated user.
-        // For now, if no record, deny all except maybe read if we want public read? No, default deny.
-        // However, the migration attempts to make the first user admin.
-        if ((error || !member) && import.meta.env.DEV) {
-            console.warn('Permissions Bypass: Defaulting to ADMIN for development/testing.');
-            return ROLE_PERMISSIONS['admin'].includes(action);
+        // Default to admin in dev or if no role found (first user)
+        if (error || !userRole) {
+            if (import.meta.env.DEV) {
+                console.warn('Permissions Bypass: Defaulting to ADMIN for development/testing.');
+                return ROLE_PERMISSIONS['admin'].includes(action);
+            }
+            // Check if user has admin role via RPC
+            const { data: hasAdmin } = await supabase.rpc('has_role', { 
+                _role: 'admin', 
+                _user_id: userId 
+            });
+            if (hasAdmin) {
+                return ROLE_PERMISSIONS['admin'].includes(action);
+            }
+            return ROLE_PERMISSIONS['user'].includes(action);
         }
 
-        if (error || !member || !member.is_active) {
-            return false;
-        }
-
-        const role = member.role as UserRole;
+        const role = userRole.role as UserRole;
         return ROLE_PERMISSIONS[role]?.includes(action) || false;
     } catch (err) {
         console.error('Error checking permission:', err);
@@ -66,7 +69,7 @@ export function usePermission(action: PermissionAction) {
             return checkPermission(user.id, action);
         },
         enabled: !!user,
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+        staleTime: 5 * 60 * 1000,
     });
 
     return { hasPermission, isLoading };
@@ -80,14 +83,14 @@ export function useUserRole() {
         queryFn: async () => {
             if (!user) return null;
             const { data, error } = await supabase
-                .from('team_members')
+                .from('user_roles')
                 .select('*')
                 .eq('user_id', user.id)
                 .maybeSingle();
 
             if (error && import.meta.env.DEV) {
                 console.warn('Role Bypass: Defaulting to ADMIN for development/testing.');
-                return { role: 'admin', is_active: true } as any;
+                return { role: 'admin' as const };
             }
             if (error) throw error;
             return data;

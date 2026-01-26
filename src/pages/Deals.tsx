@@ -53,7 +53,7 @@ export default function Deals() {
 
     const currency = settings?.currency || '₹';
 
-    const handleBulkExport = (format: 'csv' | 'excel') => {
+    const handleBulkExport = (exportFormat: 'csv' | 'excel') => {
         const selectedData = filteredDeals.filter(d => selectedIds.includes(d.id)).map(d => ({
             'Company': d.lead?.company_name,
             'Contact': d.lead?.contact_name,
@@ -63,7 +63,7 @@ export default function Deals() {
             'Expected Close': d.expected_close_date ? format(new Date(d.expected_close_date), 'yyyy-MM-dd') : '-'
         }));
 
-        if (format === 'csv') {
+        if (exportFormat === 'csv') {
             exportToCSV(selectedData, 'deals_export');
         } else {
             exportToExcel(selectedData, 'deals_export');
