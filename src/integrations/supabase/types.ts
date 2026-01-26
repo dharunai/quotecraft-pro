@@ -759,6 +759,368 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          entity_type: string | null
+          entity_id: string | null
+          assigned_to: string | null
+          due_date: string | null
+          priority: "low" | "medium" | "high" | "urgent"
+          status: "pending" | "in_progress" | "completed" | "cancelled"
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
+          assigned_to?: string | null
+          due_date?: string | null
+          priority?: "low" | "medium" | "high" | "urgent"
+          status?: "pending" | "in_progress" | "completed" | "cancelled"
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
+          assigned_to?: string | null
+          due_date?: string | null
+          priority?: "low" | "medium" | "high" | "urgent"
+          status?: "pending" | "in_progress" | "completed" | "cancelled"
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      automation_rules: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          trigger_event: string
+          trigger_conditions: Json | null
+          actions: Json
+          is_active: boolean
+          execution_count: number
+          last_executed_at: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          trigger_event: string
+          trigger_conditions?: Json | null
+          actions: Json
+          is_active?: boolean
+          execution_count?: number
+          last_executed_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          trigger_event?: string
+          trigger_conditions?: Json | null
+          actions?: Json
+          is_active?: boolean
+          execution_count?: number
+          last_executed_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: "info" | "success" | "warning" | "error"
+          category: string | null
+          entity_type: string | null
+          entity_id: string | null
+          action_url: string | null
+          is_read: boolean
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message: string
+          type: "info" | "success" | "warning" | "error"
+          category?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
+          action_url?: string | null
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string
+          type?: "info" | "success" | "warning" | "error"
+          category?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
+          action_url?: string | null
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          id: string
+          user_id: string
+          full_name: string
+          email: string
+          role: "admin" | "sales" | "viewer"
+          is_active: boolean
+          invited_by: string | null
+          invited_at: string
+          last_login: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          full_name: string
+          email: string
+          role?: "admin" | "sales" | "viewer"
+          is_active?: boolean
+          invited_by?: string | null
+          invited_at?: string
+          last_login?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          full_name?: string
+          email?: string
+          role?: "admin" | "sales" | "viewer"
+          is_active?: boolean
+          invited_by?: string | null
+          invited_at?: string
+          last_login?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workflow_definitions: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          trigger_type: "event" | "schedule" | "webhook" | "manual"
+          trigger_config: Json
+          flow_definition: Json
+          is_active: boolean
+          error_handling: "stop" | "continue" | "retry"
+          max_retries: number
+          retry_delay_seconds: number
+          timeout_seconds: number
+          version: number
+          published_at: string | null
+          execution_count: number
+          success_count: number
+          failure_count: number
+          last_executed_at: string | null
+          tags: string[] | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          trigger_type: "event" | "schedule" | "webhook" | "manual"
+          trigger_config?: Json
+          flow_definition?: Json
+          is_active?: boolean
+          error_handling?: "stop" | "continue" | "retry"
+          max_retries?: number
+          retry_delay_seconds?: number
+          timeout_seconds?: number
+          version?: number
+          published_at?: string | null
+          execution_count?: number
+          success_count?: number
+          failure_count?: number
+          last_executed_at?: string | null
+          tags?: string[] | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          trigger_type?: "event" | "schedule" | "webhook" | "manual"
+          trigger_config?: Json
+          flow_definition?: Json
+          is_active?: boolean
+          error_handling?: "stop" | "continue" | "retry"
+          max_retries?: number
+          retry_delay_seconds?: number
+          timeout_seconds?: number
+          version?: number
+          published_at?: string | null
+          execution_count?: number
+          success_count?: number
+          failure_count?: number
+          last_executed_at?: string | null
+          tags?: string[] | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workflow_executions: {
+        Row: {
+          id: string
+          workflow_id: string
+          trigger_event: string
+          trigger_data: Json
+          entity_type: string | null
+          entity_id: string | null
+          steps_executed: Json
+          current_step_id: string | null
+          status: "running" | "completed" | "failed" | "cancelled" | "paused"
+          error_message: string | null
+          error_step_id: string | null
+          started_at: string
+          completed_at: string | null
+          duration_ms: number | null
+          retry_count: number
+          next_retry_at: string | null
+          output_data: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workflow_id: string
+          trigger_event: string
+          trigger_data?: Json
+          entity_type?: string | null
+          entity_id?: string | null
+          steps_executed?: Json
+          current_step_id?: string | null
+          status: "running" | "completed" | "failed" | "cancelled" | "paused"
+          error_message?: string | null
+          error_step_id?: string | null
+          started_at?: string
+          completed_at?: string | null
+          duration_ms?: number | null
+          retry_count?: number
+          next_retry_at?: string | null
+          output_data?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workflow_id?: string
+          trigger_event?: string
+          trigger_data?: Json
+          entity_type?: string | null
+          entity_id?: string | null
+          steps_executed?: Json
+          current_step_id?: string | null
+          status?: "running" | "completed" | "failed" | "cancelled" | "paused"
+          error_message?: string | null
+          error_step_id?: string | null
+          started_at?: string
+          completed_at?: string | null
+          duration_ms?: number | null
+          retry_count?: number
+          next_retry_at?: string | null
+          output_data?: Json | null
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "workflow_executions_workflow_id_fkey"
+          columns: ["workflow_id"]
+          referencedRelation: "workflow_definitions"
+          referencedColumns: ["id"]
+        }]
+      }
+      workflow_templates: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          category: "sales" | "marketing" | "support" | "operations" | "inventory" | "payments" | null
+          icon: string | null
+          template_definition: Json
+          configurable_fields: Json | null
+          required_integrations: string[] | null
+          is_featured: boolean
+          use_count: number
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          category?: "sales" | "marketing" | "support" | "operations" | "inventory" | "payments" | null
+          icon?: string | null
+          template_definition: Json
+          configurable_fields?: Json | null
+          required_integrations?: string[] | null
+          is_featured?: boolean
+          use_count?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          category?: "sales" | "marketing" | "support" | "operations" | "inventory" | "payments" | null
+          icon?: string | null
+          template_definition?: Json
+          configurable_fields?: Json | null
+          required_integrations?: string[] | null
+          is_featured?: boolean
+          use_count?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

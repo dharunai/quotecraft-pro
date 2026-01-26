@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Invoice, InvoiceItem, Lead, Deal, Quotation, Product } from '@/types/database';
 import { toast } from 'sonner';
+import { triggerAutomation } from '@/lib/automationEngine';
 
 export function useInvoices() {
   return useQuery({
@@ -71,11 +72,27 @@ export function useCreateInvoice() {
         .select('*, lead:leads(*)')
         .single();
       if (error) throw error;
-      return data;
+      return data as Invoice & { lead: Lead };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice created');
+      
+      // Trigger automation for invoice_created
+      triggerAutomation('invoice_created', {
+        invoice: {
+          id: data.id,
+          invoice_number: data.invoice_number,
+          grand_total: data.grand_total,
+        },
+        lead: data.lead ? {
+          id: data.lead.id,
+          company_name: data.lead.company_name,
+          contact_name: data.lead.contact_name,
+          email: data.lead.email || undefined,
+          phone: data.lead.phone || undefined,
+        } : undefined,
+      });
     },
     onError: (error) => {
       toast.error('Failed to create invoice: ' + error.message);
@@ -87,9 +104,16 @@ export function useUpdateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Invoice> & { id: string }) => {
+      // Get current invoice to check for payment status changes
+      const { data: currentInvoice } = await supabase
+        .from('invoices')
+        .select('*, lead:leads(*)')
+        .eq('id', id)
+        .single();
+
       // Auto-update payment status based on amount_paid
       const updateData: Record<string, unknown> = { ...data };
-      
+
       if (data.amount_paid !== undefined && data.grand_total !== undefined) {
         if (data.amount_paid >= data.grand_total) {
           updateData.payment_status = 'paid';
@@ -100,7 +124,7 @@ export function useUpdateInvoice() {
           updateData.payment_status = 'unpaid';
         }
       }
-      
+
       const { data: result, error } = await supabase
         .from('invoices')
         .update(updateData)
@@ -108,11 +132,29 @@ export function useUpdateInvoice() {
         .select('*, lead:leads(*)')
         .single();
       if (error) throw error;
-      return result;
+      return { updated: result as Invoice & { lead: Lead }, previous: currentInvoice };
     },
-    onSuccess: () => {
+    onSuccess: ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice updated');
+      
+      // Check if invoice was just marked as paid
+      if (updated.payment_status === 'paid' && previous?.payment_status !== 'paid') {
+        triggerAutomation('invoice_paid', {
+          invoice: {
+            id: updated.id,
+            invoice_number: updated.invoice_number,
+            grand_total: updated.grand_total,
+          },
+          lead: updated.lead ? {
+            id: updated.lead.id,
+            company_name: updated.lead.company_name,
+            contact_name: updated.lead.contact_name,
+            email: updated.lead.email || undefined,
+            phone: updated.lead.phone || undefined,
+          } : undefined,
+        });
+      }
     },
     onError: (error) => {
       toast.error('Failed to update invoice: ' + error.message);
@@ -129,7 +171,7 @@ export function useDeleteInvoice() {
         .from('invoice_items')
         .select('product_id, quantity')
         .eq('invoice_id', id);
-      
+
       // Restore stock quantities for product-based items
       if (items) {
         for (const item of items) {
@@ -139,7 +181,7 @@ export function useDeleteInvoice() {
               .select('stock_quantity')
               .eq('id', item.product_id)
               .single();
-            
+
             if (product) {
               await supabase
                 .from('products')
@@ -149,7 +191,7 @@ export function useDeleteInvoice() {
           }
         }
       }
-      
+
       const { error } = await supabase
         .from('invoices')
         .delete()
@@ -178,7 +220,7 @@ export function useCreateInvoiceItem() {
         .select()
         .single();
       if (error) throw error;
-      
+
       // Reduce stock quantity for product-based items
       if (item.product_id) {
         const { data: product } = await supabase
@@ -186,7 +228,7 @@ export function useCreateInvoiceItem() {
           .select('stock_quantity')
           .eq('id', item.product_id)
           .single();
-        
+
         if (product) {
           await supabase
             .from('products')
@@ -194,7 +236,7 @@ export function useCreateInvoiceItem() {
             .eq('id', item.product_id);
         }
       }
-      
+
       return data;
     },
     onSuccess: (_, variables) => {
@@ -239,13 +281,13 @@ export function useDeleteInvoiceItem() {
         .select('product_id, quantity')
         .eq('id', id)
         .single();
-      
+
       const { error } = await supabase
         .from('invoice_items')
         .delete()
         .eq('id', id);
       if (error) throw error;
-      
+
       // Restore stock quantity for product-based items
       if (item?.product_id) {
         const { data: product } = await supabase
@@ -253,7 +295,7 @@ export function useDeleteInvoiceItem() {
           .select('stock_quantity')
           .eq('id', item.product_id)
           .single();
-        
+
         if (product) {
           await supabase
             .from('products')
@@ -261,7 +303,7 @@ export function useDeleteInvoiceItem() {
             .eq('id', item.product_id);
         }
       }
-      
+
       return { invoice_id };
     },
     onSuccess: (data) => {
@@ -284,7 +326,7 @@ export function useBulkCreateInvoiceItems() {
         .insert(items)
         .select();
       if (error) throw error;
-      
+
       // Reduce stock quantities for product-based items
       for (const item of items) {
         if (item.product_id) {
@@ -293,7 +335,7 @@ export function useBulkCreateInvoiceItems() {
             .select('stock_quantity')
             .eq('id', item.product_id)
             .single();
-          
+
           if (product) {
             await supabase
               .from('products')
@@ -302,7 +344,7 @@ export function useBulkCreateInvoiceItems() {
           }
         }
       }
-      
+
       return data;
     },
     onSuccess: () => {

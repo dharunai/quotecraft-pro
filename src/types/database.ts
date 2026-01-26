@@ -191,3 +191,178 @@ export interface Profile {
   created_at: string;
   updated_at: string;
 }
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  assigned_to: string | null;
+  due_date: string | null;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description: string | null;
+  trigger_event: string;
+  trigger_conditions: Record<string, any> | null;
+  actions: Record<string, any>;
+  is_active: boolean;
+  execution_count: number;
+  last_executed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  category: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  action_url: string | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+}
+
+// Workflow Types
+export type WorkflowTriggerType = 'event' | 'schedule' | 'webhook' | 'manual';
+export type WorkflowErrorHandling = 'stop' | 'continue' | 'retry';
+export type WorkflowExecutionStatus = 'running' | 'completed' | 'failed' | 'cancelled' | 'paused';
+export type WorkflowTemplateCategory = 'sales' | 'marketing' | 'support' | 'operations' | 'inventory' | 'payments';
+
+export interface WorkflowNodePosition {
+  x: number;
+  y: number;
+}
+
+export interface WorkflowNodeData {
+  label: string;
+  [key: string]: any;
+}
+
+export interface WorkflowNode {
+  id: string;
+  type: string;
+  position: WorkflowNodePosition;
+  data: WorkflowNodeData;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+}
+
+export interface WorkflowFlowDefinition {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+}
+
+export interface WorkflowTriggerConfig {
+  event?: string;
+  schedule_type?: 'interval' | 'cron';
+  interval_value?: number;
+  interval_unit?: 'minutes' | 'hours' | 'days';
+  cron?: string;
+  webhook_path?: string;
+  [key: string]: any;
+}
+
+export interface WorkflowDefinition {
+  id: string;
+  name: string;
+  description: string | null;
+  trigger_type: WorkflowTriggerType;
+  trigger_config: WorkflowTriggerConfig;
+  flow_definition: WorkflowFlowDefinition;
+  is_active: boolean;
+  error_handling: WorkflowErrorHandling;
+  max_retries: number;
+  retry_delay_seconds: number;
+  timeout_seconds: number;
+  version: number;
+  published_at: string | null;
+  execution_count: number;
+  success_count: number;
+  failure_count: number;
+  last_executed_at: string | null;
+  tags: string[] | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkflowExecutionStep {
+  node_id: string;
+  node_type: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  started_at?: string;
+  completed_at?: string;
+  duration_ms?: number;
+  input?: Record<string, any>;
+  output?: Record<string, any>;
+  error?: string;
+}
+
+export interface WorkflowExecution {
+  id: string;
+  workflow_id: string;
+  trigger_event: string;
+  trigger_data: Record<string, any>;
+  entity_type: string | null;
+  entity_id: string | null;
+  steps_executed: WorkflowExecutionStep[];
+  current_step_id: string | null;
+  status: WorkflowExecutionStatus;
+  error_message: string | null;
+  error_step_id: string | null;
+  started_at: string;
+  completed_at: string | null;
+  duration_ms: number | null;
+  retry_count: number;
+  next_retry_at: string | null;
+  output_data: Record<string, any> | null;
+  created_at: string;
+  workflow?: WorkflowDefinition;
+}
+
+export interface WorkflowTemplateConfigField {
+  label: string;
+  type: 'text' | 'number' | 'select' | 'time' | 'date' | 'boolean';
+  default?: any;
+  options?: { label: string; value: any }[];
+}
+
+export interface WorkflowTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  category: WorkflowTemplateCategory | null;
+  icon: string | null;
+  template_definition: {
+    trigger: WorkflowTriggerConfig;
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
+  };
+  configurable_fields: Record<string, WorkflowTemplateConfigField> | null;
+  required_integrations: string[] | null;
+  is_featured: boolean;
+  use_count: number;
+  created_by: string | null;
+  created_at: string;
+}

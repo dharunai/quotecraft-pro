@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Mail, Paperclip } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { sendEmail } from '@/lib/emailService';
 
 interface EmailDialogProps {
   open: boolean;
@@ -73,29 +73,23 @@ export function EmailDialog({
         .map((e) => e.trim())
         .filter((e) => validateEmail(e));
 
-      const { data, error } = await supabase.functions.invoke('send-email', {
-        body: {
-          type,
-          entityId,
-          to: to.trim(),
-          cc: ccEmails.length > 0 ? ccEmails : undefined,
-          subject: subject.trim(),
-          body: body.trim(),
-          pdfData,
-          pdfFilename,
-        },
+      const result = await sendEmail({
+        to: to.trim(),
+        cc: ccEmails.length > 0 ? ccEmails : undefined,
+        subject: subject.trim(),
+        body: body.trim(),
+        attachments: pdfData ? [{
+          filename: pdfFilename || `${type}.pdf`,
+          content: pdfData,
+        }] : undefined,
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to send email');
-      }
-
-      if (data?.success) {
+      if (result.success) {
         toast.success('Email sent successfully');
         onSuccess?.();
         onClose();
       } else {
-        throw new Error(data?.error || 'Failed to send email');
+        throw new Error(result.error || 'Failed to send email');
       }
     } catch (error) {
       console.error('Error sending email:', error);

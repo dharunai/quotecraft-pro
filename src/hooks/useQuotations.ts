@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Quotation, QuotationItem } from '@/types/database';
+import { Quotation, QuotationItem, Lead } from '@/types/database';
 import { toast } from 'sonner';
+import { triggerAutomation } from '@/lib/automationEngine';
 
 export function useQuotations() {
   return useQuery({
@@ -78,11 +79,11 @@ export function useCreateQuotation() {
       const { data, error } = await supabase
         .from('quotations')
         .insert(quotation)
-        .select()
+        .select(`*, lead:leads(*)`)
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Quotation & { lead: Lead };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
@@ -99,18 +100,52 @@ export function useUpdateQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, ...quotation }: Partial<Quotation> & { id: string }) => {
+      // Get current quotation to check for status changes
+      const { data: currentQuotation } = await supabase
+        .from('quotations')
+        .select(`*, lead:leads(*)`)
+        .eq('id', id)
+        .single();
+
       const { data, error } = await supabase
         .from('quotations')
         .update(quotation)
         .eq('id', id)
-        .select()
+        .select(`*, lead:leads(*)`)
         .single();
 
       if (error) throw error;
-      return data;
+      return { updated: data as Quotation & { lead: Lead }, previous: currentQuotation };
     },
-    onSuccess: () => {
+    onSuccess: ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      
+      // Check for status changes and trigger automations
+      if (updated.status !== previous?.status) {
+        const lead = updated.lead;
+        const eventData = {
+          quotation: {
+            id: updated.id,
+            quote_number: updated.quote_number,
+            total: updated.total,
+          },
+          lead: lead ? {
+            id: lead.id,
+            company_name: lead.company_name,
+            contact_name: lead.contact_name,
+            email: lead.email || undefined,
+            phone: lead.phone || undefined,
+          } : undefined,
+        };
+
+        if (updated.status === 'sent' && previous?.status === 'draft') {
+          triggerAutomation('quotation_sent', eventData);
+        } else if (updated.status === 'accepted') {
+          triggerAutomation('quotation_accepted', eventData);
+        } else if (updated.status === 'rejected') {
+          triggerAutomation('quotation_rejected', eventData);
+        }
+      }
     },
     onError: (error: Error) => {
       toast.error('Failed to update quotation: ' + error.message);

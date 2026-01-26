@@ -28,6 +28,8 @@ import TeamManagement from "./pages/TeamManagement";
 import AutomationSettings from "./pages/AutomationSettings";
 import NotificationPreferences from "./pages/NotificationPreferences";
 import WorkflowBuilder from "./pages/WorkflowBuilder";
+import Workflows from "./pages/Workflows";
+import WorkflowEditor from "./pages/WorkflowEditor";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -59,6 +61,8 @@ const App = () => (
             <Route path="/settings/automation" element={<ProtectedRoute><AutomationSettings /></ProtectedRoute>} />
             <Route path="/settings/notifications" element={<ProtectedRoute><NotificationPreferences /></ProtectedRoute>} />
             <Route path="/settings/workflow-builder" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
+            <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
+            <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowEditor /></ProtectedRoute>} />
             <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
