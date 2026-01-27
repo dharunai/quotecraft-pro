@@ -69,6 +69,7 @@ interface EventData {
 // Fetch active automation rules for a given trigger event
 async function getMatchingRules(eventType: AutomationEvent): Promise<AutomationRule[]> {
   try {
+    console.log(`[Automation] Fetching rules for event: ${eventType}`);
     const { data, error } = await supabase
       .from('automation_rules')
       .select('*')
@@ -76,13 +77,14 @@ async function getMatchingRules(eventType: AutomationEvent): Promise<AutomationR
       .eq('is_active', true);
 
     if (error) {
-      console.error('Error fetching automation rules:', error);
+      console.error('[Automation] Error fetching automation rules:', error);
       return [];
     }
 
+    console.log(`[Automation] Found ${data?.length || 0} active rule(s) for ${eventType}:`, data);
     return (data || []) as AutomationRule[];
   } catch (error) {
-    console.error('Error in getMatchingRules:', error);
+    console.error('[Automation] Error in getMatchingRules:', error);
     return [];
   }
 }
@@ -119,42 +121,53 @@ async function executeSendEmail(
   eventData: EventData,
   rule: AutomationRule
 ): Promise<boolean> {
-  const recipientEmail = eventData.lead?.email || eventData.user?.email;
-  
-  if (!recipientEmail) {
-    console.warn('No recipient email for automation:', rule.name);
+  try {
+    console.log(`[Automation] Executing email action for rule: ${rule.name}`);
+    
+    const recipientEmail = eventData.lead?.email || eventData.user?.email;
+    
+    if (!recipientEmail) {
+      console.warn('[Automation] No recipient email found for rule:', rule.name);
+      return false;
+    }
+
+    // Build email content from action value (template)
+    let subject = `Automation: ${rule.name}`;
+    let body = action.value || 'This is an automated message from QuoteCraft Pro.';
+
+    // Simple template replacements
+    body = body
+      .replace(/\{lead\.company_name\}/g, eventData.lead?.company_name || '')
+      .replace(/\{lead\.contact_name\}/g, eventData.lead?.contact_name || '')
+      .replace(/\{deal\.value\}/g, eventData.deal?.deal_value?.toString() || '')
+      .replace(/\{quotation\.number\}/g, eventData.quotation?.quote_number || '')
+      .replace(/\{invoice\.number\}/g, eventData.invoice?.invoice_number || '');
+
+    console.log(`[Automation] Sending email to: ${recipientEmail}, Subject: ${subject}`);
+
+    const result = await sendEmail({
+      to: recipientEmail,
+      subject,
+      body: `<div style="font-family: sans-serif; padding: 20px;">
+        <h2>QuoteCraft Pro Notification</h2>
+        <p>${body.replace(/\n/g, '<br>')}</p>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px;">This is an automated email triggered by: ${rule.name}</p>
+      </div>`,
+      fromName: 'QuoteCraft Pro',
+    });
+
+    if (result.success) {
+      console.log(`[Automation] ✅ Email sent successfully for automation: ${rule.name}`);
+    } else {
+      console.error(`[Automation] Email failed for automation: ${rule.name}`, result);
+    }
+
+    return result.success;
+  } catch (error) {
+    console.error(`[Automation] Error executing email action:`, error);
     return false;
   }
-
-  // Build email content from action value (template)
-  let subject = `Automation: ${rule.name}`;
-  let body = action.value || 'This is an automated message from QuoteCraft Pro.';
-
-  // Simple template replacements
-  body = body
-    .replace(/\{lead\.company_name\}/g, eventData.lead?.company_name || '')
-    .replace(/\{lead\.contact_name\}/g, eventData.lead?.contact_name || '')
-    .replace(/\{deal\.value\}/g, eventData.deal?.deal_value?.toString() || '')
-    .replace(/\{quotation\.number\}/g, eventData.quotation?.quote_number || '')
-    .replace(/\{invoice\.number\}/g, eventData.invoice?.invoice_number || '');
-
-  const result = await sendEmail({
-    to: recipientEmail,
-    subject,
-    body: `<div style="font-family: sans-serif; padding: 20px;">
-      <h2>QuoteCraft Pro Notification</h2>
-      <p>${body}</p>
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-      <p style="color: #666; font-size: 12px;">This is an automated email triggered by: ${rule.name}</p>
-    </div>`,
-    fromName: 'QuoteCraft Pro',
-  });
-
-  if (result.success) {
-    console.log(`✅ Email sent for automation: ${rule.name}`);
-  }
-
-  return result.success;
 }
 
 // Create task action
@@ -163,31 +176,42 @@ async function executeCreateTask(
   eventData: EventData,
   rule: AutomationRule
 ): Promise<boolean> {
-  const taskTitle = action.value || `Follow up: ${rule.name}`;
-  
-  // Calculate due date (3 days from now by default)
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 3);
+  try {
+    console.log(`[Automation] Executing create task action for rule: ${rule.name}`);
+    
+    const taskTitle = action.value || `Follow up: ${rule.name}`;
+    
+    // Calculate due date (3 days from now by default)
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 3);
 
-  const { error } = await supabase.from('tasks').insert({
-    title: taskTitle
-      .replace(/\{lead\.company_name\}/g, eventData.lead?.company_name || '')
-      .replace(/\{lead\.contact_name\}/g, eventData.lead?.contact_name || ''),
-    description: `Auto-created by automation rule: ${rule.name}`,
-    entity_type: eventData.lead ? 'lead' : eventData.deal ? 'deal' : null,
-    entity_id: eventData.lead?.id || eventData.deal?.id || null,
-    due_date: dueDate.toISOString().split('T')[0],
-    priority: 'medium',
-    status: 'pending',
-  });
+    const taskData = {
+      title: taskTitle
+        .replace(/\{lead\.company_name\}/g, eventData.lead?.company_name || '')
+        .replace(/\{lead\.contact_name\}/g, eventData.lead?.contact_name || ''),
+      description: `Auto-created by automation rule: ${rule.name}`,
+      entity_type: eventData.lead ? 'lead' : eventData.deal ? 'deal' : null,
+      entity_id: eventData.lead?.id || eventData.deal?.id || null,
+      due_date: dueDate.toISOString().split('T')[0],
+      priority: 'medium',
+      status: 'pending',
+    };
 
-  if (error) {
-    console.error('Error creating task:', error);
+    console.log(`[Automation] Creating task:`, taskData);
+
+    const { error, data } = await supabase.from('tasks').insert(taskData).select();
+
+    if (error) {
+      console.error('[Automation] Error creating task:', error);
+      return false;
+    }
+
+    console.log(`[Automation] ✅ Task created successfully for automation: ${rule.name}`, data);
+    return true;
+  } catch (error) {
+    console.error(`[Automation] Error executing create task action:`, error);
     return false;
   }
-
-  console.log(`✅ Task created for automation: ${rule.name}`);
-  return true;
 }
 
 // Send notification action
@@ -196,43 +220,58 @@ async function executeNotification(
   eventData: EventData,
   rule: AutomationRule
 ): Promise<boolean> {
-  const userId = eventData.user?.id;
-  
-  if (!userId) {
+  try {
+    console.log(`[Automation] Executing notification action for rule: ${rule.name}`);
+    
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.warn('No user for notification');
+      console.warn('[Automation] No user found for notification');
       return false;
     }
     
     const message = action.value || `Automation triggered: ${rule.name}`;
     
+    // Create notification in database
     const { error } = await supabase.from('notifications').insert({
       user_id: user.id,
       title: rule.name,
       message: message
         .replace(/\{lead\.company_name\}/g, eventData.lead?.company_name || '')
-        .replace(/\{lead\.contact_name\}/g, eventData.lead?.contact_name || ''),
+        .replace(/\{lead\.contact_name\}/g, eventData.lead?.contact_name || '')
+        .replace(/\{deal\.value\}/g, eventData.deal?.deal_value?.toString() || '')
+        .replace(/\{quotation\.number\}/g, eventData.quotation?.quote_number || '')
+        .replace(/\{invoice\.number\}/g, eventData.invoice?.invoice_number || ''),
       type: 'info',
       category: 'automation',
-      entity_type: eventData.lead ? 'lead' : eventData.deal ? 'deal' : null,
-      entity_id: eventData.lead?.id || eventData.deal?.id || null,
+      entity_type: eventData.lead ? 'lead' : eventData.deal ? 'deal' : eventData.quotation ? 'quotation' : eventData.invoice ? 'invoice' : null,
+      entity_id: eventData.lead?.id || eventData.deal?.id || eventData.quotation?.id || eventData.invoice?.id || null,
+      is_read: false,
     });
 
     if (error) {
-      console.error('Error creating notification:', error);
-      return false;
+      console.error('[Automation] Error creating notification in DB:', error);
     }
+
+    // Also show a toast notification (client-side)
+    const finalMessage = message
+      .replace(/\{lead\.company_name\}/g, eventData.lead?.company_name || '')
+      .replace(/\{lead\.contact_name\}/g, eventData.lead?.contact_name || '')
+      .replace(/\{deal\.value\}/g, eventData.deal?.deal_value?.toString() || '')
+      .replace(/\{quotation\.number\}/g, eventData.quotation?.quote_number || '')
+      .replace(/\{invoice\.number\}/g, eventData.invoice?.invoice_number || '');
+    
+    toast.info(`🤖 ${rule.name}`, {
+      description: finalMessage,
+      duration: 5000,
+    });
+
+    console.log(`[Automation] ✅ Notification sent for automation: ${rule.name}`);
+    return true;
+  } catch (error) {
+    console.error(`[Automation] Error executing notification:`, error);
+    return false;
   }
-
-  // Also show a toast notification
-  toast.info(`🤖 ${rule.name}`, {
-    description: action.value || 'Automation executed successfully',
-  });
-
-  console.log(`✅ Notification sent for automation: ${rule.name}`);
-  return true;
 }
 
 // Update status action (for leads/deals)
@@ -305,32 +344,40 @@ export async function handleAutomationEvent(
   entityId: string,
   data: EventData
 ): Promise<void> {
-  console.log(`🤖 Automation event: ${eventType}`, { entityType, entityId });
+  console.log(`\n🤖 [Automation] Event triggered: ${eventType}`);
+  console.log(`   Entity: ${entityType}/${entityId}`);
+  console.log(`   Data:`, data);
 
   try {
     // Get matching rules
-    const rules = await getMatchingRules(eventType);
+    const rules = await getMatchingRules(eventType as AutomationEvent);
     
     if (rules.length === 0) {
-      console.log(`No active automation rules for event: ${eventType}`);
+      console.log(`[Automation] ⚠️ No active automation rules found for event: ${eventType}`);
       return;
     }
 
-    console.log(`Found ${rules.length} automation rule(s) for: ${eventType}`);
+    console.log(`[Automation] 📋 Found ${rules.length} active rule(s) for: ${eventType}`);
 
     // Execute each matching rule
     for (const rule of rules) {
-      console.log(`Executing rule: ${rule.name}`);
+      console.log(`[Automation] ▶️  Executing rule: "${rule.name}"`);
+      console.log(`   Action Type: ${(rule.actions as any)?.type || 'unknown'}`);
       
       const action = rule.actions as AutomationAction;
       const success = await executeAction(action, data, rule);
       
       if (success) {
         await updateRuleExecution(rule.id);
+        console.log(`[Automation] ✅ Rule execution tracked`);
+      } else {
+        console.log(`[Automation] ❌ Rule execution failed`);
       }
     }
+    
+    console.log(`[Automation] 🏁 Automation processing complete for event: ${eventType}\n`);
   } catch (error) {
-    console.error('Error in handleAutomationEvent:', error);
+    console.error(`[Automation] 💥 Error in handleAutomationEvent:`, error);
   }
 }
 

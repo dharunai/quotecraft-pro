@@ -275,7 +275,46 @@ export interface WorkflowFlowDefinition {
 
 export interface WorkflowTriggerConfig {
   event?: string;
-  schedule_type?: 'interval' | 'cron';
+  
+  // Schedule triggers
+  schedule_type?: 'once' | 'daily' | 'weekly' | 'monthly' | 'custom';
+  schedule_enabled?: boolean;
+  schedule_time?: string; // HH:mm format
+  schedule_day?: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  schedule_date?: number; // Day of month (1-31)
+  schedule_cron?: string; // Custom cron expression
+  
+  // Webhook triggers
+  webhook_enabled?: boolean;
+  webhook_id?: string;
+  webhook_secret?: string;
+  webhook_content_type?: 'application/json' | 'application/x-www-form-urlencoded' | 'text/plain';
+  
+  // Advanced conditions
+  conditions_enabled?: boolean;
+  conditions?: Array<{
+    field: string;
+    operator: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'in_list';
+    value: string;
+  }>;
+  
+  // Field change detection
+  trigger_on_field_change?: boolean;
+  watch_fields?: string[]; // Array of field names to watch
+  
+  // Time-based triggers
+  delay_enabled?: boolean;
+  delay_value?: number;
+  delay_unit?: 'minutes' | 'hours' | 'days';
+  
+  // Batch processing
+  batch_enabled?: boolean;
+  batch_size?: number; // Number of events to batch
+  batch_window_value?: number;
+  batch_window_unit?: 'minutes' | 'hours';
+  
+  // Legacy fields for backward compatibility
+  schedule_type_legacy?: 'interval' | 'cron';
   interval_value?: number;
   interval_unit?: 'minutes' | 'hours' | 'days';
   cron?: string;

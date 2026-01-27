@@ -16,6 +16,10 @@ import Deals from "./pages/Deals";
 import Quotations from "./pages/Quotations";
 import QuotationEditor from "./pages/QuotationEditor";
 import Settings from "./pages/Settings";
+import CompanySettings from "./pages/CompanySettings";
+import EmailSettings from "./pages/EmailSettings";
+import BillingSettings from "./pages/BillingSettings";
+import NotificationSettings from "./pages/NotificationSettings";
 import Pipeline from "./pages/Pipeline";
 import Products from "./pages/Products";
 import ProductCategories from "./pages/ProductCategories";
@@ -26,6 +30,7 @@ import NotFound from "./pages/NotFound";
 import EmailLogs from "./pages/EmailLogs";
 import TeamManagement from "./pages/TeamManagement";
 import AutomationSettings from "./pages/AutomationSettings";
+import AutomationDiagnostics from "./pages/AutomationDiagnostics";
 import NotificationPreferences from "./pages/NotificationPreferences";
 import WorkflowBuilder from "./pages/WorkflowBuilder";
 import Workflows from "./pages/Workflows";
@@ -57,8 +62,13 @@ const App = () => (
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
             <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceEditor /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/settings/company" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+            <Route path="/settings/email" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
+            <Route path="/settings/billing" element={<ProtectedRoute><BillingSettings /></ProtectedRoute>} />
+            <Route path="/settings/notifications-config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
             <Route path="/settings/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
             <Route path="/settings/automation" element={<ProtectedRoute><AutomationSettings /></ProtectedRoute>} />
+            <Route path="/settings/automation/diagnostics" element={<ProtectedRoute><AutomationDiagnostics /></ProtectedRoute>} />
             <Route path="/settings/notifications" element={<ProtectedRoute><NotificationPreferences /></ProtectedRoute>} />
             <Route path="/settings/workflow-builder" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
             <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />

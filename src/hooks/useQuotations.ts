@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Quotation, QuotationItem, Lead } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
+import { triggerWorkflows } from '@/lib/workflowEngine';
 
 export function useQuotations() {
   return useQuery({
@@ -117,7 +118,7 @@ export function useUpdateQuotation() {
       if (error) throw error;
       return { updated: data as Quotation & { lead: Lead }, previous: currentQuotation };
     },
-    onSuccess: ({ updated, previous }) => {
+    onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       
       // Check for status changes and trigger automations
@@ -139,11 +140,14 @@ export function useUpdateQuotation() {
         };
 
         if (updated.status === 'sent' && previous?.status === 'draft') {
-          triggerAutomation('quotation_sent', eventData);
+          await triggerAutomation('quotation_sent', eventData);
+          await triggerWorkflows('quotation_sent', 'quotation', updated.id, eventData.quotation || {});
         } else if (updated.status === 'accepted') {
-          triggerAutomation('quotation_accepted', eventData);
+          await triggerAutomation('quotation_accepted', eventData);
+          await triggerWorkflows('quotation_accepted', 'quotation', updated.id, eventData.quotation || {});
         } else if (updated.status === 'rejected') {
-          triggerAutomation('quotation_rejected', eventData);
+          await triggerAutomation('quotation_rejected', eventData);
+          await triggerWorkflows('quotation_rejected', 'quotation', updated.id, eventData.quotation || {});
         }
       }
     },

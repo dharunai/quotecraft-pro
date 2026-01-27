@@ -19,19 +19,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    let timeoutId: NodeJS.Timeout;
+    let isMounted = true;
+
+    const initAuth = async () => {
+      try {
+        // Set a 5-second timeout to prevent hanging
+        timeoutId = setTimeout(() => {
+          if (isMounted) {
+            console.warn('AuthContext: getSession timeout, proceeding as anonymous');
+            setLoading(false);
+          }
+        }, 5000);
+
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        clearTimeout(timeoutId);
+        
+        if (error) {
+          console.warn('AuthContext: getSession error:', error);
+        }
+        
+        if (isMounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('AuthContext: Error during initialization:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (isMounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {

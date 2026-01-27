@@ -56,9 +56,13 @@ export async function sendEmail({
     return { success: true, messageId: data.messageId };
   } catch (error) {
     console.error('Error sending email:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Network error';
+    const message = errorMsg.includes('Failed to fetch') 
+      ? 'Backend server is not running. Make sure the backend server is running on port 3001' 
+      : errorMsg;
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Network error - make sure the server is running' 
+      error: message
     };
   }
 }

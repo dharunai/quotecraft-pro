@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Task } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
+import { triggerWorkflows } from '@/lib/workflowEngine';
 
 export function useTasks() {
   return useQuery({
@@ -133,17 +134,20 @@ export function useCompleteTask() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task completed!');
       
+      const taskData = {
+        id: data.id,
+        title: data.title,
+      };
+      
       // Trigger automation for task_completed
-      triggerAutomation('task_completed', {
-        task: {
-          id: data.id,
-          title: data.title,
-        },
-      });
+      await triggerAutomation('task_completed', { task: taskData });
+      
+      // Trigger workflows for task_completed
+      await triggerWorkflows('task_completed', 'task', data.id, taskData);
     },
     onError: (error: Error) => {
       toast.error('Failed to complete task: ' + error.message);

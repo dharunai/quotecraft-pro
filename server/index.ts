@@ -42,7 +42,7 @@ app.post('/api/send-email', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${fromName || 'QuoteCraft Pro'} <onboarding@resend.dev>`,
+        from: `${fromName || 'QuoteCraft Pro'} <dharunshanmugavel12@gmail.com>`,
         to: Array.isArray(to) ? to : [to],
         cc: cc?.filter((email: string) => email && email.includes('@')),
         subject,

@@ -341,3 +341,41 @@ export const useDuplicateWorkflow = () => {
     },
   });
 };
+
+// Rename workflow
+export const useRenameWorkflow = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { data, error } = await supabase
+        .from("workflow_definitions")
+        .update({ 
+          name,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return transformWorkflow(data);
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      queryClient.invalidateQueries({ queryKey: ["workflows", data.id] });
+      toast({
+        title: "Workflow renamed",
+        description: `Renamed to "${data.name}"`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error renaming workflow",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};

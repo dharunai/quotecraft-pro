@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Deal, Lead } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
+import { triggerWorkflows } from '@/lib/workflowEngine';
 
 export function useDeals() {
   return useQuery({
@@ -71,18 +72,20 @@ export function useCreateDeal() {
 
       return data as Deal & { lead: Lead };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Deal created');
       
+      const dealData = {
+        id: data.id,
+        deal_value: data.deal_value || undefined,
+        stage: data.stage,
+      };
+      
       // Trigger automation for deal_created
-      triggerAutomation('deal_created', {
-        deal: {
-          id: data.id,
-          deal_value: data.deal_value || undefined,
-          stage: data.stage,
-        },
+      await triggerAutomation('deal_created', {
+        deal: dealData,
         lead: data.lead ? {
           id: data.lead.id,
           company_name: data.lead.company_name,
@@ -91,6 +94,9 @@ export function useCreateDeal() {
           phone: data.lead.phone || undefined,
         } : undefined,
       });
+      
+      // Trigger workflows for deal_created
+      await triggerWorkflows('deal_created', 'deal', data.id, dealData);
     },
     onError: (error) => {
       toast.error('Failed to create deal: ' + error.message);
@@ -142,7 +148,7 @@ export function useUpdateDeal() {
       
       return { updated: result as Deal & { lead: Lead }, previous: currentDeal };
     },
-    onSuccess: ({ updated, previous }) => {
+    onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       toast.success('Deal updated');
       
@@ -165,9 +171,11 @@ export function useUpdateDeal() {
         };
 
         if (updated.stage === 'won') {
-          triggerAutomation('deal_won', eventData);
+          await triggerAutomation('deal_won', eventData);
+          await triggerWorkflows('deal_won', 'deal', updated.id, eventData.deal || {});
         } else if (updated.stage === 'lost') {
-          triggerAutomation('deal_lost', eventData);
+          await triggerAutomation('deal_lost', eventData);
+          await triggerWorkflows('deal_lost', 'deal', updated.id, eventData.deal || {});
         }
       }
     },

@@ -15,47 +15,22 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { 
   Plus, 
   Search, 
-  Zap, 
-  Play, 
-  Pause, 
   MoreHorizontal, 
-  Copy, 
-  Trash2, 
-  Edit, 
-  Clock, 
-  CheckCircle2, 
-  XCircle,
-  AlertCircle,
-  TrendingUp,
-  Workflow,
   Loader2,
-  FileText,
-  Trophy,
-  CreditCard,
-  Package,
-  UserPlus,
-  Sparkles,
 } from 'lucide-react';
-import { useWorkflows, useCreateWorkflow, useDeleteWorkflow, useToggleWorkflow, useDuplicateWorkflow } from '@/hooks/useWorkflows';
+import { useWorkflows, useCreateWorkflow, useDeleteWorkflow, useToggleWorkflow, useDuplicateWorkflow, useRenameWorkflow } from '@/hooks/useWorkflows';
 import { useWorkflowTemplates, useCreateWorkflowFromTemplate } from '@/hooks/useWorkflowTemplates';
 import { useWorkflowExecutionStats } from '@/hooks/useWorkflowExecutions';
 import type { WorkflowDefinition, WorkflowTemplate } from '@/types/database';
-
-// Template icons mapping
-const templateIcons: Record<string, React.ElementType> = {
-  UserPlus,
-  TrendingUp,
-  FileText,
-  Trophy,
-  CreditCard,
-  Package,
-};
 
 export default function Workflows() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameWorkflowId, setRenameWorkflowId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const [newWorkflowName, setNewWorkflowName] = useState('');
   const [newWorkflowTrigger, setNewWorkflowTrigger] = useState<'event' | 'schedule' | 'webhook' | 'manual'>('event');
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null);
@@ -68,6 +43,7 @@ export default function Workflows() {
   const deleteWorkflow = useDeleteWorkflow();
   const toggleWorkflow = useToggleWorkflow();
   const duplicateWorkflow = useDuplicateWorkflow();
+  const renameWorkflow = useRenameWorkflow();
   const createFromTemplate = useCreateWorkflowFromTemplate();
   
   // Filter workflows
@@ -145,11 +121,16 @@ export default function Workflows() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => navigate(`/workflows/${workflow.id}`)}>
-                    <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    setRenameWorkflowId(workflow.id);
+                    setRenameValue(workflow.name);
+                    setShowRenameDialog(true);
+                  }}>
+                    Rename
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => duplicateWorkflow.mutate(workflow.id)}>
-                    <Copy className="h-4 w-4 mr-2" />
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -157,7 +138,6 @@ export default function Workflows() {
                     className="text-destructive"
                     onClick={() => deleteWorkflow.mutate(workflow.id)}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -261,8 +241,7 @@ export default function Workflows() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Workflow className="h-6 w-6" />
+            <h1 className="text-2xl font-bold">
               Workflows
             </h1>
             <p className="text-muted-foreground">
@@ -286,7 +265,6 @@ export default function Workflows() {
                   <p className="text-sm text-muted-foreground">Total Workflows</p>
                   <p className="text-2xl font-bold">{workflows?.length || 0}</p>
                 </div>
-                <Workflow className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -520,6 +498,55 @@ export default function Workflows() {
                   <Plus className="h-4 w-4 mr-2" />
                 )}
                 Create Workflow
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rename Workflow Dialog */}
+        <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rename Workflow</DialogTitle>
+              <DialogDescription>
+                Enter a new name for your workflow
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Workflow Name</Label>
+                <Input
+                  placeholder="Enter new workflow name"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && renameValue.trim() && renameWorkflowId) {
+                      renameWorkflow.mutate({ id: renameWorkflowId, name: renameValue });
+                      setShowRenameDialog(false);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (renameValue.trim() && renameWorkflowId) {
+                    renameWorkflow.mutate({ id: renameWorkflowId, name: renameValue });
+                    setShowRenameDialog(false);
+                  }
+                }}
+                disabled={!renameValue.trim() || renameWorkflow.isPending}
+              >
+                {renameWorkflow.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4 mr-2" />
+                )}
+                Rename
               </Button>
             </DialogFooter>
           </DialogContent>

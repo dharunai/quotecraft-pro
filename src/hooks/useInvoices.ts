@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Invoice, InvoiceItem, Lead, Deal, Quotation, Product } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
+import { triggerWorkflows } from '@/lib/workflowEngine';
 
 export function useInvoices() {
   return useQuery({
@@ -74,17 +75,19 @@ export function useCreateInvoice() {
       if (error) throw error;
       return data as Invoice & { lead: Lead };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice created');
       
+      const invoiceData = {
+        id: data.id,
+        invoice_number: data.invoice_number,
+        grand_total: data.grand_total,
+      };
+      
       // Trigger automation for invoice_created
-      triggerAutomation('invoice_created', {
-        invoice: {
-          id: data.id,
-          invoice_number: data.invoice_number,
-          grand_total: data.grand_total,
-        },
+      await triggerAutomation('invoice_created', {
+        invoice: invoiceData,
         lead: data.lead ? {
           id: data.lead.id,
           company_name: data.lead.company_name,
@@ -93,6 +96,9 @@ export function useCreateInvoice() {
           phone: data.lead.phone || undefined,
         } : undefined,
       });
+      
+      // Trigger workflows for invoice_created
+      await triggerWorkflows('invoice_created', 'invoice', data.id, invoiceData);
     },
     onError: (error) => {
       toast.error('Failed to create invoice: ' + error.message);
@@ -134,18 +140,19 @@ export function useUpdateInvoice() {
       if (error) throw error;
       return { updated: result as Invoice & { lead: Lead }, previous: currentInvoice };
     },
-    onSuccess: ({ updated, previous }) => {
+    onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice updated');
       
       // Check if invoice was just marked as paid
       if (updated.payment_status === 'paid' && previous?.payment_status !== 'paid') {
-        triggerAutomation('invoice_paid', {
-          invoice: {
-            id: updated.id,
-            invoice_number: updated.invoice_number,
-            grand_total: updated.grand_total,
-          },
+        const invoiceData = {
+          id: updated.id,
+          invoice_number: updated.invoice_number,
+          grand_total: updated.grand_total,
+        };
+        await triggerAutomation('invoice_paid', {
+          invoice: invoiceData,
           lead: updated.lead ? {
             id: updated.lead.id,
             company_name: updated.lead.company_name,

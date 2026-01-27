@@ -8,6 +8,7 @@ import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
 import { LeadForm } from '@/components/leads/LeadForm';
 import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
 import { handleAutomationEvent } from '@/lib/automationEngine';
+import { triggerWorkflows } from '@/lib/workflowEngine';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,13 +96,18 @@ export default function LeadDetail() {
       notes: null,
       created_by: null,
     }, {
-      onSuccess: (deal) => {
+      onSuccess: async (deal) => {
         // Update lead as qualified
         updateLead.mutate({ id, is_qualified: true });
 
-        // Trigger automation
-        handleAutomationEvent('lead_qualified', 'lead', id!, {
+        // Trigger automation and workflows
+        await handleAutomationEvent('lead_qualified', 'lead', id!, {
           ...lead,
+          is_qualified: true,
+          deal_value: dealValue ? parseFloat(dealValue) : null
+        });
+        
+        await triggerWorkflows('lead_qualified', 'lead', id!, {
           is_qualified: true,
           deal_value: dealValue ? parseFloat(dealValue) : null
         });

@@ -144,8 +144,8 @@ export default function Leads() {
   };
   return <AppLayout>
     <div className="space-y-6">
-      <div className="flex items-center justify-between bg-primary-foreground">
-        <h1 className="text-2xl font-bold bg-muted">​Leads </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Leads</h1>
         <div className="flex items-center gap-2">
           <Input
             type="file"
@@ -231,7 +231,7 @@ export default function Leads() {
                   onCheckedChange={(checked) => handleSelectOne(lead.id, !!checked)}
                 />
               </td>
-              <td className="font-medium shadow-md">{lead.company_name}</td>
+              <td className="font-medium">{lead.company_name}</td>
               <td>{lead.contact_name}</td>
               <td className="text-muted-foreground">{lead.email || '-'}</td>
               <td className="text-muted-foreground">{lead.phone || '-'}</td>

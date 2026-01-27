@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Lead } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
+import { triggerWorkflows } from '@/lib/workflowEngine';
 
 export function useLeads() {
   return useQuery({
@@ -51,20 +52,37 @@ export function useCreateLead() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      console.log('[Hook] useCreateLead onSuccess - Lead created:', data.id, data.company_name);
+      
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Lead created successfully');
       
+      const leadData = {
+        id: data.id,
+        company_name: data.company_name,
+        contact_name: data.contact_name,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+      };
+      
+      console.log('[Hook] Triggering automations and workflows for lead_created...');
+      
       // Trigger automation for lead_created
-      triggerAutomation('lead_created', {
-        lead: {
-          id: data.id,
-          company_name: data.company_name,
-          contact_name: data.contact_name,
-          email: data.email || undefined,
-          phone: data.phone || undefined,
-        },
-      });
+      try {
+        await triggerAutomation('lead_created', { lead: leadData });
+        console.log('[Hook] ✅ Automations triggered');
+      } catch (error) {
+        console.error('[Hook] ❌ Automation trigger error:', error);
+      }
+      
+      // Trigger workflows for lead_created
+      try {
+        await triggerWorkflows('lead_created', 'lead', data.id, leadData);
+        console.log('[Hook] ✅ Workflows triggered');
+      } catch (error) {
+        console.error('[Hook] ❌ Workflow trigger error:', error);
+      }
     },
     onError: (error: Error) => {
       toast.error('Failed to create lead: ' + error.message);
@@ -96,21 +114,21 @@ export function useUpdateLead() {
       // Return both current and updated for comparison
       return { updated: data, previous: currentLead };
     },
-    onSuccess: ({ updated, previous }) => {
+    onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Lead updated successfully');
       
       // Check if lead was just qualified
       if (updated.is_qualified && !previous?.is_qualified) {
-        triggerAutomation('lead_qualified', {
-          lead: {
-            id: updated.id,
-            company_name: updated.company_name,
-            contact_name: updated.contact_name,
-            email: updated.email || undefined,
-            phone: updated.phone || undefined,
-          },
-        });
+        const leadData = {
+          id: updated.id,
+          company_name: updated.company_name,
+          contact_name: updated.contact_name,
+          email: updated.email || undefined,
+          phone: updated.phone || undefined,
+        };
+        await triggerAutomation('lead_qualified', { lead: leadData });
+        await triggerWorkflows('lead_qualified', 'lead', updated.id, leadData);
       }
     },
     onError: (error: Error) => {

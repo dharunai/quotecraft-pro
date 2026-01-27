@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -129,6 +130,8 @@ export default function AutomationSettings() {
     return actionTypes.find(a => a.value === type)?.label || type;
   };
 
+  const navigate = useNavigate();
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -139,10 +142,19 @@ export default function AutomationSettings() {
               Automate your business workflows with trigger-based actions.
             </p>
           </div>
-          <Button onClick={openNewDialog}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Rule
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => navigate('/settings/automation/diagnostics')}
+              variant="outline"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Diagnostics
+            </Button>
+            <Button onClick={openNewDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Rule
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -201,9 +213,7 @@ export default function AutomationSettings() {
                 <Card key={rule.id} className={`transition-opacity ${!rule.is_active ? 'opacity-60' : ''}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
-                      <div className={`p-2 rounded-lg ${rule.is_active ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        <Zap className={`h-5 w-5 ${rule.is_active ? 'text-green-600' : 'text-gray-400'}`} />
-                      </div>
+                      <Zap className={`h-5 w-5 ${rule.is_active ? 'text-gray-600' : 'text-gray-400'}`} />
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">

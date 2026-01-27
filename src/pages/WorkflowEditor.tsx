@@ -33,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { AdvancedTriggerConfig } from '@/components/workflow/AdvancedTriggerConfig';
 import { 
   Save, 
   Play, 
@@ -62,7 +63,7 @@ import {
   useSaveWorkflowFlow 
 } from '@/hooks/useWorkflows';
 import { useWorkflowExecutions, useStartWorkflowExecution } from '@/hooks/useWorkflowExecutions';
-import type { WorkflowNode, WorkflowEdge, WorkflowFlowDefinition } from '@/types/database';
+import type { WorkflowNode, WorkflowEdge, WorkflowFlowDefinition, WorkflowTriggerConfig } from '@/types/database';
 
 // Define a flexible NodeData type for workflow nodes
 interface WorkflowNodeData {
@@ -820,78 +821,101 @@ function WorkflowCanvas() {
         
         {/* Settings Dialog */}
         <Dialog open={showSettings} onOpenChange={setShowSettings}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Workflow Settings</DialogTitle>
               <DialogDescription>
-                Configure workflow behavior and error handling
+                Configure workflow behavior, error handling, and advanced triggers
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={workflowDescription}
-                  onChange={(e) => setWorkflowDescription(e.target.value)}
-                  placeholder="Describe what this workflow does..."
-                  rows={3}
-                />
-              </div>
+            
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced Triggers</TabsTrigger>
+              </TabsList>
               
-              <div className="space-y-2">
-                <Label>Error Handling</Label>
-                <Select
-                  value={workflow.error_handling}
-                  onValueChange={(v) => updateWorkflow.mutate({ id: workflow.id, error_handling: v as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="stop">Stop on Error</SelectItem>
-                    <SelectItem value="continue">Continue on Error</SelectItem>
-                    <SelectItem value="retry">Retry on Error</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {workflow.error_handling === 'retry' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Max Retries</Label>
-                    <Input
-                      type="number"
-                      value={workflow.max_retries}
-                      onChange={(e) => updateWorkflow.mutate({ id: workflow.id, max_retries: parseInt(e.target.value) })}
-                      min={1}
-                      max={10}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Retry Delay (sec)</Label>
-                    <Input
-                      type="number"
-                      value={workflow.retry_delay_seconds}
-                      onChange={(e) => updateWorkflow.mutate({ id: workflow.id, retry_delay_seconds: parseInt(e.target.value) })}
-                      min={10}
-                    />
-                  </div>
+              {/* General Settings Tab */}
+              <TabsContent value="general" className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={workflowDescription}
+                    onChange={(e) => setWorkflowDescription(e.target.value)}
+                    placeholder="Describe what this workflow does..."
+                    rows={3}
+                  />
                 </div>
-              )}
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Active</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Enable this workflow to run automatically
-                  </p>
+                
+                <div className="space-y-2">
+                  <Label>Error Handling</Label>
+                  <Select
+                    value={workflow.error_handling}
+                    onValueChange={(v) => updateWorkflow.mutate({ id: workflow.id, error_handling: v as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="stop">Stop on Error</SelectItem>
+                      <SelectItem value="continue">Continue on Error</SelectItem>
+                      <SelectItem value="retry">Retry on Error</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Switch
-                  checked={workflow.is_active}
-                  onCheckedChange={(checked) => updateWorkflow.mutate({ id: workflow.id, is_active: checked })}
+                
+                {workflow.error_handling === 'retry' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Max Retries</Label>
+                      <Input
+                        type="number"
+                        value={workflow.max_retries}
+                        onChange={(e) => updateWorkflow.mutate({ id: workflow.id, max_retries: parseInt(e.target.value) })}
+                        min={1}
+                        max={10}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Retry Delay (sec)</Label>
+                      <Input
+                        type="number"
+                        value={workflow.retry_delay_seconds}
+                        onChange={(e) => updateWorkflow.mutate({ id: workflow.id, retry_delay_seconds: parseInt(e.target.value) })}
+                        min={10}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Active</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Enable this workflow to run automatically
+                    </p>
+                  </div>
+                  <Switch
+                    checked={workflow.is_active}
+                    onCheckedChange={(checked) => updateWorkflow.mutate({ id: workflow.id, is_active: checked })}
+                  />
+                </div>
+              </TabsContent>
+              
+              {/* Advanced Triggers Tab */}
+              <TabsContent value="advanced" className="py-4">
+                <AdvancedTriggerConfig
+                  triggerConfig={workflow.trigger_config || {}}
+                  onConfigChange={(config: WorkflowTriggerConfig) => {
+                    updateWorkflow.mutate({
+                      id: workflow.id,
+                      trigger_config: config,
+                    });
+                  }}
                 />
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
+            
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowSettings(false)}>
                 Close
