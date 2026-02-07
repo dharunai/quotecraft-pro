@@ -51,7 +51,7 @@ async function sendEmail(to: string, subject: string, body: string): Promise<boo
         to,
         subject,
         htmlBody: `<div style="font-family: sans-serif; padding: 20px;">${body.replace(/\n/g, '<br>')}</div>`,
-        fromName: settings?.company_name || 'QuoteCraft Pro',
+        fromName: settings?.company_name || 'The Genworks CRM',
       }),
     });
 

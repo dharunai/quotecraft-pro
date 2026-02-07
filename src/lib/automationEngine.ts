@@ -133,7 +133,7 @@ async function executeSendEmail(
 
     // Build email content from action value (template)
     let subject = `Automation: ${rule.name}`;
-    let body = action.value || 'This is an automated message from QuoteCraft Pro.';
+    let body = action.value || 'This is an automated message from The Genworks CRM.';
 
     // Simple template replacements
     body = body
@@ -149,12 +149,12 @@ async function executeSendEmail(
       to: recipientEmail,
       subject,
       body: `<div style="font-family: sans-serif; padding: 20px;">
-        <h2>QuoteCraft Pro Notification</h2>
+        <h2>The Genworks CRM Notification</h2>
         <p>${body.replace(/\n/g, '<br>')}</p>
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
         <p style="color: #666; font-size: 12px;">This is an automated email triggered by: ${rule.name}</p>
       </div>`,
-      fromName: 'QuoteCraft Pro',
+      fromName: 'The Genworks CRM',
     });
 
     if (result.success) {

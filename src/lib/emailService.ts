@@ -24,7 +24,7 @@ export async function sendEmail({
   cc,
   subject,
   body,
-  fromName = 'QuoteCraft Pro',
+  fromName = 'The Genworks CRM',
   attachments,
 }: SendEmailParams): Promise<EmailResponse> {
   try {

@@ -34,9 +34,12 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">Create Account</CardTitle>
-          <CardDescription>Sign up to start your new Company Workspace</CardDescription>
+        <CardHeader className="space-y-3">
+          <div className="flex items-center justify-center gap-3">
+            <img src="/logo.png" alt="The Genworks" className="h-10 w-10 object-contain rounded" />
+            <CardTitle className="text-2xl font-bold text-primary">The Genworks</CardTitle>
+          </div>
+          <CardDescription className="text-center">Sign up to start your new Company Workspace</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

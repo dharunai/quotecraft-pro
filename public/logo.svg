@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00e5ff;stop-opacity:1"/>
+      <stop offset="40%" style="stop-color:#76ff03;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#c6ff00;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="circuitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00bcd4;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#76ff03;stop-opacity:1"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#0a0a0a"/>
+
+  <!-- Circuit lines -->
+  <g stroke="url(#circuitGrad)" stroke-width="1.5" fill="none" opacity="0.6" filter="url(#glow)">
+    <!-- Top circuit lines -->
+    <line x1="256" y1="60" x2="256" y2="85"/>
+    <line x1="256" y1="60" x2="220" y2="40"/>
+    <line x1="256" y1="60" x2="292" y2="40"/>
+    <line x1="220" y1="40" x2="190" y2="40"/>
+    <line x1="292" y1="40" x2="322" y2="40"/>
+
+    <!-- Left circuit lines -->
+    <line x1="130" y1="170" x2="155" y2="170"/>
+    <line x1="130" y1="170" x2="110" y2="140"/>
+    <line x1="130" y1="170" x2="110" y2="200"/>
+    <line x1="110" y1="140" x2="110" y2="110"/>
+
+    <!-- Right circuit lines -->
+    <line x1="382" y1="170" x2="357" y2="170"/>
+    <line x1="382" y1="170" x2="402" y2="140"/>
+    <line x1="382" y1="170" x2="402" y2="200"/>
+    <line x1="402" y1="140" x2="402" y2="110"/>
+
+    <!-- Bottom-left circuit -->
+    <line x1="150" y1="280" x2="170" y2="260"/>
+    <line x1="150" y1="280" x2="120" y2="300"/>
+    <line x1="120" y1="300" x2="120" y2="330"/>
+
+    <!-- Bottom-right circuit -->
+    <line x1="362" y1="280" x2="342" y2="260"/>
+    <line x1="362" y1="280" x2="392" y2="300"/>
+    <line x1="392" y1="300" x2="392" y2="330"/>
+  </g>
+
+  <!-- Circuit dots -->
+  <g fill="url(#circuitGrad)" filter="url(#glow)">
+    <circle cx="190" cy="40" r="4"/>
+    <circle cx="322" cy="40" r="4"/>
+    <circle cx="256" cy="60" r="3.5"/>
+    <circle cx="110" cy="110" r="4"/>
+    <circle cx="110" cy="200" r="3.5"/>
+    <circle cx="402" cy="110" r="4"/>
+    <circle cx="402" cy="200" r="3.5"/>
+    <circle cx="120" cy="330" r="4"/>
+    <circle cx="392" cy="330" r="4"/>
+    <circle cx="150" cy="280" r="3"/>
+    <circle cx="362" cy="280" r="3"/>
+  </g>
+
+  <!-- Diamond / Cube shape -->
+  <g transform="translate(256, 140)">
+    <!-- Left face -->
+    <polygon points="0,-70 -65,0 0,30 0,-70" fill="#0097a7" opacity="0.9"/>
+    <!-- Right face -->
+    <polygon points="0,-70 65,0 0,30 0,-70" fill="#00bfa5" opacity="0.9"/>
+    <!-- Top face -->
+    <polygon points="0,-70 -45,-35 0,-5 45,-35" fill="url(#diamondGrad)" opacity="0.95"/>
+    <!-- Front-left face -->
+    <polygon points="-65,0 0,30 0,70 -65,35" fill="#1de9b6" opacity="0.3"/>
+    <!-- Front-right face -->
+    <polygon points="65,0 0,30 0,70 65,35" fill="#00e5ff" opacity="0.3"/>
+  </g>
+
+  <!-- Hexagonal border around cube -->
+  <polygon points="256,70 191,105 191,210 256,245 321,210 321,105"
+    fill="none" stroke="url(#circuitGrad)" stroke-width="2" opacity="0.5"/>
+
+  <!-- GW Text -->
+  <g transform="translate(256, 340)">
+    <!-- G letter -->
+    <text x="-48" y="0" font-family="Arial Black, Arial, sans-serif" font-weight="900"
+      font-size="90" fill="#ffffff" text-anchor="middle" dominant-baseline="central"
+      letter-spacing="-4">G</text>
+    <!-- W letter -->
+    <text x="48" y="0" font-family="Arial Black, Arial, sans-serif" font-weight="900"
+      font-size="90" fill="#ffffff" text-anchor="middle" dominant-baseline="central"
+      letter-spacing="-4">W</text>
+  </g>
+
+  <!-- TheGenWorks text -->
+  <text x="256" y="435" font-family="Arial, Helvetica, sans-serif" font-weight="700"
+    font-size="38" fill="#ffffff" text-anchor="middle" letter-spacing="2">TheGenWorks</text>
+</svg>
