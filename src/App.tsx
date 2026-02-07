@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
+import BusinessCardScannerPage from "./pages/BusinessCardScanner";
 import Deals from "./pages/Deals";
 import Quotations from "./pages/Quotations";
 import QuotationEditor from "./pages/QuotationEditor";
@@ -35,6 +36,7 @@ import NotificationPreferences from "./pages/NotificationPreferences";
 import WorkflowBuilder from "./pages/WorkflowBuilder";
 import Workflows from "./pages/Workflows";
 import WorkflowEditor from "./pages/WorkflowEditor";
+import Meetings from "./pages/Meetings";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -50,8 +52,10 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+            <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
             <Route path="/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
+            <Route path="/business-card-scanner" element={<ProtectedRoute><BusinessCardScannerPage /></ProtectedRoute>} />
             <Route path="/quotations" element={<ProtectedRoute><Quotations /></ProtectedRoute>} />
             <Route path="/quotations/:id" element={<ProtectedRoute><QuotationEditor /></ProtectedRoute>} />
             <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />

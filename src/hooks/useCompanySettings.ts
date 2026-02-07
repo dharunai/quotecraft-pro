@@ -2,20 +2,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySettings } from '@/types/database';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useCompanySettings() {
+  const { companyId } = useAuth();
+  
   return useQuery({
-    queryKey: ['company-settings'],
+    queryKey: ['company-settings', companyId],
     queryFn: async (): Promise<CompanySettings | null> => {
+      if (!companyId) return null;
+      
       const { data, error } = await supabase
         .from('company_settings')
         .select('*')
-        .limit(1)
+        .eq('id', companyId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching company settings:", error);
+        throw error;
+      };
+      
       return data;
     },
+    enabled: !!companyId
   });
 }
 

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
+import { parseLeadInfoBasic, parseLeadInfoGemini } from './src/utils/ocrProcessor.js';
 
 // Load .env from parent directory
 dotenv.config({ path: resolve(__dirname, '../.env') });
@@ -71,6 +72,41 @@ app.post('/api/send-email', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Server error' 
+    });
+  }
+});
+
+// OCR Business Card Extraction Endpoint
+app.post('/api/ocr/extract-lead', async (req, res) => {
+  try {
+    const { ocrText, useGemini = false } = req.body;
+
+    if (!ocrText || typeof ocrText !== 'string') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'OCR text is required' 
+      });
+    }
+
+    let extractedLead;
+    
+    if (useGemini && process.env.GEMINI_API_KEY) {
+      console.log('Using Gemini for lead extraction');
+      extractedLead = await parseLeadInfoGemini(ocrText);
+    } else {
+      console.log('Using basic regex for lead extraction');
+      extractedLead = parseLeadInfoBasic(ocrText);
+    }
+
+    res.json({ 
+      success: true, 
+      lead: extractedLead 
+    });
+  } catch (error) {
+    console.error('Error extracting lead from OCR:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to extract lead' 
     });
   }
 });

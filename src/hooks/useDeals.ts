@@ -55,6 +55,7 @@ export function useDealByLeadId(leadId: string | undefined) {
 
 export function useCreateDeal() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (deal: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'lead'>) => {
       const { data, error } = await supabase

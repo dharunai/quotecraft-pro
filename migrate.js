@@ -7,31 +7,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Supabase credentials from .env
-const projectId = 'anqdcadmweehttbmmdey';
-const secretKey = 'sb_secret_mO8q1GvDVuH1ayBJI2oLrA_wfLn5_ws';
-const supabaseUrl = `https://${projectId}.supabase.co`;
+const projectId = 'jvkhbpclkporkhxjgncn';
+const secretKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2a2hicGNsa3BvcmtoeGpnbmNuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDIxNzI1OCwiZXhwIjoyMDg1NzkzMjU4fQ.24Ih18qHD7KA-wsZGNVMpgKcKtCSNFkGCh0SPk08iak';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://jvkhbpclkporkhxjgncn.supabase.co';
 
 // PostgreSQL connection string
 const connectionString = `postgresql://postgres:[YOUR_POSTGRES_PASSWORD]@${projectId}.postgres.supabase.co:5432/postgres`;
 
 const migrations = [
-  '20260103103732_d3f2eb8f-2ba2-4fc6-9bdb-98b8d7487ef4.sql',
-  '20260103103746_86a547a1-6fc5-4a60-9a2f-bba417822dd5.sql',
-  '20260115175943_051044fc-1a28-411e-aa7b-f7d7cc0a1fe7.sql',
-  '20260123101342_eba77847-01ea-441a-8b7e-8e533729d9ea.sql',
-  '20260124_automation.sql',
-  '20260124_notifications.sql',
-  '20260124_scoring.sql',
-  '20260124_tasks.sql',
-  '20260124000000_team_members.sql',
-  '20260124000100_search_indexes.sql',
-  '20260124000200_auto_admin.sql'
+  '20260208000000_multitenancy_and_meetings.sql',
+  '20260208000001_fix_signup_and_storage.sql'
 ];
 
 async function runMigrations() {
   const { createClient } = await import('@supabase/supabase-js');
   
-  const supabase = createClient(supabaseUrl, secretKey);
+  const supabase = createClient(supabaseUrl, secretKey, {
+    auth: {
+        autoRefreshToken: false,
+        persistSession: false
+    }
+  });
   
   console.log('🚀 Starting migrations...\n');
   
@@ -42,21 +38,30 @@ async function runMigrations() {
       const sql = fs.readFileSync(filePath, 'utf8');
       console.log(`📝 Running: ${migration}`);
       
-      const { data, error } = await supabase.rpc('exec_sql', { 
-        sql_query: sql 
-      }).catch(async () => {
-        // Fallback: Try using the REST API with raw SQL
-        const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${secretKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ sql_query: sql })
-        });
-        return response.json();
-      });
-      
+      // Try RPC
+      let { error } = await supabase.rpc('exec_sql', { sql_query: sql });
+
+      if (error) {
+         console.warn(`RPC failed (${error.message || error.code}), checking valid helper...`);
+         
+         if (error.code === 'PGRST202' || (error.message && error.message.includes('Could not find the function'))) {
+             console.error("❌ CRITICAL: The helper function 'exec_sql' is missing in the database.");
+             console.error("   To proceed, please create the 'exec_sql' function in Supabase Dashboard -> SQL Editor:");
+             console.log(`
+             CREATE OR REPLACE FUNCTION exec_sql(sql_query text)
+             RETURNS void
+             LANGUAGE plpgsql
+             SECURITY DEFINER
+             AS $$
+             BEGIN
+               EXECUTE sql_query;
+             END;
+             $$;
+             `);
+             return; 
+         }
+      }
+
       if (error) {
         console.error(`❌ Error in ${migration}:`, error);
       } else {
@@ -103,40 +108,6 @@ async function runMigrationsWithPsql() {
 }
 
 // For now, let's just show instructions
-console.log(`
-╔════════════════════════════════════════════════════════════════╗
-║         QuoteCraft Pro - Database Migration Script              ║
-╚════════════════════════════════════════════════════════════════╝
-
-📊 New Supabase Project Details:
-  • Project ID: ${projectId}
-  • URL: ${supabaseUrl}
-  • Region: (Check your Supabase dashboard)
-
-🔐 To run migrations, you need:
-  1. Your Supabase database password (from Database settings)
-  2. Either psql installed OR the Supabase CLI
-
-🎯 Option 1: Using Supabase CLI (Recommended)
-   $ supabase db push
-
-🎯 Option 2: Using psql directly
-   $ psql -h ${projectId}.postgres.supabase.co -U postgres -d postgres
-   Then run each migration file individually.
-
-🎯 Option 3: Copy-paste SQL in Supabase Dashboard
-   1. Go to SQL Editor in Supabase Dashboard
-   2. Open each migration file
-   3. Copy and paste the SQL
-   4. Run each one
-
-📁 Migration files location:
-   ${path.join(__dirname, 'supabase', 'migrations')}
-
-✨ After migrations are complete:
-   1. Verify tables in Supabase Dashboard
-   2. Test the app connection
-   3. Create an admin user account
-
-Would you like to proceed with option 1, 2, or 3?
-`);
+// console.log(`...`); // Commented out help
+console.log('Attempting to run migrations via Service Role Key...');
+runMigrations().catch(e => console.error(e));

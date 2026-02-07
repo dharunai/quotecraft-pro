@@ -147,6 +147,12 @@ export default function Leads() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Leads</h1>
         <div className="flex items-center gap-2">
+          <Link to="/business-card-scanner">
+            <Button variant="outline">
+              <Upload className="mr-2 w-4 h-4" />
+              Scan Business Card
+            </Button>
+          </Link>
           <Input
             type="file"
             accept=".csv,.xlsx,.xls"

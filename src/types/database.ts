@@ -1,5 +1,5 @@
 export interface CompanySettings {
-  id: string;
+  id: string; // Acts as company_id for the tenant
   company_name: string;
   logo_url: string | null;
   address: string | null;
@@ -37,6 +37,7 @@ export interface CompanySettings {
 
 export interface Lead {
   id: string;
+  company_id?: string; // Multi-tenancy
   company_name: string;
   contact_name: string;
   email: string | null;
@@ -52,6 +53,7 @@ export interface Lead {
 
 export interface Deal {
   id: string;
+  company_id?: string; // Multi-tenancy
   lead_id: string;
   deal_value: number | null;
   stage: 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
@@ -69,6 +71,7 @@ export interface Deal {
 
 export interface ProductCategory {
   id: string;
+  company_id?: string; // Multi-tenancy
   name: string;
   description: string | null;
   sort_order: number;
@@ -78,6 +81,7 @@ export interface ProductCategory {
 
 export interface Product {
   id: string;
+  company_id?: string; // Multi-tenancy
   sku: string;
   name: string;
   description: string | null;
@@ -97,6 +101,7 @@ export interface Product {
 
 export interface Quotation {
   id: string;
+  company_id?: string; // Multi-tenancy
   quote_number: string;
   lead_id: string;
   deal_id: string | null;
@@ -129,6 +134,7 @@ export interface QuotationItem {
 
 export interface Invoice {
   id: string;
+  company_id?: string; // Multi-tenancy
   invoice_number: string;
   deal_id: string | null;
   quotation_id: string | null;
@@ -171,6 +177,7 @@ export interface InvoiceItem {
 
 export interface TeamMember {
   id: string;
+  company_id?: string; // Multi-tenancy
   user_id: string;
   full_name: string;
   email: string;
@@ -188,12 +195,14 @@ export interface Profile {
   user_id: string;
   email: string | null;
   full_name: string | null;
+  company_id?: string; // Link to company
   created_at: string;
   updated_at: string;
 }
 
 export interface Task {
   id: string;
+  company_id?: string; // Multi-tenancy
   title: string;
   description: string | null;
   entity_type: string | null;
@@ -205,6 +214,32 @@ export interface Task {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Meeting {
+  id: string;
+  company_id?: string; // Multi-tenancy (not yet in DB)
+  title: string;
+  description: string | null;
+  start_time: string;
+  end_time: string;
+  location: string | null;
+  meeting_link: string | null;
+  organizer_id: string | null;
+  lead_id: string | null;
+  deal_id: string | null;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  created_at: string;
+  updated_at: string;
+  participants?: MeetingParticipant[];
+}
+
+export interface MeetingParticipant {
+  id: string;
+  meeting_id: string;
+  user_id: string | null;
+  name: string | null;
+  email: string | null;
 }
 
 export interface AutomationRule {

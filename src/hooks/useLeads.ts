@@ -43,9 +43,12 @@ export function useCreateLead() {
 
   return useMutation({
     mutationFn: async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const leadData = { ...lead, created_by: user?.id };
+      
       const { data, error } = await supabase
         .from('leads')
-        .insert(lead)
+        .insert(leadData)
         .select()
         .single();
 

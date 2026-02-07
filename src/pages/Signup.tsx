@@ -10,6 +10,7 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
@@ -19,8 +20,8 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      await signUp(email, password, fullName);
-      toast.success('Account created successfully');
+      await signUp(email, password, fullName, companyName);
+      toast.success('Account and Company created successfully');
       navigate('/dashboard');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to create account';
@@ -35,13 +36,26 @@ export default function Signup() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">Create Account</CardTitle>
-          <CardDescription>Sign up to start using the CRM</CardDescription>
+          <CardDescription>Sign up to start your new Company Workspace</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <label htmlFor="companyName" className="text-sm font-medium">
+                Company Name
+              </label>
+              <Input
+                id="companyName"
+                type="text"
+                placeholder="Acme Corp"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
               <label htmlFor="fullName" className="text-sm font-medium">
-                Full Name
+                Your Full Name
               </label>
               <Input
                 id="fullName"
@@ -49,6 +63,7 @@ export default function Signup() {
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                required
               />
             </div>
             <div className="space-y-2">

@@ -5,6 +5,7 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import {
     LayoutDashboard,
     CheckSquare,
+    Calendar,
     Users,
     Handshake,
     GitBranch,
@@ -24,6 +25,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Tasks', href: '/tasks', icon: CheckSquare },
+    { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'Leads', href: '/leads', icon: Users },
     { name: 'Deals', href: '/deals', icon: Handshake },
     { name: 'Pipeline', href: '/pipeline', icon: GitBranch },
