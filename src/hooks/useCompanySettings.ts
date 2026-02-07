@@ -59,27 +59,50 @@ export function useUploadLogo() {
 
   return useMutation({
     mutationFn: async ({ file, settingsId }: { file: File; settingsId: string }) => {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `logo-${Date.now()}.${fileExt}`;
+      // Try Supabase Storage first
+      try {
+        // Ensure bucket exists by attempting upload
+        const fileExt = file.name.split('.').pop();
+        const fileName = `logo-${settingsId}-${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('company-assets')
-        .upload(fileName, file, { upsert: true });
+        const { error: uploadError } = await supabase.storage
+          .from('company-assets')
+          .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('company-assets')
+            .getPublicUrl(fileName);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('company-assets')
-        .getPublicUrl(fileName);
+          const { error: updateError } = await supabase
+            .from('company_settings')
+            .update({ logo_url: publicUrl })
+            .eq('id', settingsId);
+
+          if (updateError) throw updateError;
+          return publicUrl;
+        }
+
+        console.warn('Storage upload failed, falling back to base64:', uploadError.message);
+      } catch (storageErr) {
+        console.warn('Storage not available, using base64 fallback:', storageErr);
+      }
+
+      // Fallback: Convert to base64 data URL and store directly
+      const base64Url = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
       const { error: updateError } = await supabase
         .from('company_settings')
-        .update({ logo_url: publicUrl })
+        .update({ logo_url: base64Url })
         .eq('id', settingsId);
 
       if (updateError) throw updateError;
-
-      return publicUrl;
+      return base64Url;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-settings'] });

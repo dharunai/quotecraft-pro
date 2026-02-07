@@ -3,20 +3,33 @@
 -- 1. Create company-assets bucket if not exists
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('company-assets', 'company-assets', true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Allow public access to company-assets
+-- Drop existing policies to avoid conflicts, then recreate
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Users Can Upload" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Users Can Update" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Users Can Delete" ON storage.objects;
+
+-- Allow public read access to company-assets
 CREATE POLICY "Public Access"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'company-assets' );
 
+-- Allow authenticated users to upload
 CREATE POLICY "Auth Users Can Upload"
-ON storage.objects FOR INSERT
-WITH CHECK ( bucket_id = 'company-assets' AND auth.role() = 'authenticated' );
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK ( bucket_id = 'company-assets' );
 
+-- Allow authenticated users to update
 CREATE POLICY "Auth Users Can Update"
-ON storage.objects FOR UPDATE
-USING ( bucket_id = 'company-assets' AND auth.role() = 'authenticated' );
+ON storage.objects FOR UPDATE TO authenticated
+USING ( bucket_id = 'company-assets' );
+
+-- Allow authenticated users to delete
+CREATE POLICY "Auth Users Can Delete"
+ON storage.objects FOR DELETE TO authenticated
+USING ( bucket_id = 'company-assets' );
 
 -- 2. Update handle_new_user to create company and link
 CREATE OR REPLACE FUNCTION public.handle_new_user()
