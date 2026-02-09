@@ -12,16 +12,32 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
   Loader2,
+  Zap,
+  Play,
+  TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  Sparkles,
+  Workflow,
+  FileText
 } from 'lucide-react';
 import { useWorkflows, useCreateWorkflow, useDeleteWorkflow, useToggleWorkflow, useDuplicateWorkflow, useRenameWorkflow } from '@/hooks/useWorkflows';
 import { useWorkflowTemplates, useCreateWorkflowFromTemplate } from '@/hooks/useWorkflowTemplates';
 import { useWorkflowExecutionStats } from '@/hooks/useWorkflowExecutions';
 import type { WorkflowDefinition, WorkflowTemplate } from '@/types/database';
+
+// Helper for template icons
+const templateIcons: Record<string, any> = {
+  zap: Zap,
+  mail: FileText,
+  // Add other mappings as needed
+};
 
 export default function Workflows() {
   const navigate = useNavigate();
@@ -35,7 +51,7 @@ export default function Workflows() {
   const [newWorkflowTrigger, setNewWorkflowTrigger] = useState<'event' | 'schedule' | 'webhook' | 'manual'>('event');
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null);
   const [templateWorkflowName, setTemplateWorkflowName] = useState('');
-  
+
   const { data: workflows, isLoading } = useWorkflows();
   const { data: templates } = useWorkflowTemplates();
   const { data: stats } = useWorkflowExecutionStats();
@@ -45,51 +61,51 @@ export default function Workflows() {
   const duplicateWorkflow = useDuplicateWorkflow();
   const renameWorkflow = useRenameWorkflow();
   const createFromTemplate = useCreateWorkflowFromTemplate();
-  
+
   // Filter workflows
-  const filteredWorkflows = workflows?.filter(w => 
+  const filteredWorkflows = workflows?.filter(w =>
     w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     w.description?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
-  
+
   const activeWorkflows = filteredWorkflows.filter(w => w.is_active);
   const draftWorkflows = filteredWorkflows.filter(w => !w.is_active);
-  
+
   // Create new workflow
   const handleCreateWorkflow = async () => {
     if (!newWorkflowName.trim()) return;
-    
+
     const workflow = await createWorkflow.mutateAsync({
       name: newWorkflowName,
       trigger_type: newWorkflowTrigger,
     });
-    
+
     setShowCreateDialog(false);
     setNewWorkflowName('');
     navigate(`/workflows/${workflow.id}`);
   };
-  
+
   // Create from template
   const handleCreateFromTemplate = async () => {
     if (!selectedTemplate || !templateWorkflowName.trim()) return;
-    
+
     const workflow = await createFromTemplate.mutateAsync({
       templateId: selectedTemplate.id,
       name: templateWorkflowName,
     });
-    
+
     setShowTemplateDialog(false);
     setSelectedTemplate(null);
     setTemplateWorkflowName('');
     navigate(`/workflows/${workflow.id}`);
   };
-  
+
   // Render workflow card
   const WorkflowCard = ({ workflow }: { workflow: WorkflowDefinition }) => {
     const successRate = workflow.execution_count > 0
       ? Math.round((workflow.success_count / workflow.execution_count) * 100)
       : 0;
-      
+
     return (
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
@@ -134,7 +150,7 @@ export default function Workflows() {
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="text-destructive"
                     onClick={() => deleteWorkflow.mutate(workflow.id)}
                   >
@@ -151,7 +167,7 @@ export default function Workflows() {
               {workflow.description}
             </p>
           )}
-          
+
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
@@ -177,7 +193,7 @@ export default function Workflows() {
               </span>
             )}
           </div>
-          
+
           {workflow.tags && workflow.tags.length > 0 && (
             <div className="flex gap-1 mt-3">
               {workflow.tags.slice(0, 3).map((tag) => (
@@ -191,13 +207,13 @@ export default function Workflows() {
       </Card>
     );
   };
-  
+
   // Render template card
   const TemplateCard = ({ template }: { template: WorkflowTemplate }) => {
     const IconComponent = template.icon ? templateIcons[template.icon] || Sparkles : Sparkles;
-    
+
     return (
-      <Card 
+      <Card
         className="cursor-pointer hover:border-primary transition-colors"
         onClick={() => {
           setSelectedTemplate(template);
@@ -255,7 +271,7 @@ export default function Workflows() {
             </Button>
           </div>
         </div>
-        
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -302,7 +318,7 @@ export default function Workflows() {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Templates Section */}
         {templates && templates.length > 0 && (
           <div>
@@ -317,7 +333,7 @@ export default function Workflows() {
             </div>
           </div>
         )}
-        
+
         {/* Search */}
         <div className="flex gap-4">
           <div className="relative flex-1 max-w-md">
@@ -330,7 +346,7 @@ export default function Workflows() {
             />
           </div>
         </div>
-        
+
         {/* Workflows List */}
         <Tabs defaultValue="all">
           <TabsList>
@@ -338,7 +354,7 @@ export default function Workflows() {
             <TabsTrigger value="active">Active ({activeWorkflows.length})</TabsTrigger>
             <TabsTrigger value="drafts">Drafts ({draftWorkflows.length})</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="all" className="mt-4">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
@@ -366,7 +382,7 @@ export default function Workflows() {
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="active" className="mt-4">
             {activeWorkflows.length === 0 ? (
               <Card className="py-8">
@@ -380,7 +396,7 @@ export default function Workflows() {
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="drafts" className="mt-4">
             {draftWorkflows.length === 0 ? (
               <Card className="py-8">
@@ -395,7 +411,7 @@ export default function Workflows() {
             )}
           </TabsContent>
         </Tabs>
-        
+
         {/* Create Workflow Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent>
@@ -442,7 +458,7 @@ export default function Workflows() {
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreateWorkflow}
                 disabled={!newWorkflowName.trim() || createWorkflow.isPending}
               >
@@ -456,7 +472,7 @@ export default function Workflows() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        
+
         {/* Create from Template Dialog */}
         <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
           <DialogContent>
@@ -488,7 +504,7 @@ export default function Workflows() {
               <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreateFromTemplate}
                 disabled={!templateWorkflowName.trim() || createFromTemplate.isPending}
               >
@@ -532,7 +548,7 @@ export default function Workflows() {
               <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   if (renameValue.trim() && renameWorkflowId) {
                     renameWorkflow.mutate({ id: renameWorkflowId, name: renameValue });

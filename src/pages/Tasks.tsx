@@ -8,23 +8,33 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Plus, CheckSquare, Clock, Calendar, Trash2, Edit, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Plus, CheckSquare, Clock, Calendar, Trash2, Edit, CheckCircle2, Circle, AlertCircle, MoreVertical } from 'lucide-react';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useCompleteTask } from '@/hooks/useTasks';
 import { Task } from '@/types/database';
 import { format } from 'date-fns';
+import { RecentActivityWidget } from '@/components/activity/ActivityTimeline';
 
 const priorityColors: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-700',
-  medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-orange-100 text-orange-700',
-  urgent: 'bg-red-100 text-red-700',
+  low: 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+  medium: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
+  high: 'bg-orange-50 text-orange-700 hover:bg-orange-100',
+  urgent: 'bg-red-50 text-red-700 hover:bg-red-100',
 };
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-gray-100 text-gray-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  completed: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-700',
+  pending: 'bg-slate-100 text-slate-700 border-slate-200',
+  in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
+  completed: 'bg-green-50 text-green-700 border-green-200',
+  cancelled: 'bg-red-50 text-red-700 border-red-200',
 };
 
 export default function Tasks() {
@@ -75,7 +85,7 @@ export default function Tasks() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const taskData = {
       title: formData.title,
       description: formData.description || null,
@@ -92,7 +102,7 @@ export default function Tasks() {
     } else {
       await createTask.mutateAsync(taskData);
     }
-    
+
     setIsDialogOpen(false);
     resetForm();
   };
@@ -113,213 +123,221 @@ export default function Tasks() {
     return true;
   });
 
-  const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress');
-  const completedTasks = tasks.filter(t => t.status === 'completed');
-  const overdueTasks = tasks.filter(t => 
-    t.due_date && 
-    new Date(t.due_date) < new Date() && 
-    t.status !== 'completed' && 
-    t.status !== 'cancelled'
-  );
+  const pendingTasksCount = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length;
+  const completedTasksCount = tasks.filter(t => t.status === 'completed').length;
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 font-sans">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
-            <p className="text-muted-foreground">
-              Manage your follow-ups and CRM to-dos.
+            <h1 className="text-xl font-bold text-slate-900">Task Overview</h1>
+            <p className="text-xs text-muted-foreground mt-1">
+              Review details of your recent projects and tasks.
             </p>
           </div>
-          <Button onClick={openNewDialog}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Task
+          <Button onClick={openNewDialog} size="sm" className="h-9 gap-2">
+            <Plus className="h-4 w-4" />
+            Create Task
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingTasks.length}</div>
+        {/* Stats Row */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="rounded-none border-none shadow-sm bg-white relative overflow-hidden">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Upcoming Tasks</p>
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-slate-400" />
+                  <span className="text-3xl font-bold text-slate-900">{pendingTasksCount}</span>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
             </CardContent>
+            {/* Cleaner bottom bar */}
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-slate-900" />
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckSquare className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{completedTasks.length}</div>
+
+          <Card className="rounded-none border-none shadow-sm bg-white relative overflow-hidden">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tasks Completed</p>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-slate-400" />
+                  <span className="text-3xl font-bold text-slate-900">{completedTasksCount}</span>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
             </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{overdueTasks.length}</div>
-            </CardContent>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-teal-500" />
           </Card>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2">
-          <Button 
-            variant={filter === 'all' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilter('all')}
-          >
-            All ({tasks.length})
-          </Button>
-          <Button 
-            variant={filter === 'pending' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilter('pending')}
-          >
-            Pending ({pendingTasks.length})
-          </Button>
-          <Button 
-            variant={filter === 'completed' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilter('completed')}
-          >
-            Completed ({completedTasks.length})
-          </Button>
-        </div>
-
-        {/* Tasks List */}
-        {isLoading ? (
-          <div className="text-center py-12">Loading tasks...</div>
-        ) : filteredTasks.length === 0 ? (
-          <Card className="p-8 text-center">
-            <CheckSquare className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first task to start organizing your work.
-            </p>
-            <Button onClick={openNewDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Task
-            </Button>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {filteredTasks.map((task) => (
-              <Card key={task.id} className={`transition-opacity ${task.status === 'completed' ? 'opacity-60' : ''}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <button
-                      onClick={() => task.status !== 'completed' && handleComplete(task)}
-                      className="mt-1 flex-shrink-0"
-                      disabled={task.status === 'completed'}
-                    >
-                      {task.status === 'completed' ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                      )}
-                    </button>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className={`font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
-                          {task.title}
-                        </h3>
-                        <Badge className={priorityColors[task.priority]} variant="secondary">
-                          {task.priority}
-                        </Badge>
-                        <Badge className={statusColors[task.status]} variant="secondary">
-                          {task.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      
-                      {task.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                      )}
-                      
-                      {task.due_date && (
-                        <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span className={
-                            new Date(task.due_date) < new Date() && task.status !== 'completed' 
-                              ? 'text-red-600 font-medium' 
-                              : ''
-                          }>
-                            Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(task)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main Content - Task Table */}
+          <div className="lg:col-span-8 space-y-6">
+            <Card className="rounded-none border-none shadow-sm bg-white">
+              <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-slate-50">
+                <div>
+                  <CardTitle className="text-base font-bold text-slate-900">Upcoming Tasks</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Below are some of the upcoming tasks.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={filter === 'all' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFilter('all')}
+                    className="text-xs h-7"
+                  >
+                    All
+                  </Button>
+                  <Button
+                    variant={filter === 'pending' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFilter('pending')}
+                    className="text-xs h-7"
+                  >
+                    Pending
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader className="bg-slate-50/50">
+                    <TableRow className="hover:bg-transparent border-slate-50">
+                      <TableHead className="w-[40%] text-xs font-semibold text-slate-500 pl-6 h-10">Assigned User</TableHead>
+                      <TableHead className="text-xs font-semibold text-slate-500 h-10">Due Date</TableHead>
+                      <TableHead className="text-xs font-semibold text-slate-500 h-10">Status</TableHead>
+                      <TableHead className="text-right text-xs font-semibold text-slate-500 pr-6 h-10">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTasks.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-32 text-center text-sm text-muted-foreground">
+                          No tasks found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredTasks.map((task) => (
+                        <TableRow key={task.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
+                          <TableCell className="pl-6 py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8 bg-slate-100 border border-slate-200">
+                                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.id}`} />
+                                <AvatarFallback className="text-xs text-slate-500">
+                                  {task.title.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className={`text-sm font-semibold ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                  {task.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {task.description || 'No description'}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3">
+                            {task.due_date ? (
+                              <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                                <span className={new Date(task.due_date) < new Date() && task.status !== 'completed' ? 'text-red-600' : ''}>
+                                  {format(new Date(task.due_date), 'EEE, MMM d')}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-3">
+                            <Badge variant="outline" className={`rounded-sm px-2.5 py-0.5 text-[10px] font-semibold border ${statusColors[task.status]}`}>
+                              {task.status.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right pr-6 py-3">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-slate-900" onClick={() => openEditDialog(task)}>
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-green-600" onClick={() => handleComplete(task)}>
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600" onClick={() => handleDelete(task.id)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </div>
-        )}
+
+          {/* Sidebar - Activity */}
+          <div className="lg:col-span-4 space-y-6">
+            <RecentActivityWidget maxItems={8} />
+          </div>
+        </div>
 
         {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>{editingTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
+                <Label htmlFor="title" className="text-xs">Title *</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Enter task title"
+                  placeholder="Task title"
                   required
+                  className="h-9 text-sm rounded-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="text-xs">Description</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Enter task description"
+                  placeholder="Add details..."
                   rows={3}
+                  className="text-sm resize-none rounded-sm"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="due_date">Due Date</Label>
+                  <Label htmlFor="due_date" className="text-xs">Due Date</Label>
                   <Input
                     id="due_date"
                     type="date"
                     value={formData.due_date}
                     onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                    className="h-9 text-sm rounded-sm"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select 
-                    value={formData.priority} 
+                  <Label htmlFor="priority" className="text-xs">Priority</Label>
+                  <Select
+                    value={formData.priority}
                     onValueChange={(value: Task['priority']) => setFormData({ ...formData, priority: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9 text-sm rounded-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -334,12 +352,12 @@ export default function Tasks() {
 
               {editingTask && (
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select 
-                    value={formData.status} 
+                  <Label htmlFor="status" className="text-xs">Status</Label>
+                  <Select
+                    value={formData.status}
                     onValueChange={(value: Task['status']) => setFormData({ ...formData, status: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9 text-sm rounded-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -352,11 +370,11 @@ export default function Tasks() {
                 </div>
               )}
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setIsDialogOpen(false)} className="rounded-sm">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createTask.isPending || updateTask.isPending}>
+                <Button type="submit" size="sm" disabled={createTask.isPending || updateTask.isPending} className="rounded-sm">
                   {editingTask ? 'Save Changes' : 'Create Task'}
                 </Button>
               </DialogFooter>

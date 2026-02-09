@@ -211,59 +211,61 @@ export default function Leads() {
           Add Your First Lead
         </Button>
       </div> : <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <table className="crm-table">
-          <thead>
-            <tr>
-              <th className="w-8 pl-4">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                />
-              </th>
-              <th className="">Company</th>
-              <th>Contact name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th className="w-24">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLeads.map(lead => <tr key={lead.id} className={isSelected(lead.id) ? "bg-muted/50" : ""}>
-              <td className="pl-4">
-                <Checkbox
-                  checked={isSelected(lead.id)}
-                  onCheckedChange={(checked) => handleSelectOne(lead.id, !!checked)}
-                />
-              </td>
-              <td className="font-medium">{lead.company_name}</td>
-              <td>{lead.contact_name}</td>
-              <td className="text-muted-foreground">{lead.email || '-'}</td>
-              <td className="text-muted-foreground">{lead.phone || '-'}</td>
-              <td>
-                <LeadStatusBadge status={lead.status} />
-              </td>
-              <td className="text-muted-foreground">
-                {format(new Date(lead.created_at), 'dd MMM yyyy')}
-              </td>
-              <td>
-                <div className="flex items-center gap-1">
-                  <Link to={`/leads/${lead.id}`}>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <PermissionGuard requireAdmin>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(lead.id)} className="text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </PermissionGuard>
-                </div>
-              </td>
-            </tr>)}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="crm-table">
+            <thead>
+              <tr>
+                <th className="w-8 pl-4">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                  />
+                </th>
+                <th className="">Company</th>
+                <th>Contact name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th className="w-24">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLeads.map(lead => <tr key={lead.id} className={isSelected(lead.id) ? "bg-muted/50" : ""}>
+                <td className="pl-4">
+                  <Checkbox
+                    checked={isSelected(lead.id)}
+                    onCheckedChange={(checked) => handleSelectOne(lead.id, !!checked)}
+                  />
+                </td>
+                <td className="font-medium">{lead.company_name}</td>
+                <td>{lead.contact_name}</td>
+                <td className="text-muted-foreground">{lead.email || '-'}</td>
+                <td className="text-muted-foreground">{lead.phone || '-'}</td>
+                <td>
+                  <LeadStatusBadge status={lead.status} />
+                </td>
+                <td className="text-muted-foreground">
+                  {format(new Date(lead.created_at), 'dd MMM yyyy')}
+                </td>
+                <td>
+                  <div className="flex items-center gap-1">
+                    <Link to={`/leads/${lead.id}`}>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <PermissionGuard requireAdmin>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(lead.id)} className="text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </PermissionGuard>
+                  </div>
+                </td>
+              </tr>)}
+            </tbody>
+          </table>
+        </div>
       </div>}
 
       {/* Create Lead Dialog */}

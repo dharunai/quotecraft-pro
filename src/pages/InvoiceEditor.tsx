@@ -589,75 +589,77 @@ export default function InvoiceEditor() {
                   )}
                 </div>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Item</th>
-                      <th className="text-right p-3 text-sm font-medium text-muted-foreground w-24">Qty</th>
-                      <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Unit Price</th>
-                      <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Total</th>
-                      <th className="p-3 w-12"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item) => (
-                      <tr key={item.id} className="border-b border-border">
-                        <td className="p-3">
-                          <Input
-                            value={item.item_title}
-                            onChange={(e) => handleUpdateItem(item.id, 'item_title', e.target.value)}
-                            disabled={isLocked}
-                            className="font-medium"
-                          />
-                          <Input
-                            value={item.description || ''}
-                            onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
-                            disabled={isLocked}
-                            placeholder="Description (optional)"
-                            className="mt-1 text-sm"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => handleUpdateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                            disabled={isLocked}
-                            min="0"
-                            step="0.01"
-                            className="text-right"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <Input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) => handleUpdateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                            disabled={isLocked}
-                            min="0"
-                            step="0.01"
-                            className="text-right"
-                          />
-                        </td>
-                        <td className="p-3 text-right font-medium">
-                          {currency}{item.line_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3">
-                          {!isLocked && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteItem(item.id)}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              ×
-                            </Button>
-                          )}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-3 text-sm font-medium text-muted-foreground">Item</th>
+                        <th className="text-right p-3 text-sm font-medium text-muted-foreground w-24">Qty</th>
+                        <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Unit Price</th>
+                        <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Total</th>
+                        <th className="p-3 w-12"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {items.map((item) => (
+                        <tr key={item.id} className="border-b border-border">
+                          <td className="p-3">
+                            <Input
+                              value={item.item_title}
+                              onChange={(e) => handleUpdateItem(item.id, 'item_title', e.target.value)}
+                              disabled={isLocked}
+                              className="font-medium"
+                            />
+                            <Input
+                              value={item.description || ''}
+                              onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
+                              disabled={isLocked}
+                              placeholder="Description (optional)"
+                              className="mt-1 text-sm"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => handleUpdateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                              disabled={isLocked}
+                              min="0"
+                              step="0.01"
+                              className="text-right"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Input
+                              type="number"
+                              value={item.unit_price}
+                              onChange={(e) => handleUpdateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                              disabled={isLocked}
+                              min="0"
+                              step="0.01"
+                              className="text-right"
+                            />
+                          </td>
+                          <td className="p-3 text-right font-medium">
+                            {currency}{item.line_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="p-3">
+                            {!isLocked && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteItem(item.id)}
+                                className="text-muted-foreground hover:text-destructive"
+                              >
+                                ×
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>

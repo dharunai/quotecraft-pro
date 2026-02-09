@@ -11,14 +11,14 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format, subMonths, isSameMonth, addMonths, parseISO, startOfMonth, isWithinInterval, addDays, startOfYear, endOfYear } from 'date-fns';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend 
+import {
+  PieChart, Pie, Cell, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend
 } from 'recharts';
 import { DateRange } from "react-day-picker";
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import {
-  DndContext, 
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -35,6 +35,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Edit, Save, X } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -47,17 +48,31 @@ function SortableItem(props: any) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id: props.id });
+  } = useSortable({
+    id: props.id,
+    disabled: !props.isEditMode // Disable if not in edit mode
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 10 : 1,
     opacity: isDragging ? 0.8 : 1,
+    cursor: props.isEditMode ? 'grab' : 'default', // Change cursor based on mode
   };
 
+  // Only attach listeners if in Edit Mode
+  const dragListeners = props.isEditMode ? listeners : {};
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={props.className}>
+    <div ref={setNodeRef} style={style} {...attributes} {...dragListeners} className={`${props.className} relative group`}>
+      {props.isEditMode && (
+        <div className="absolute top-2 right-2 z-20">
+          <div className="bg-black/10 p-1 rounded hover:bg-black/20 transition-colors">
+            <Edit className="h-3 w-3 text-slate-500" />
+          </div>
+        </div>
+      )}
       {props.children}
     </div>
   );
@@ -72,6 +87,9 @@ export default function Dashboard() {
   const { data: settings } = useCompanySettings();
   const currency = settings?.currency || '₹';
 
+  // --- State ---
+  const [isEditMode, setIsEditMode] = useState(false);
+
   // --- Date Filter State ---
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfYear(new Date()),
@@ -82,7 +100,7 @@ export default function Dashboard() {
   const [kpiOrder, setKpiOrder] = useState([
     'totalSales', 'winRate', 'pipelineValue', 'openDeals', 'weightedValue', 'avgDaysToClose'
   ]);
-  
+
   const [chartOrder, setChartOrder] = useState([
     'wonDealsTrend', 'salesPipeline', 'dealsProjection', 'dealLossReasons', 'upcomingTasks'
   ]);
@@ -100,7 +118,7 @@ export default function Dashboard() {
   const filteredDeals = useMemo(() => {
     if (!dateRange?.from) return deals;
     // Basic filtering can happen here if needed, but we do precise filtering in metrics
-    return deals; 
+    return deals;
   }, [deals, dateRange]);
 
   // --- KPI Metrics Calculation ---
@@ -110,26 +128,26 @@ export default function Dashboard() {
     const to = dateRange?.to || new Date(2100, 0, 1);
 
     const activeDeals = deals.filter(d => d.stage !== 'lost' && d.stage !== 'won');
-    
+
     // Won deals strictly in period
-    const wonDealsInPeriod = deals.filter(d => 
-      d.stage === 'won' && 
-      d.won_date && 
+    const wonDealsInPeriod = deals.filter(d =>
+      d.stage === 'won' &&
+      d.won_date &&
       isWithinInterval(parseISO(d.won_date), { start: from, end: to })
     );
 
     // Lost deals in period
-    const lostDealsInPeriod = deals.filter(d => 
-      d.stage === 'lost' && 
+    const lostDealsInPeriod = deals.filter(d =>
+      d.stage === 'lost' &&
       d.lost_date &&
       isWithinInterval(parseISO(d.lost_date), { start: from, end: to })
     );
 
     const pipelineValue = activeDeals.reduce((sum, d) => sum + (d.deal_value || 0), 0);
     const weightedValue = activeDeals.reduce((sum, d) => sum + ((d.deal_value || 0) * (d.probability / 100)), 0);
-    
-    const winRate = (wonDealsInPeriod.length + lostDealsInPeriod.length) > 0 
-      ? Math.round((wonDealsInPeriod.length / (wonDealsInPeriod.length + lostDealsInPeriod.length)) * 100) 
+
+    const winRate = (wonDealsInPeriod.length + lostDealsInPeriod.length) > 0
+      ? Math.round((wonDealsInPeriod.length / (wonDealsInPeriod.length + lostDealsInPeriod.length)) * 100)
       : 0;
 
     const closedDealsWithDates = wonDealsInPeriod.filter(d => d.won_date && d.created_at);
@@ -138,9 +156,9 @@ export default function Dashboard() {
       const won = new Date(d.won_date!);
       return sum + (won.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
     }, 0);
-    
-    const avgDaysToClose = closedDealsWithDates.length > 0 
-      ? Math.round(totalDaysToClose / closedDealsWithDates.length) 
+
+    const avgDaysToClose = closedDealsWithDates.length > 0
+      ? Math.round(totalDaysToClose / closedDealsWithDates.length)
       : 0;
 
     return {
@@ -169,18 +187,18 @@ export default function Dashboard() {
   const wonDealsTrend = useMemo(() => {
     const data = [];
     const endDate = dateRange?.to || new Date();
-    
+
     for (let i = 11; i >= 0; i--) {
       const date = subMonths(endDate, i);
       const monthStart = startOfMonth(date);
-      const monthDeals = deals.filter(d => 
-        d.stage === 'won' && 
-        d.won_date && 
+      const monthDeals = deals.filter(d =>
+        d.stage === 'won' &&
+        d.won_date &&
         isSameMonth(parseISO(d.won_date), date)
       );
-      
+
       data.push({
-        month: format(date, 'MMM yyyy'),
+        month: format(date, 'MMM'),
         value: monthDeals.reduce((sum, d) => sum + (d.deal_value || 0), 0),
         count: monthDeals.length
       });
@@ -191,47 +209,47 @@ export default function Dashboard() {
   const dealsProjection = useMemo(() => {
     const data = [];
     const startDate = dateRange?.to ? dateRange.to : new Date(); // Start projection from end of selected range (or today)
-    
-    for (let i = 0; i < 12; i++) {
-        const date = addMonths(startDate, i);
-        // Filter active deals expecting to close in this month
-        const monthDeals = deals.filter(d => 
-            d.stage !== 'won' && d.stage !== 'lost' &&
-            d.expected_close_date &&
-            isSameMonth(parseISO(d.expected_close_date), date)
-        );
 
-        data.push({
-            month: format(date, 'MMM yyyy'),
-            value: monthDeals.reduce((sum, d) => sum + ((d.deal_value || 0) * (d.probability / 100)), 0),
-            count: monthDeals.length
-        });
+    for (let i = 0; i < 12; i++) {
+      const date = addMonths(startDate, i);
+      // Filter active deals expecting to close in this month
+      const monthDeals = deals.filter(d =>
+        d.stage !== 'won' && d.stage !== 'lost' &&
+        d.expected_close_date &&
+        isSameMonth(parseISO(d.expected_close_date), date)
+      );
+
+      data.push({
+        month: format(date, 'MMM'),
+        value: monthDeals.reduce((sum, d) => sum + ((d.deal_value || 0) * (d.probability / 100)), 0),
+        count: monthDeals.length
+      });
     }
     return data;
   }, [deals, dateRange]);
 
   const lossReasonsData = useMemo(() => {
-      // Filter lost deals by date range
-      const from = dateRange?.from || new Date(0);
-      const to = dateRange?.to || new Date(2100, 0, 1);
-      
-      const lostDeals = deals.filter(d => 
-        d.stage === 'lost' &&
-        (!d.lost_date || isWithinInterval(parseISO(d.lost_date), { start: from, end: to }))
-      );
-      
-      const reasons: Record<string, number> = {};
-      lostDeals.forEach(d => {
-          const reason = d.lost_reason || 'Unknown';
-          reasons[reason] = (reasons[reason] || 0) + 1;
-      });
+    // Filter lost deals by date range
+    const from = dateRange?.from || new Date(0);
+    const to = dateRange?.to || new Date(2100, 0, 1);
 
-      return Object.keys(reasons).map(key => ({
-          name: key,
-          value: reasons[key]
-      }));
+    const lostDeals = deals.filter(d =>
+      d.stage === 'lost' &&
+      (!d.lost_date || isWithinInterval(parseISO(d.lost_date), { start: from, end: to }))
+    );
+
+    const reasons: Record<string, number> = {};
+    lostDeals.forEach(d => {
+      const reason = d.lost_reason || 'Unknown';
+      reasons[reason] = (reasons[reason] || 0) + 1;
+    });
+
+    return Object.keys(reasons).map(key => ({
+      name: key,
+      value: reasons[key]
+    }));
   }, [deals, dateRange]);
-  
+
   const upcomingTasksData = useMemo(() => {
     return tasks
       .filter(t => t.status !== 'completed' && t.status !== 'cancelled')
@@ -245,7 +263,9 @@ export default function Dashboard() {
 
   // --- Handlers ---
   function handleDragEnd(event: DragEndEvent) {
-    const {active, over} = event;
+    if (!isEditMode) return; // double check logic
+
+    const { active, over } = event;
     setActiveId(null);
 
     if (active.id !== over?.id) {
@@ -267,119 +287,133 @@ export default function Dashboard() {
 
   // --- Render Functions for Dynamic Widgets ---
   const renderKpiCard = (id: string) => {
-    switch(id) {
-      case 'totalSales':
-        return (
-          <Card className="bg-primary text-primary-foreground h-full" key={id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium font-sans opacity-90 cursor-move">Total Sales</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{currency}{pipelineMetrics.totalSales.toLocaleString('en-IN')}</div>
-            </CardContent>
-          </Card>
-        );
-      case 'winRate':
-        return (
-          <Card className="bg-blue-600 text-white h-full" key={id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium font-sans opacity-90 cursor-move">Win Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pipelineMetrics.winRate}%</div>
-            </CardContent>
-          </Card>
-        );
-      case 'pipelineValue':
-        return (
-          <Card className="bg-violet-600 text-white h-full" key={id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium font-sans opacity-90 cursor-move">Pipeline Value</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{currency}{pipelineMetrics.pipelineValue.toLocaleString('en-IN')}</div>
-            </CardContent>
-          </Card>
-        );
-      case 'openDeals':
-        return (
-          <Card className="bg-indigo-600 text-white h-full" key={id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium font-sans opacity-90 cursor-move">Open Deals</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pipelineMetrics.openDealsCount}</div>
-            </CardContent>
-          </Card>
-        );
-      case 'weightedValue':
-        return (
-          <Card className="bg-sky-500 text-white h-full" key={id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium font-sans opacity-90 cursor-move">Weighted Value</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{currency}{Math.round(pipelineMetrics.weightedValue).toLocaleString('en-IN')}</div>
-            </CardContent>
-          </Card>
-        );
-      case 'avgDaysToClose':
-        return (
-          <Card className="bg-teal-500 text-white h-full" key={id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium font-sans opacity-90 cursor-move">Avg Days to Close</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pipelineMetrics.avgDaysToClose}</div>
-            </CardContent>
-          </Card>
-        );
+    const cardContent = (title: string, value: string | number, bgClass: string) => (
+      <Card className={`h-full border-none shadow-sm relative overflow-hidden transition-all ${isEditMode ? 'hover:ring-2 hover:ring-primary/20' : ''}`}>
+        {/* Abstract Background for Nano look */}
+        <div className={`absolute inset-0 opacity-10 ${bgClass}`}
+          style={{
+            backgroundImage: 'url(/abstract_nano_bg.webp)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            mixBlendMode: 'overlay'
+          }} />
+
+        <CardHeader className="pb-1 relative z-10">
+          <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="relative z-10">
+          <div className="text-xl font-bold text-slate-900">{value}</div>
+        </CardContent>
+
+        {/* Decorative nano-line */}
+        <div className={`absolute bottom-0 left-0 h-0.5 w-full ${bgClass.replace('bg-', 'bg-gradient-to-r from-transparent to-')}`} />
+      </Card>
+    );
+
+    switch (id) {
+      case 'totalSales': return cardContent('Total Sales', `${currency}${pipelineMetrics.totalSales.toLocaleString('en-IN')}`, 'bg-primary');
+      case 'winRate': return cardContent('Win Rate', `${pipelineMetrics.winRate}%`, 'bg-blue-500');
+      case 'pipelineValue': return cardContent('Pipeline Value', `${currency}${pipelineMetrics.pipelineValue.toLocaleString('en-IN')}`, 'bg-purple-500');
+      case 'openDeals': return cardContent('Open Deals', pipelineMetrics.openDealsCount, 'bg-indigo-500');
+      case 'weightedValue': return cardContent('Weighted Value', `${currency}${Math.round(pipelineMetrics.weightedValue).toLocaleString('en-IN')}`, 'bg-sky-500');
+      case 'avgDaysToClose': return cardContent('Avg Days to Close', pipelineMetrics.avgDaysToClose, 'bg-teal-500');
       default: return null;
     }
   };
 
   const renderChartCard = (id: string) => {
-    switch(id) {
+    // Helper to wrap charts with consistent styling
+    const ChartWrapper = ({ title, children, className = '' }: any) => (
+      <Card key={id} className={`h-full border-none shadow-sm transition-all ${isEditMode ? 'hover:ring-2 hover:ring-primary/20' : ''} ${className}`}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold text-slate-800">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {children}
+        </CardContent>
+      </Card>
+    );
+
+    switch (id) {
       case 'wonDealsTrend':
         return (
-          <Card key={id} className={`h-full ${chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}`}>
-            <CardHeader>
-              <CardTitle className="font-sans cursor-move">Won deals (trend)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={wonDealsTrend}>
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="month" fontSize={12} />
-                    <YAxis fontSize={12} />
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="value" stroke="#0ea5e9" fillOpacity={1} fill="url(#colorValue)" name="Closed Value" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <ChartWrapper title="Won Deals Trend" className={chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={wonDealsTrend}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Area type="monotone" dataKey="value" stroke="#0f172a" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartWrapper>
         );
       case 'salesPipeline':
         return (
-          <Card key={id} className="h-full">
-            <CardHeader>
-              <CardTitle className="font-sans cursor-move">Sales pipeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
+          <ChartWrapper title="Sales Pipeline">
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pipelineData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pipelineData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none' }} />
+                  <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartWrapper>
+        );
+      case 'dealsProjection':
+        return (
+          <ChartWrapper title="Deals Projection" className={chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dealsProjection}>
+                  <defs>
+                    <linearGradient id="colorProj" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#64748b" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#64748b" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none' }} />
+                  <Area type="monotone" dataKey="value" stroke="#64748b" strokeWidth={2} fillOpacity={1} fill="url(#colorProj)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartWrapper>
+        );
+      case 'dealLossReasons':
+        return (
+          <ChartWrapper title="Deal Loss Reasons">
+            <div className="h-[250px] flex items-center justify-center">
+              {lossReasonsData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={pipelineData}
+                      data={lossReasonsData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -387,112 +421,45 @@ export default function Dashboard() {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {pipelineData.map((entry, index) => (
+                      {lossReasonsData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip />
-                    <Legend verticalAlign="bottom" height={36}/>
+                    <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none' }} />
+                    <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'dealsProjection':
-        return (
-          <Card key={id} className={`h-full ${chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}`}>
-            <CardHeader>
-              <CardTitle className="font-sans cursor-move">Deals projection</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dealsProjection}>
-                    <defs>
-                      <linearGradient id="colorProj" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="month" fontSize={12} />
-                    <YAxis fontSize={12} />
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="value" stroke="#8884d8" fillOpacity={1} fill="url(#colorProj)" name="Projected Value" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 'dealLossReasons':
-        return (
-          <Card key={id} className="h-full">
-            <CardHeader>
-              <CardTitle className="font-sans cursor-move">Deal loss reasons</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center">
-                {lossReasonsData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={lossReasonsData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {lossReasonsData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip />
-                      <Legend verticalAlign="bottom" height={36} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="text-muted-foreground text-sm">No lost deals data available</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              ) : (
+                <div className="text-muted-foreground text-xs">No lost deals data</div>
+              )}
+            </div>
+          </ChartWrapper>
         );
       case 'upcomingTasks':
         return (
-          <Card key={id} className="h-full">
-            <CardHeader>
-              <CardTitle className="font-sans cursor-move">Upcoming Tasks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                 {upcomingTasksData.length === 0 ? (
-                   <p className="text-sm text-muted-foreground text-center py-8">No upcoming tasks</p>
-                 ) : (
-                   upcomingTasksData.map(task => (
-                     <div key={task.id} className="flex items-start gap-3 border-b pb-3 last:border-0 last:pb-0">
-                       <div className={`w-2 h-2 mt-2 rounded-full ${
-                         task.priority === 'high' || task.priority === 'urgent' ? 'bg-destructive' : 'bg-primary'
-                       }`} />
-                       <div>
-                         <p className="text-sm font-medium">{task.title}</p>
-                         <p className="text-xs text-muted-foreground">
-                           {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : 'No due date'}
-                         </p>
-                       </div>
-                     </div>
-                   ))
-                 )}
-                 <Button variant="outline" className="w-full text-xs" asChild>
-                    <Link to="/tasks">View All Tasks</Link>
-                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ChartWrapper title="Upcoming Tasks">
+            <div className="space-y-3">
+              {upcomingTasksData.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">No upcoming tasks</p>
+              ) : (
+                upcomingTasksData.map(task => (
+                  <div key={task.id} className="flex items-start gap-3 border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+                    <div className={`w-1.5 h-1.5 mt-1.5 rounded-full ${task.priority === 'high' || task.priority === 'urgent' ? 'bg-red-500' : 'bg-slate-400'
+                      }`} />
+                    <div>
+                      <p className="text-xs font-medium text-slate-700">{task.title}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {task.due_date ? format(new Date(task.due_date), 'MMM d') : 'No date'}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <Button variant="ghost" size="sm" className="w-full text-xs h-7 text-slate-500 hover:text-slate-900" asChild>
+                <Link to="/tasks">View All</Link>
+              </Button>
+            </div>
+          </ChartWrapper>
         );
       default: return null;
     }
@@ -500,25 +467,34 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-5 font-sans">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold font-sans">CRM Dashboard</h1>
+          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">Dashboard</h1>
           <div className="flex items-center space-x-2">
+            <Button
+              variant={isEditMode ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs gap-1"
+              onClick={() => setIsEditMode(!isEditMode)}
+            >
+              {isEditMode ? <Save className="h-3 w-3" /> : <Edit className="h-3 w-3" />}
+              {isEditMode ? 'Save Layout' : 'Customize'}
+            </Button>
             <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           </div>
         </div>
 
-        <DndContext 
-          sensors={sensors} 
-          collisionDetection={closestCenter} 
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
           onDragStart={(event) => setActiveId(event.active.id as string)}
         >
           {/* KPI Metrics - Sortable Grid */}
-          <SortableContext items={kpiOrder} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <SortableContext items={kpiOrder} strategy={rectSortingStrategy} disabled={!isEditMode}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {kpiOrder.map(id => (
-                <SortableItem key={id} id={id} className="h-full">
+                <SortableItem key={id} id={id} className="h-full" isEditMode={isEditMode}>
                   {renderKpiCard(id)}
                 </SortableItem>
               ))}
@@ -526,33 +502,27 @@ export default function Dashboard() {
           </SortableContext>
 
           {/* Charts Row - Sortable Grid */}
-          <SortableContext items={chartOrder} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+          <SortableContext items={chartOrder} strategy={rectSortingStrategy} disabled={!isEditMode}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-5">
               {chartOrder.map((id, index) => {
-                // Apply conditional spanning classes based on position if needed
                 const isFirst = chartOrder.indexOf(id) === 0;
                 return (
                   <SortableItem key={id} id={id} className={
-                    // Simple heuristic: If it's a "wide" chart (trend/projection) AND it's in a slot that allows spanning
-                    // we span it. But for DND we just sort them. The grid is cols-3. 
-                    // Let's make "WonDeals" and "Projection" span 2 cols if possible.
-                    // But if they are dragged to a narrow slot, they will squeeze.
                     ((id === 'wonDealsTrend' || id === 'dealsProjection') && isFirst) ? "md:col-span-2" : ""
-                  }>
+                  } isEditMode={isEditMode}>
                     {renderChartCard(id)}
                   </SortableItem>
                 );
               })}
             </div>
           </SortableContext>
-          
+
           <DragOverlay>
-             {activeId ? (
-                // Simplified Overlay
-                <Card className="opacity-80 w-full h-full bg-background shadow-xl">
-                   <CardHeader><CardTitle>Moving...</CardTitle></CardHeader>
-                </Card>
-             ) : null}
+            {activeId ? (
+              <Card className="opacity-80 w-full h-full bg-white shadow-2xl border-primary/20">
+                <CardHeader><CardTitle className="text-xs">Moving Widget...</CardTitle></CardHeader>
+              </Card>
+            ) : null}
           </DragOverlay>
         </DndContext>
       </div>

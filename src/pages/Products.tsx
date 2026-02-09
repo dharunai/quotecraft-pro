@@ -136,243 +136,245 @@ export default function Products() {
   };
   const currency = settings?.currency || '₹';
   return <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold font-sans">Products</h1>
-            <Link to="/products/categories">
-              <Button variant="outline" size="sm">
-                <FolderOpen className="h-4 w-4 mr-2" />
-                Categories
-              </Button>
-            </Link>
-          </div>
-          <Button onClick={() => handleOpenForm()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4">
-          <Input placeholder="Search by name or SKU..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-64" />
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={stockFilter} onValueChange={setStockFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Stock Levels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Stock Levels</SelectItem>
-              <SelectItem value="inStock">In Stock</SelectItem>
-              <SelectItem value="lowStock">Low Stock</SelectItem>
-              <SelectItem value="outOfStock">Out of Stock</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {isLoading ? <p className="text-muted-foreground">Loading products...</p> : filteredProducts.length === 0 ? <div className="text-center py-12 bg-card rounded-lg border border-border">
-            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4 font-sans">No products found</p>
-            <Button onClick={() => handleOpenForm()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Product
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold font-sans">Products</h1>
+          <Link to="/products/categories">
+            <Button variant="outline" size="sm">
+              <FolderOpen className="h-4 w-4 mr-2" />
+              Categories
             </Button>
-          </div> : <div className="bg-card rounded-lg border border-border overflow-hidden">
-            <table className="crm-table">
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Product Name</th>
-                  <th>Category</th>
-                  <th>Unit Price</th>
-                  <th>Stock</th>
-                  <th>Status</th>
-                  <th className="w-24">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map(product => <tr key={product.id} className={!product.is_active ? 'opacity-50' : ''}>
-                    <td className="font-mono text-sm">{product.sku}</td>
-                    <td>
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        {product.description && <p className="text-sm text-muted-foreground truncate max-w-xs">{product.description}</p>}
-                      </div>
-                    </td>
-                    <td className="text-muted-foreground">{product.category?.name || '-'}</td>
-                    <td className="font-medium">
-                      {currency}{product.unit_price.toLocaleString('en-IN', {
-                  minimumFractionDigits: 2
-                })}
-                      <span className="text-muted-foreground text-sm">/{product.unit}</span>
-                    </td>
-                    <td>{product.stock_quantity}</td>
-                    <td>{getStockBadge(product)}</td>
-                    <td>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenForm(product)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(product.id)} className="text-muted-foreground hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>)}
-              </tbody>
-            </table>
-          </div>}
+          </Link>
+        </div>
+        <Button onClick={() => handleOpenForm()}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Product
+        </Button>
+      </div>
 
-        {/* Product Form Dialog */}
-        <Dialog open={isFormOpen} onOpenChange={handleCloseForm}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans text-center">SKU</label>
-                  <Input value={formData.sku} onChange={e => setFormData(prev => ({
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4">
+        <Input placeholder="Search by name or SKU..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-64" />
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={stockFilter} onValueChange={setStockFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="All Stock Levels" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Stock Levels</SelectItem>
+            <SelectItem value="inStock">In Stock</SelectItem>
+            <SelectItem value="lowStock">Low Stock</SelectItem>
+            <SelectItem value="outOfStock">Out of Stock</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? <p className="text-muted-foreground">Loading products...</p> : filteredProducts.length === 0 ? <div className="text-center py-12 bg-card rounded-lg border border-border">
+        <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground mb-4 font-sans">No products found</p>
+        <Button onClick={() => handleOpenForm()}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Your First Product
+        </Button>
+      </div> : <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="crm-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Unit Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th className="w-24">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProducts.map(product => <tr key={product.id} className={!product.is_active ? 'opacity-50' : ''}>
+                <td className="font-mono text-sm">{product.sku}</td>
+                <td>
+                  <div>
+                    <p className="font-medium">{product.name}</p>
+                    {product.description && <p className="text-sm text-muted-foreground truncate max-w-xs">{product.description}</p>}
+                  </div>
+                </td>
+                <td className="text-muted-foreground">{product.category?.name || '-'}</td>
+                <td className="font-medium">
+                  {currency}{product.unit_price.toLocaleString('en-IN', {
+                    minimumFractionDigits: 2
+                  })}
+                  <span className="text-muted-foreground text-sm">/{product.unit}</span>
+                </td>
+                <td>{product.stock_quantity}</td>
+                <td>{getStockBadge(product)}</td>
+                <td>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => handleOpenForm(product)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(product.id)} className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>)}
+            </tbody>
+          </table>
+        </div>
+      </div>}
+
+      {/* Product Form Dialog */}
+      <Dialog open={isFormOpen} onOpenChange={handleCloseForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans text-center">SKU</label>
+                <Input value={formData.sku} onChange={e => setFormData(prev => ({
                   ...prev,
                   sku: e.target.value
                 }))} placeholder="PROD-0001" required />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Product Name</label>
-                  <Input value={formData.name} onChange={e => setFormData(prev => ({
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Product Name</label>
+                <Input value={formData.name} onChange={e => setFormData(prev => ({
                   ...prev,
                   name: e.target.value
                 }))} placeholder="Enter product name" required />
-                </div>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium font-sans">Description</label>
-                <Textarea value={formData.description} onChange={e => setFormData(prev => ({
+            <div className="space-y-2">
+              <label className="text-sm font-medium font-sans">Description</label>
+              <Textarea value={formData.description} onChange={e => setFormData(prev => ({
                 ...prev,
                 description: e.target.value
               }))} placeholder="Enter product description..." rows={3} />
-              </div>
+            </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Category</label>
-                  <Select value={formData.category_id} onValueChange={v => setFormData(prev => ({
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Category</label>
+                <Select value={formData.category_id} onValueChange={v => setFormData(prev => ({
                   ...prev,
                   category_id: v
                 }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Unit</label>
-                  <Select value={formData.unit} onValueChange={v => setFormData(prev => ({
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Unit</label>
+                <Select value={formData.unit} onValueChange={v => setFormData(prev => ({
                   ...prev,
                   unit: v
                 }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {UNITS.map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNITS.map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Unit Price ({currency})</label>
-                  <Input type="number" value={formData.unit_price} onChange={e => setFormData(prev => ({
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Unit Price ({currency})</label>
+                <Input type="number" value={formData.unit_price} onChange={e => setFormData(prev => ({
                   ...prev,
                   unit_price: parseFloat(e.target.value) || 0
                 }))} min="0" step="0.01" required />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Cost Price ({currency})</label>
-                  <Input type="number" value={formData.cost_price} onChange={e => setFormData(prev => ({
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Cost Price ({currency})</label>
+                <Input type="number" value={formData.cost_price} onChange={e => setFormData(prev => ({
                   ...prev,
                   cost_price: parseFloat(e.target.value) || 0
                 }))} min="0" step="0.01" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Tax Rate (%)</label>
-                  <Input type="number" value={formData.tax_rate || ''} onChange={e => setFormData(prev => ({
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Tax Rate (%)</label>
+                <Input type="number" value={formData.tax_rate || ''} onChange={e => setFormData(prev => ({
                   ...prev,
                   tax_rate: e.target.value ? parseFloat(e.target.value) : null
                 }))} min="0" max="100" step="0.01" placeholder="Use default" />
-                </div>
               </div>
+            </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Stock Quantity</label>
-                  <Input type="number" value={formData.stock_quantity} onChange={e => setFormData(prev => ({
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Stock Quantity</label>
+                <Input type="number" value={formData.stock_quantity} onChange={e => setFormData(prev => ({
                   ...prev,
                   stock_quantity: parseInt(e.target.value) || 0
                 }))} min="0" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans">Low Stock Threshold</label>
-                  <Input type="number" value={formData.low_stock_threshold} onChange={e => setFormData(prev => ({
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium font-sans">Low Stock Threshold</label>
+                <Input type="number" value={formData.low_stock_threshold} onChange={e => setFormData(prev => ({
                   ...prev,
                   low_stock_threshold: parseInt(e.target.value) || 10
                 }))} min="0" />
-                </div>
               </div>
+            </div>
 
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div className="flex items-center gap-3">
-                  <Switch checked={formData.is_active} onCheckedChange={checked => setFormData(prev => ({
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center gap-3">
+                <Switch checked={formData.is_active} onCheckedChange={checked => setFormData(prev => ({
                   ...prev,
                   is_active: checked
                 }))} />
-                  <label className="text-sm font-medium">Active</label>
-                </div>
-                <div className="flex gap-3">
-                  <Button type="button" variant="outline" onClick={handleCloseForm}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createProduct.isPending || updateProduct.isPending}>
-                    {createProduct.isPending || updateProduct.isPending ? 'Saving...' : 'Save Product'}
-                  </Button>
-                </div>
+                <label className="text-sm font-medium">Active</label>
               </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={handleCloseForm}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createProduct.isPending || updateProduct.isPending}>
+                  {createProduct.isPending || updateProduct.isPending ? 'Saving...' : 'Save Product'}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Product</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this product? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </AppLayout>;
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this product? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  </AppLayout>;
 }

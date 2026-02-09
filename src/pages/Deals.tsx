@@ -154,60 +154,62 @@ export default function Deals() {
                     </div>
                 ) : (
                     <div className="bg-card rounded-lg border border-border overflow-hidden">
-                        <table className="crm-table">
-                            <thead>
-                                <tr>
-                                    <th className="w-8 pl-4">
-                                        <Checkbox
-                                            checked={allSelected}
-                                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                                        />
-                                    </th>
-                                    <th>Company</th>
-                                    <th>Contact</th>
-                                    <th>Value</th>
-                                    <th>Stage</th>
-                                    <th>Probability</th>
-                                    <th>Expected Close</th>
-                                    <th className="w-24">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredDeals.map((deal) => (
-                                    <tr key={deal.id} className={isSelected(deal.id) ? "bg-muted/50" : ""}>
-                                        <td className="pl-4">
+                        <div className="overflow-x-auto">
+                            <table className="crm-table">
+                                <thead>
+                                    <tr>
+                                        <th className="w-8 pl-4">
                                             <Checkbox
-                                                checked={isSelected(deal.id)}
-                                                onCheckedChange={(checked) => handleSelectOne(deal.id, !!checked)}
+                                                checked={allSelected}
+                                                onCheckedChange={(checked) => handleSelectAll(!!checked)}
                                             />
-                                        </td>
-                                        <td className="font-medium">{deal.lead?.company_name}</td>
-                                        <td>{deal.lead?.contact_name}</td>
-                                        <td className="text-primary font-semibold">
-                                            {currency}{deal.deal_value?.toLocaleString('en-IN') || '0'}
-                                        </td>
-                                        <td>
-                                            <Badge className={getStageColor(deal.stage)}>
-                                                {deal.stage.charAt(0).toUpperCase() + deal.stage.slice(1)}
-                                            </Badge>
-                                        </td>
-                                        <td>{deal.probability}%</td>
-                                        <td className="text-muted-foreground text-sm">
-                                            {deal.expected_close_date ? format(new Date(deal.expected_close_date), 'dd MMM yyyy') : '-'}
-                                        </td>
-                                        <td>
-                                            <div className="flex items-center gap-1">
-                                                <Link to={`/deals/${deal.id}`}>
-                                                    <Button variant="ghost" size="sm">
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                            </div>
-                                        </td>
+                                        </th>
+                                        <th>Company</th>
+                                        <th>Contact</th>
+                                        <th>Value</th>
+                                        <th>Stage</th>
+                                        <th>Probability</th>
+                                        <th>Expected Close</th>
+                                        <th className="w-24">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filteredDeals.map((deal) => (
+                                        <tr key={deal.id} className={isSelected(deal.id) ? "bg-muted/50" : ""}>
+                                            <td className="pl-4">
+                                                <Checkbox
+                                                    checked={isSelected(deal.id)}
+                                                    onCheckedChange={(checked) => handleSelectOne(deal.id, !!checked)}
+                                                />
+                                            </td>
+                                            <td className="font-medium">{deal.lead?.company_name}</td>
+                                            <td>{deal.lead?.contact_name}</td>
+                                            <td className="text-primary font-semibold">
+                                                {currency}{deal.deal_value?.toLocaleString('en-IN') || '0'}
+                                            </td>
+                                            <td>
+                                                <Badge className={getStageColor(deal.stage)}>
+                                                    {deal.stage.charAt(0).toUpperCase() + deal.stage.slice(1)}
+                                                </Badge>
+                                            </td>
+                                            <td>{deal.probability}%</td>
+                                            <td className="text-muted-foreground text-sm">
+                                                {deal.expected_close_date ? format(new Date(deal.expected_close_date), 'dd MMM yyyy') : '-'}
+                                            </td>
+                                            <td>
+                                                <div className="flex items-center gap-1">
+                                                    <Link to={`/deals/${deal.id}`}>
+                                                        <Button variant="ghost" size="sm">
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
 

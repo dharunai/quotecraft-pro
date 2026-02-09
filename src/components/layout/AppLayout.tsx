@@ -53,7 +53,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Sidebar Overlay */}
             {mobileMenuOpen && (
-                <div 
+                <div
                     className="fixed inset-0 z-30 bg-black/50 md:hidden"
                     onClick={() => setMobileMenuOpen(false)}
                 />
@@ -61,7 +61,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Sidebar */}
             <div className={cn(
-                "fixed left-0 top-0 z-40 h-screen w-64 bg-card border-r border-border transform transition-transform duration-300 md:hidden",
+                "fixed left-0 top-0 z-50 h-screen w-64 bg-card border-r border-border transform transition-transform duration-300 md:hidden",
                 mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <AppSidebar
@@ -88,7 +88,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                             >
                                 <Menu className="h-5 w-5" />
                             </Button>
-                            
+
                             {/* Company Name on Mobile */}
                             <span className="font-semibold text-foreground md:hidden truncate max-w-[150px]">
                                 {settings?.company_name || 'CRM'}
@@ -103,7 +103,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         {/* Right - Actions */}
                         <div className="flex items-center gap-2">
                             <NotificationBell />
-                            
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -148,7 +148,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Main Content */}
-                <main className="p-4 md:p-6 animate-fade-in">
+                <main className="p-4 md:p-6 animate-fade-in overflow-x-hidden">
                     {children}
                 </main>
             </div>

@@ -67,9 +67,9 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                 {!collapsed ? (
                     <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
                         {settings?.logo_url ? (
-                            <img 
-                                src={settings.logo_url} 
-                                alt={companyName} 
+                            <img
+                                src={settings.logo_url}
+                                alt={companyName}
                                 className="h-8 w-8 object-contain rounded"
                             />
                         ) : (
@@ -84,9 +84,9 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                 ) : (
                     <Link to="/dashboard">
                         {settings?.logo_url ? (
-                            <img 
-                                src={settings.logo_url} 
-                                alt={companyName} 
+                            <img
+                                src={settings.logo_url}
+                                alt={companyName}
                                 className="h-8 w-8 object-contain rounded"
                             />
                         ) : (

@@ -26,9 +26,9 @@ app.get('/health', (req, res) => {
 app.post('/api/send-email', async (req, res) => {
   try {
     const { to, cc, subject, body, fromName, attachments } = req.body;
-    
+
     const apiKey = process.env.VITE_RESEND_API_KEY;
-    
+
     if (!apiKey) {
       console.error('VITE_RESEND_API_KEY not found in environment');
       return res.status(500).json({ success: false, error: 'Email service not configured' });
@@ -43,7 +43,7 @@ app.post('/api/send-email', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${fromName || 'The Genworks CRM'} <dharunshanmugavel12@gmail.com>`,
+        from: process.env.VITE_EMAIL_FROM || `${fromName || 'The Genworks CRM'} <onboarding@resend.dev>`,
         to: Array.isArray(to) ? to : [to],
         cc: cc?.filter((email: string) => email && email.includes('@')),
         subject,
@@ -59,9 +59,9 @@ app.post('/api/send-email', async (req, res) => {
 
     if (!response.ok) {
       console.error('Resend API error:', data);
-      return res.status(400).json({ 
-        success: false, 
-        error: data.message || data.error?.message || 'Failed to send email' 
+      return res.status(400).json({
+        success: false,
+        error: data.message || data.error?.message || 'Failed to send email'
       });
     }
 
@@ -69,9 +69,9 @@ app.post('/api/send-email', async (req, res) => {
     res.json({ success: true, messageId: data.id });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Server error' 
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Server error'
     });
   }
 });
@@ -82,14 +82,14 @@ app.post('/api/ocr/extract-lead', async (req, res) => {
     const { ocrText, useGemini = false } = req.body;
 
     if (!ocrText || typeof ocrText !== 'string') {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'OCR text is required' 
+      return res.status(400).json({
+        success: false,
+        error: 'OCR text is required'
       });
     }
 
     let extractedLead;
-    
+
     if (useGemini && process.env.GEMINI_API_KEY) {
       console.log('Using Gemini for lead extraction');
       extractedLead = await parseLeadInfoGemini(ocrText);
@@ -98,15 +98,15 @@ app.post('/api/ocr/extract-lead', async (req, res) => {
       extractedLead = parseLeadInfoBasic(ocrText);
     }
 
-    res.json({ 
-      success: true, 
-      lead: extractedLead 
+    res.json({
+      success: true,
+      lead: extractedLead
     });
   } catch (error) {
     console.error('Error extracting lead from OCR:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to extract lead' 
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to extract lead'
     });
   }
 });

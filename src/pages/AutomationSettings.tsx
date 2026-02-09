@@ -86,7 +86,7 @@ export default function AutomationSettings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const ruleData = {
       name: formData.name,
       description: formData.description || null,
@@ -104,7 +104,7 @@ export default function AutomationSettings() {
     } else {
       await createRule.mutateAsync(ruleData);
     }
-    
+
     setIsDialogOpen(false);
     resetForm();
   };
@@ -143,12 +143,20 @@ export default function AutomationSettings() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
+            <Button
               onClick={() => navigate('/settings/automation/diagnostics')}
               variant="outline"
             >
               <Zap className="h-4 w-4 mr-2" />
               Diagnostics
+            </Button>
+            <Button
+              onClick={() => navigate('/workflows')}
+              variant="default"
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Go to Workflows
             </Button>
             <Button onClick={openNewDialog}>
               <Plus className="h-4 w-4 mr-2" />
@@ -214,7 +222,7 @@ export default function AutomationSettings() {
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <Zap className={`h-5 w-5 ${rule.is_active ? 'text-gray-600' : 'text-gray-400'}`} />
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-medium">{rule.name}</h3>
@@ -222,7 +230,7 @@ export default function AutomationSettings() {
                             {rule.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                         </div>
-                        
+
                         {rule.description && (
                           <p className="text-sm text-muted-foreground mt-1">{rule.description}</p>
                         )}
@@ -298,8 +306,8 @@ export default function AutomationSettings() {
 
               <div className="space-y-2">
                 <Label htmlFor="trigger">When this happens (Trigger) *</Label>
-                <Select 
-                  value={formData.trigger_event} 
+                <Select
+                  value={formData.trigger_event}
                   onValueChange={(value) => setFormData({ ...formData, trigger_event: value })}
                   required
                 >
@@ -318,8 +326,8 @@ export default function AutomationSettings() {
 
               <div className="space-y-2">
                 <Label htmlFor="action">Do this (Action) *</Label>
-                <Select 
-                  value={formData.action_type} 
+                <Select
+                  value={formData.action_type}
                   onValueChange={(value) => setFormData({ ...formData, action_type: value })}
                 >
                   <SelectTrigger>

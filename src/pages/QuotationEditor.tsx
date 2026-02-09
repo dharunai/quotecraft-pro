@@ -331,20 +331,22 @@ export default function QuotationEditor() {
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Item
                 </Button>
-              </div> : <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Item</th>
-                    <th className="text-right p-3 text-sm font-medium text-muted-foreground w-24">Qty</th>
-                    <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Unit Price</th>
-                    <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Total</th>
-                    <th className="p-3 w-12"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map(item => <QuotationItemRow key={item.id} item={item} currency={currency} onUpdate={handleUpdateItem} onDelete={handleDeleteItem} />)}
-                </tbody>
-              </table>}
+              </div> : <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">Item</th>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground w-24">Qty</th>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Unit Price</th>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground w-32">Total</th>
+                      <th className="p-3 w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map(item => <QuotationItemRow key={item.id} item={item} currency={currency} onUpdate={handleUpdateItem} onDelete={handleDeleteItem} />)}
+                  </tbody>
+                </table>
+              </div>}
             </CardContent>
           </Card>
         </TabsContent>
