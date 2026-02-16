@@ -17,8 +17,11 @@ const connectionString = `postgresql://postgres:[YOUR_POSTGRES_PASSWORD]@${proje
 
 const migrations = [
   '20260216170900_add_multi_tenancy.sql',
-  'supabase/migrations/final_fix.sql',
-  'supabase/migrations/add_join_company_flow.sql'
+  'final_fix.sql',
+  'add_join_company_flow.sql',
+  'check_rls.sql',
+  'get_rls_json.sql',
+  'cleanup_old_policies.sql'
 ];
 
 async function runMigrations() {
@@ -41,7 +44,11 @@ async function runMigrations() {
       console.log(`📝 Running: ${migration}`);
 
       // Try RPC
-      let { error } = await supabase.rpc('exec_sql', { sql_query: sql });
+      const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
+
+      if (migration.includes('check_rls')) {
+        console.log('🔍 RLS Check Results:', JSON.stringify(data, null, 2));
+      }
 
       if (error) {
         console.warn(`RPC failed (${error.message || error.code}), checking valid helper...`);

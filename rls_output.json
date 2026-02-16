@@ -1,0 +1,98 @@
+[
+  {
+    "schemaname": "public",
+    "tablename": "product_categories",
+    "policyname": "Tenant Isolation Delete product_categories",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(company_id = get_current_company_id())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "product_categories",
+    "policyname": "Tenant Isolation Insert product_categories",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(company_id = get_current_company_id())"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "product_categories",
+    "policyname": "Tenant Isolation Select product_categories",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(company_id = get_current_company_id())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "product_categories",
+    "policyname": "Tenant Isolation Update product_categories",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(company_id = get_current_company_id())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "products",
+    "policyname": "Tenant Isolation Delete products",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "(company_id = get_current_company_id())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "products",
+    "policyname": "Tenant Isolation Insert products",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(company_id = get_current_company_id())"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "products",
+    "policyname": "Tenant Isolation Select products",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "(company_id = get_current_company_id())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "products",
+    "policyname": "Tenant Isolation Update products",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "(company_id = get_current_company_id())",
+    "with_check": null
+  }
+]
