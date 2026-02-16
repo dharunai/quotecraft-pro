@@ -1,0 +1,105 @@
+{
+  "profiles": [
+    {
+      "id": "a3280c34-1f05-4eae-a58c-5260a193eb86",
+      "user_id": "fe4c65b2-07f9-4194-9c68-280130394cf9",
+      "email": "dharunshanmugavel12@gmail.com",
+      "full_name": "Dharun S",
+      "created_at": "2026-02-16T13:36:05.195663+00:00",
+      "updated_at": "2026-02-16T13:36:05.195663+00:00",
+      "company_id": "062b0bd7-1723-44ac-bcfc-8d0d839661d2",
+      "position": null,
+      "department_id": null,
+      "reports_to": null,
+      "hierarchy_level": 2,
+      "can_assign_tasks": false,
+      "can_view_all_tasks": false
+    },
+    {
+      "id": "780eb94e-948f-4d97-85f5-2666433b6fb4",
+      "user_id": "17b5531e-84cc-4c2d-8ab4-7ecc1b388120",
+      "email": "dharunshanmugavel9@gmail.com",
+      "full_name": "Dharun S",
+      "created_at": "2026-02-16T13:37:03.628013+00:00",
+      "updated_at": "2026-02-16T13:37:03.628013+00:00",
+      "company_id": "9ef42206-11ae-4a94-8586-e61269300344",
+      "position": null,
+      "department_id": null,
+      "reports_to": null,
+      "hierarchy_level": 2,
+      "can_assign_tasks": false,
+      "can_view_all_tasks": false
+    },
+    {
+      "id": "84759073-1e87-4bcb-aaf1-4940085ec189",
+      "user_id": "86bcdd97-0da5-4d64-8c6f-1af9860dac0b",
+      "email": "dharuncrmmanager@gmail.com",
+      "full_name": "Dharun S",
+      "created_at": "2026-02-16T12:44:06.743603+00:00",
+      "updated_at": "2026-02-16T17:13:47.16597+00:00",
+      "company_id": "062b0bd7-1723-44ac-bcfc-8d0d839661d2",
+      "position": "",
+      "department_id": null,
+      "reports_to": null,
+      "hierarchy_level": 2,
+      "can_assign_tasks": false,
+      "can_view_all_tasks": false
+    }
+  ],
+  "team": [
+    {
+      "id": "d81cc242-a02c-4825-932d-c31d3e267416",
+      "user_id": "86bcdd97-0da5-4d64-8c6f-1af9860dac0b",
+      "full_name": "Dharun S",
+      "email": "dharuncrmmanager@gmail.com",
+      "role": "admin",
+      "is_active": true,
+      "invited_by": null,
+      "invited_at": "2026-02-16T12:44:06.743603+00:00",
+      "last_login": null,
+      "created_at": "2026-02-16T12:44:06.743603+00:00",
+      "updated_at": "2026-02-16T12:44:06.743603+00:00",
+      "company_id": "062b0bd7-1723-44ac-bcfc-8d0d839661d2"
+    },
+    {
+      "id": "e3a32d48-c592-4ffc-8b4a-ae7d0853b45d",
+      "user_id": "fe4c65b2-07f9-4194-9c68-280130394cf9",
+      "full_name": "Dharun S",
+      "email": "dharunshanmugavel12@gmail.com",
+      "role": "viewer",
+      "is_active": true,
+      "invited_by": null,
+      "invited_at": "2026-02-16T13:36:05.195663+00:00",
+      "last_login": null,
+      "created_at": "2026-02-16T13:36:05.195663+00:00",
+      "updated_at": "2026-02-16T13:36:05.195663+00:00",
+      "company_id": "062b0bd7-1723-44ac-bcfc-8d0d839661d2"
+    },
+    {
+      "id": "806b04b1-392a-43a8-b78e-ef7324f29883",
+      "user_id": "17b5531e-84cc-4c2d-8ab4-7ecc1b388120",
+      "full_name": "Dharun S",
+      "email": "dharunshanmugavel9@gmail.com",
+      "role": "admin",
+      "is_active": true,
+      "invited_by": null,
+      "invited_at": "2026-02-16T13:37:03.628013+00:00",
+      "last_login": null,
+      "created_at": "2026-02-16T13:37:03.628013+00:00",
+      "updated_at": "2026-02-16T13:37:03.628013+00:00",
+      "company_id": "9ef42206-11ae-4a94-8586-e61269300344"
+    }
+  ],
+  "depts": [
+    {
+      "id": "5842606a-cfc1-4820-9a42-3f70655f1e01",
+      "company_id": "826f7ff5-ea7a-4a5c-8096-be57877561ee",
+      "name": "sales",
+      "description": null,
+      "manager_id": "a3280c34-1f05-4eae-a58c-5260a193eb86",
+      "is_active": true,
+      "created_at": "2026-02-16T17:45:20.850172+00:00",
+      "updated_at": "2026-02-16T17:45:20.850172+00:00"
+    }
+  ]
+}

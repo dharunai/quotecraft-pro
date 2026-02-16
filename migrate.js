@@ -21,7 +21,13 @@ const migrations = [
   'add_join_company_flow.sql',
   'check_rls.sql',
   'get_rls_json.sql',
-  'cleanup_old_policies.sql'
+  'cleanup_old_policies.sql',
+  '20260216_company_hierarchy.sql',
+  '20260216_fix_profiles_rls.sql',
+  '20260216_fix_departments.sql',
+  '20260216_fix_profiles_rls_v2.sql',
+  '20260216_fix_rls_final.sql',
+  '20260217_fix_tasks_fk.sql'
 ];
 
 async function runMigrations() {

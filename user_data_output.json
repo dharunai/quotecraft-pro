@@ -1,0 +1,56 @@
+Profiles:
+[
+  {
+    "id": "780eb94e-948f-4d97-85f5-2666433b6fb4",
+    "email": "dharunshanmugavel9@gmail.com",
+    "company_id": "9ef42206-11ae-4a94-8586-e61269300344",
+    "full_name": "Dharun S"
+  },
+  {
+    "id": "84759073-1e87-4bcb-aaf1-4940085ec189",
+    "email": "dharuncrmmanager@gmail.com",
+    "company_id": "062b0bd7-1723-44ac-bcfc-8d0d839661d2",
+    "full_name": "Dharun S"
+  },
+  {
+    "id": "a3280c34-1f05-4eae-a58c-5260a193eb86",
+    "email": "dharunshanmugavel12@gmail.com",
+    "company_id": "062b0bd7-1723-44ac-bcfc-8d0d839661d2",
+    "full_name": "Dharun S"
+  }
+]
+Companies:
+[
+  {
+    "id": "062b0bd7-1723-44ac-bcfc-8d0d839661d2",
+    "name": "The Genworks",
+    "subscription_status": "active",
+    "created_at": "2026-02-16T12:44:06.743603+00:00",
+    "updated_at": "2026-02-16T12:44:06.743603+00:00",
+    "company_code": "tm-b57c0e"
+  },
+  {
+    "id": "89bc8694-4449-4f43-bf44-53326534eca7",
+    "name": "abc",
+    "subscription_status": "active",
+    "created_at": "2026-02-16T12:45:40.285622+00:00",
+    "updated_at": "2026-02-16T12:45:40.285622+00:00",
+    "company_code": "tm-58a5e9"
+  },
+  {
+    "id": "a5e0c200-473e-4760-86d5-db1374274319",
+    "name": "The Genworks",
+    "subscription_status": "active",
+    "created_at": "2026-02-16T13:00:34.641112+00:00",
+    "updated_at": "2026-02-16T13:00:34.641112+00:00",
+    "company_code": "tm-8d514c"
+  },
+  {
+    "id": "9ef42206-11ae-4a94-8586-e61269300344",
+    "name": "Travgram",
+    "subscription_status": "active",
+    "created_at": "2026-02-16T13:37:03.628013+00:00",
+    "updated_at": "2026-02-16T13:37:03.628013+00:00",
+    "company_code": "tm-0d8f71"
+  }
+]

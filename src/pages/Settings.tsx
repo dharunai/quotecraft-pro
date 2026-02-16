@@ -45,6 +45,15 @@ export default function Settings() {
       path: '/settings/team',
       color: 'text-red-600',
       adminOnly: true
+    },
+    {
+      title: 'Company Hierarchy',
+      description: 'Manage company structure and reporting lines',
+      icon: Users,
+      path: '/settings/hierarchy',
+      color: 'text-indigo-600',
+      path: '/settings/hierarchy',
+      color: 'text-indigo-600'
     }
   ];
 

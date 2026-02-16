@@ -22,6 +22,9 @@ import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useCompleteTask 
 import { Task } from '@/types/database';
 import { format } from 'date-fns';
 import { RecentActivityWidget } from '@/components/activity/ActivityTimeline';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const priorityColors: Record<string, string> = {
   low: 'bg-slate-100 text-slate-700 hover:bg-slate-200',
@@ -38,11 +41,33 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Tasks() {
+  const { user } = useAuth();
   const { data: tasks = [], isLoading } = useTasks();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const completeTask = useCompleteTask();
+
+  const { data: profiles } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('*');
+      return data || [];
+    }
+  });
+
+  const { data: currentUserProfile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  const canAssign = currentUserProfile?.can_assign_tasks || false; // Or default to true if we want active by default? Better safe with false based on schema. Or check role?
+  // Let's assume if the user is a manager (hierarchy < 2) they can assign too? For now, stick to the flag.
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -52,6 +77,7 @@ export default function Tasks() {
     due_date: '',
     priority: 'medium' as Task['priority'],
     status: 'pending' as Task['status'],
+    assigned_to: null as string | null,
   });
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
 
@@ -62,6 +88,7 @@ export default function Tasks() {
       due_date: '',
       priority: 'medium',
       status: 'pending',
+      assigned_to: user?.id || null, // Default to self?
     });
     setEditingTask(null);
   };
@@ -79,6 +106,7 @@ export default function Tasks() {
       due_date: task.due_date || '',
       priority: task.priority,
       status: task.status,
+      assigned_to: task.assigned_to,
     });
     setIsDialogOpen(true);
   };
@@ -94,7 +122,7 @@ export default function Tasks() {
       status: formData.status,
       entity_type: null,
       entity_id: null,
-      assigned_to: null,
+      assigned_to: formData.assigned_to,
     };
 
     if (editingTask) {
@@ -228,20 +256,33 @@ export default function Tasks() {
                         <TableRow key={task.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
                           <TableCell className="pl-6 py-3">
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8 bg-slate-100 border border-slate-200">
-                                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.id}`} />
-                                <AvatarFallback className="text-xs text-slate-500">
-                                  {task.title.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className={`text-sm font-semibold ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                                  {task.title}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {task.description || 'No description'}
-                                </p>
-                              </div>
+                              {(() => {
+                                const assignee = profiles?.find(p => p.id === task.assigned_to);
+                                return (
+                                  <>
+                                    <Avatar className="h-8 w-8 bg-slate-100 border border-slate-200">
+                                      {assignee?.full_name ? (
+                                        <AvatarFallback className="text-xs text-slate-500">
+                                          {assignee.full_name.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                      ) : (
+                                        <>
+                                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.id}`} />
+                                          <AvatarFallback>TASK</AvatarFallback>
+                                        </>
+                                      )}
+                                    </Avatar>
+                                    <div>
+                                      <p className={`text-sm font-semibold ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                        {task.title}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {assignee ? `Assigned to: ${assignee.full_name || assignee.email}` : (task.description || 'No description')}
+                                      </p>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                           <TableCell className="py-3">
@@ -348,6 +389,26 @@ export default function Tasks() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="assigned_to" className="text-xs">Assign To</Label>
+                <Select
+                  value={formData.assigned_to || "unassigned"}
+                  onValueChange={(value) => setFormData({ ...formData, assigned_to: value === "unassigned" ? null : value })}
+                >
+                  <SelectTrigger className="h-9 text-sm rounded-sm">
+                    <SelectValue placeholder="Select team member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {profiles?.map((profile: any) => (
+                      <SelectItem key={profile.id} value={profile.id}>
+                        {profile.full_name || profile.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {editingTask && (

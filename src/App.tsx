@@ -37,6 +37,7 @@ import WorkflowBuilder from "./pages/WorkflowBuilder";
 import Workflows from "./pages/Workflows";
 import WorkflowEditor from "./pages/WorkflowEditor";
 import Meetings from "./pages/Meetings";
+import Hierarchy from "./pages/settings/Hierarchy";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceEditor /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/settings/company" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+            <Route path="/settings/hierarchy" element={<ProtectedRoute><Hierarchy /></ProtectedRoute>} />
             <Route path="/settings/email" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
             <Route path="/settings/billing" element={<ProtectedRoute><BillingSettings /></ProtectedRoute>} />
             <Route path="/settings/notifications-config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />

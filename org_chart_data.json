@@ -1,0 +1,26 @@
+[
+  {
+    "id": "84759073-1e87-4bcb-aaf1-4940085ec189",
+    "full_name": "Dharun S",
+    "email": "dharuncrmmanager@gmail.com",
+    "position": "sales Manager",
+    "reports_to": null,
+    "department_id": "5842606a-cfc1-4820-9a42-3f70655f1e01"
+  },
+  {
+    "id": "780eb94e-948f-4d97-85f5-2666433b6fb4",
+    "full_name": "Dharun S",
+    "email": "dharunshanmugavel9@gmail.com",
+    "position": null,
+    "reports_to": null,
+    "department_id": null
+  },
+  {
+    "id": "a3280c34-1f05-4eae-a58c-5260a193eb86",
+    "full_name": "Dharun S",
+    "email": "dharunshanmugavel12@gmail.com",
+    "position": "Sales Executive",
+    "reports_to": null,
+    "department_id": "5842606a-cfc1-4820-9a42-3f70655f1e01"
+  }
+]
