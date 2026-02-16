@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import fetch from 'node-fetch';
 
 export interface ExtractedLeadInfo {
   Name: string;
@@ -159,9 +158,9 @@ Website may be a domain or full URL. Do not include any extra text or markdown f
     const data = await response.json() as {
       candidates?: Array<{ content: { parts: Array<{ text: string }> } }>;
     };
-    
+
     const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
+
     // Clean JSON from markdown
     let cleanedJson = generatedText.trim();
     if (cleanedJson.startsWith('```')) {
@@ -170,7 +169,7 @@ Website may be a domain or full URL. Do not include any extra text or markdown f
     }
 
     const parsed = JSON.parse(cleanedJson);
-    
+
     return {
       Name: parsed.Name || 'Not found',
       Phone: parsed.Phone || 'Not found',

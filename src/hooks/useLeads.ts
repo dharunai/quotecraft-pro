@@ -3,7 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { Lead } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
-import { triggerWorkflows } from '@/lib/workflowEngine';
+import { useAuth } from '@/contexts/AuthContext';
+// import { triggerWorkflows } from '@/lib/workflowEngine'; // Deprecated client-side engine
+
+// API Trigger Helper
+async function triggerWorkflowAPI(event: string, data: any) {
+  try {
+    await fetch('http://localhost:3001/api/workflows/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, data })
+    });
+  } catch (err) {
+    console.error('Failed to trigger workflow API:', err);
+  }
+}
 
 export function useLeads() {
   return useQuery({
@@ -40,12 +54,20 @@ export function useLead(id: string | undefined) {
 
 export function useCreateLead() {
   const queryClient = useQueryClient();
+  const { companyId } = useAuth();
 
   return useMutation({
     mutationFn: async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const leadData = { ...lead, created_by: user?.id };
-      
+
+      if (!companyId) throw new Error('Company ID not found');
+
+      const leadData = {
+        ...lead,
+        created_by: user?.id,
+        company_id: companyId
+      };
+
       const { data, error } = await supabase
         .from('leads')
         .insert(leadData)
@@ -57,10 +79,10 @@ export function useCreateLead() {
     },
     onSuccess: async (data) => {
       console.log('[Hook] useCreateLead onSuccess - Lead created:', data.id, data.company_name);
-      
+
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Lead created successfully');
-      
+
       const leadData = {
         id: data.id,
         company_name: data.company_name,
@@ -68,9 +90,9 @@ export function useCreateLead() {
         email: data.email || undefined,
         phone: data.phone || undefined,
       };
-      
+
       console.log('[Hook] Triggering automations and workflows for lead_created...');
-      
+
       // Trigger automation for lead_created
       try {
         await triggerAutomation('lead_created', { lead: leadData });
@@ -78,14 +100,14 @@ export function useCreateLead() {
       } catch (error) {
         console.error('[Hook] ❌ Automation trigger error:', error);
       }
-      
-      // Trigger workflows for lead_created
-      try {
-        await triggerWorkflows('lead_created', 'lead', data.id, leadData);
-        console.log('[Hook] ✅ Workflows triggered');
-      } catch (error) {
-        console.error('[Hook] ❌ Workflow trigger error:', error);
-      }
+
+      // Trigger workflows for lead_created (Server-side)
+      console.log('[Hook] Triggering server-side workflows...');
+      triggerWorkflowAPI('lead_created', {
+        entity_type: 'lead',
+        entity_id: data.id,
+        ...leadData
+      });
     },
     onError: (error: Error) => {
       toast.error('Failed to create lead: ' + error.message);
@@ -113,14 +135,14 @@ export function useUpdateLead() {
         .single();
 
       if (error) throw error;
-      
+
       // Return both current and updated for comparison
       return { updated: data, previous: currentLead };
     },
     onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Lead updated successfully');
-      
+
       // Check if lead was just qualified
       if (updated.is_qualified && !previous?.is_qualified) {
         const leadData = {
@@ -131,7 +153,11 @@ export function useUpdateLead() {
           phone: updated.phone || undefined,
         };
         await triggerAutomation('lead_qualified', { lead: leadData });
-        await triggerWorkflows('lead_qualified', 'lead', updated.id, leadData);
+        triggerWorkflowAPI('lead_qualified', {
+          entity_type: 'lead',
+          entity_id: updated.id,
+          ...leadData
+        });
       }
     },
     onError: (error: Error) => {

@@ -82,7 +82,7 @@ export default function Workflows() {
 
     setShowCreateDialog(false);
     setNewWorkflowName('');
-    navigate(`/workflows/${workflow.id}`);
+    navigate(`/settings/workflows/${workflow.id}`);
   };
 
   // Create from template
@@ -97,7 +97,7 @@ export default function Workflows() {
     setShowTemplateDialog(false);
     setSelectedTemplate(null);
     setTemplateWorkflowName('');
-    navigate(`/workflows/${workflow.id}`);
+    navigate(`/settings/workflows/${workflow.id}`);
   };
 
   // Render workflow card
@@ -136,7 +136,7 @@ export default function Workflows() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/workflows/${workflow.id}`)}>
+                  <DropdownMenuItem onClick={() => navigate(`/settings/workflows/${workflow.id}`)}>
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {

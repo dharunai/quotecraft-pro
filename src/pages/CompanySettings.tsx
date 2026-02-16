@@ -159,6 +159,35 @@ export default function CompanySettings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 pt-3">
+            {/* Invite Code Section */}
+            <div className="bg-muted/50 p-3 rounded-md border border-dashed mb-4">
+              <label className="text-xs font-medium font-sans text-muted-foreground block mb-1">Company Invite Code</label>
+              <div className="flex items-center gap-2">
+                <code className="bg-background px-2 py-1 rounded border font-mono text-sm select-all">
+                  {/* @ts-ignore */}
+                  {settings?.company_code || 'Loading...'}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    // @ts-ignore
+                    if (settings?.company_code) {
+                      // @ts-ignore
+                      navigator.clipboard.writeText(settings.company_code);
+                      toast.success("Code copied!");
+                    }
+                  }}
+                >
+                  Copy Code
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Share this code with your team members so they can join this workspace during signup.
+              </p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-medium font-sans">Company Name</label>

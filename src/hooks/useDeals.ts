@@ -4,6 +4,7 @@ import { Deal, Lead } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useDeals() {
   return useQuery({
@@ -55,12 +56,15 @@ export function useDealByLeadId(leadId: string | undefined) {
 
 export function useCreateDeal() {
   const queryClient = useQueryClient();
+  const { companyId } = useAuth();
 
   return useMutation({
     mutationFn: async (deal: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'lead'>) => {
+      if (!companyId) throw new Error('Company ID not found');
+
       const { data, error } = await supabase
         .from('deals')
-        .insert(deal)
+        .insert({ ...deal, company_id: companyId })
         .select('*, lead:leads(*)')
         .single();
       if (error) throw error;
@@ -77,13 +81,13 @@ export function useCreateDeal() {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Deal created');
-      
+
       const dealData = {
         id: data.id,
         deal_value: data.deal_value || undefined,
         stage: data.stage,
       };
-      
+
       // Trigger automation for deal_created
       await triggerAutomation('deal_created', {
         deal: dealData,
@@ -95,7 +99,7 @@ export function useCreateDeal() {
           phone: data.lead.phone || undefined,
         } : undefined,
       });
-      
+
       // Trigger workflows for deal_created
       await triggerWorkflows('deal_created', 'deal', data.id, dealData);
     },
@@ -146,13 +150,13 @@ export function useUpdateDeal() {
         .select('*, lead:leads(*)')
         .single();
       if (error) throw error;
-      
+
       return { updated: result as Deal & { lead: Lead }, previous: currentDeal };
     },
     onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       toast.success('Deal updated');
-      
+
       // Check for stage changes and trigger automations
       if (updated.stage !== previous?.stage) {
         const lead = updated.lead;

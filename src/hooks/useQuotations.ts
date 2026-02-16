@@ -4,6 +4,7 @@ import { Quotation, QuotationItem, Lead } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useQuotations() {
   return useQuery({
@@ -74,12 +75,15 @@ export function useGenerateQuoteNumber() {
 
 export function useCreateQuotation() {
   const queryClient = useQueryClient();
+  const { companyId } = useAuth();
 
   return useMutation({
     mutationFn: async (quotation: Omit<Quotation, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'lead'>) => {
+      if (!companyId) throw new Error('Company ID not found');
+
       const { data, error } = await supabase
         .from('quotations')
-        .insert(quotation)
+        .insert({ ...quotation, company_id: companyId })
         .select(`*, lead:leads(*)`)
         .single();
 
@@ -120,7 +124,7 @@ export function useUpdateQuotation() {
     },
     onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
-      
+
       // Check for status changes and trigger automations
       if (updated.status !== previous?.status) {
         const lead = updated.lead;

@@ -16,7 +16,8 @@ import {
     Settings,
     ChevronLeft,
     ChevronRight,
-    Building2
+    Building2,
+    Workflow
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -32,6 +33,7 @@ const navigation = [
     { name: 'Quotations', href: '/quotations', icon: FileText },
     { name: 'Products', href: '/products', icon: Package },
     { name: 'Invoices', href: '/invoices', icon: Receipt },
+    { name: 'Workflows', href: '/settings/workflows', icon: Workflow },
     { name: 'Automation', href: '/settings/automation', icon: Zap },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];

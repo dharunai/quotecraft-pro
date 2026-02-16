@@ -4,6 +4,7 @@ import { Invoice, InvoiceItem, Lead, Deal, Quotation, Product } from '@/types/da
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useInvoices() {
   return useQuery({
@@ -65,11 +66,15 @@ export function useGenerateInvoiceNumber() {
 
 export function useCreateInvoice() {
   const queryClient = useQueryClient();
+  const { companyId } = useAuth();
+
   return useMutation({
     mutationFn: async (invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'lead' | 'deal' | 'quotation'>) => {
+      if (!companyId) throw new Error('Company ID not found');
+
       const { data, error } = await supabase
         .from('invoices')
-        .insert(invoice)
+        .insert({ ...invoice, company_id: companyId })
         .select('*, lead:leads(*)')
         .single();
       if (error) throw error;
@@ -78,13 +83,13 @@ export function useCreateInvoice() {
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice created');
-      
+
       const invoiceData = {
         id: data.id,
         invoice_number: data.invoice_number,
         grand_total: data.grand_total,
       };
-      
+
       // Trigger automation for invoice_created
       await triggerAutomation('invoice_created', {
         invoice: invoiceData,
@@ -96,7 +101,7 @@ export function useCreateInvoice() {
           phone: data.lead.phone || undefined,
         } : undefined,
       });
-      
+
       // Trigger workflows for invoice_created
       await triggerWorkflows('invoice_created', 'invoice', data.id, invoiceData);
     },
@@ -143,7 +148,7 @@ export function useUpdateInvoice() {
     onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice updated');
-      
+
       // Check if invoice was just marked as paid
       if (updated.payment_status === 'paid' && previous?.payment_status !== 'paid') {
         const invoiceData = {

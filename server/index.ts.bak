@@ -1,13 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-import { parseLeadInfoBasic, parseLeadInfoGemini } from './src/utils/ocrProcessor.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { resolve } from 'path';
+// import { parseLeadInfoBasic, parseLeadInfoGemini } from './src/utils/ocrProcessor.ts';
 
 // Load .env from parent directory
 dotenv.config({ path: resolve(__dirname, '../.env') });
@@ -63,17 +58,15 @@ app.post('/api/send-email', async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
-      // @ts-ignore
       console.error('Resend API error:', data);
       return res.status(400).json({
         success: false,
-        // @ts-ignore
         error: data.message || data.error?.message || 'Failed to send email'
       });
     }
 
-    console.log('Email sent successfully:', (data as any).id);
-    res.json({ success: true, messageId: (data as any).id });
+    console.log('Email sent successfully:', data.id);
+    res.json({ success: true, messageId: data.id });
   } catch (error) {
     console.error('Error sending email:', error);
     res.status(500).json({
@@ -99,12 +92,12 @@ app.post('/api/ocr/extract-lead', async (req, res) => {
 
     if (useGemini && process.env.GEMINI_API_KEY) {
       console.log('Using Gemini for lead extraction');
-      extractedLead = await parseLeadInfoGemini(ocrText);
-      // extractedLead = {}; // Placeholder
+      // extractedLead = await parseLeadInfoGemini(ocrText);
+      extractedLead = {}; // Placeholder
     } else {
       console.log('Using basic regex for lead extraction');
-      extractedLead = parseLeadInfoBasic(ocrText);
-      // extractedLead = {}; // Placeholder
+      // extractedLead = parseLeadInfoBasic(ocrText);
+      extractedLead = {}; // Placeholder
     }
 
     res.json({
@@ -117,32 +110,6 @@ app.post('/api/ocr/extract-lead', async (req, res) => {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to extract lead'
     });
-  }
-});
-
-// Workflow Trigger Endpoint
-app.post('/api/workflows/trigger', async (req, res) => {
-  try {
-    const { event, data } = req.body;
-
-    if (!event || !data) {
-      return res.status(400).json({ success: false, error: 'Missing event or data' });
-    }
-
-    console.log(`[API] Triggering workflow event: ${event}`);
-
-    // Import dynamically to avoid top-level await issues if any
-    const { triggerWorkflows } = await import('./src/services/WorkflowEngine.ts');
-
-    // Run asynchronously (don't block response)
-    triggerWorkflows(event, data).catch(err =>
-      console.error(`[Background] Workflow execution error:`, err)
-    );
-
-    res.json({ success: true, message: 'Workflow triggered successfully' });
-  } catch (error) {
-    console.error('Error triggering workflow:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
   }
 });
 

@@ -6,24 +6,32 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function useCompanySettings() {
   const { companyId } = useAuth();
-  
+
   return useQuery({
     queryKey: ['company-settings', companyId],
-    queryFn: async (): Promise<CompanySettings | null> => {
+    queryFn: async (): Promise<CompanySettings & { company_code?: string } | null> => {
       if (!companyId) return null;
-      
+
       const { data, error } = await supabase
         .from('company_settings')
-        .select('*')
-        .eq('id', companyId)
+        .select(`
+          *,
+          company:companies(company_code)
+        `)
+        .eq('company_id', companyId)
         .maybeSingle();
 
       if (error) {
         console.error("Error fetching company settings:", error);
         throw error;
       };
-      
-      return data;
+
+      // Flatten structure for easier usage
+      const settings = data as unknown as CompanySettings & { company: { company_code: string } };
+      return {
+        ...settings,
+        company_code: settings.company?.company_code
+      };
     },
     enabled: !!companyId
   });

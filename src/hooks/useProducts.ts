@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/database';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Categories
 export function useProductCategories() {
@@ -20,11 +21,14 @@ export function useProductCategories() {
 
 export function useCreateProductCategory() {
     const queryClient = useQueryClient();
+    const { companyId } = useAuth();
+
     return useMutation({
         mutationFn: async (category: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>) => {
+            if (!companyId) throw new Error('Company ID not found');
             const { data, error } = await supabase
                 .from('product_categories')
-                .insert(category)
+                .insert({ ...category, company_id: companyId })
                 .select()
                 .single();
             if (error) throw error;
@@ -127,11 +131,14 @@ export function useGenerateSku() {
 
 export function useCreateProduct() {
     const queryClient = useQueryClient();
+    const { companyId } = useAuth();
+
     return useMutation({
         mutationFn: async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category'>) => {
+            if (!companyId) throw new Error('Company ID not found');
             const { data, error } = await supabase
                 .from('products')
-                .insert(product)
+                .insert({ ...product, company_id: companyId })
                 .select()
                 .single();
             if (error) throw error;

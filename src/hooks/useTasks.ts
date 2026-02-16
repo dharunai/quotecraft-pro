@@ -4,6 +4,7 @@ import { Task } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useTasks() {
   return useQuery({
@@ -40,12 +41,15 @@ export function useTask(id: string | undefined) {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
+  const { companyId } = useAuth();
 
   return useMutation({
     mutationFn: async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'completed_at'>) => {
+      if (!companyId) throw new Error('Company ID not found');
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert(task)
+        .insert({ ...task, company_id: companyId })
         .select()
         .single();
 
@@ -68,12 +72,12 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: async ({ id, ...task }: Partial<Task> & { id: string }) => {
       const updateData: Partial<Task> = { ...task };
-      
+
       // If marking as completed, set completed_at
       if (task.status === 'completed') {
         updateData.completed_at = new Date().toISOString();
       }
-      
+
       const { data, error } = await supabase
         .from('tasks')
         .update(updateData)
@@ -123,9 +127,9 @@ export function useCompleteTask() {
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update({ 
-          status: 'completed', 
-          completed_at: new Date().toISOString() 
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -137,15 +141,15 @@ export function useCompleteTask() {
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task completed!');
-      
+
       const taskData = {
         id: data.id,
         title: data.title,
       };
-      
+
       // Trigger automation for task_completed
       await triggerAutomation('task_completed', { task: taskData });
-      
+
       // Trigger workflows for task_completed
       await triggerWorkflows('task_completed', 'task', data.id, taskData);
     },

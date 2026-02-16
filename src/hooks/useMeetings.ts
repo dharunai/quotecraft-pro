@@ -11,7 +11,7 @@ const participantsTable = () => (supabase as any).from('meeting_participants');
 
 export function useMeetings() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, companyId } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const createMeeting = async (meeting: Omit<Meeting, 'id' | 'created_at' | 'updated_at'>, participants: Omit<MeetingParticipant, 'id' | 'meeting_id'>[]) => {
@@ -21,7 +21,8 @@ export function useMeetings() {
       const { data: newMeeting, error: meetingError } = await meetingsTable()
         .insert({
           ...meeting,
-          organizer_id: user?.id
+          organizer_id: user?.id,
+          company_id: companyId
         })
         .select()
         .single();

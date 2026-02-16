@@ -8,7 +8,7 @@ interface AuthContextType {
   companyId: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName?: string, companyName?: string) => Promise<void>;
+  signUp: (email: string, password: string, options?: { fullName?: string, companyName?: string, mode?: 'create' | 'join', companyCode?: string }) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -37,22 +37,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const sessionResult = await withTimeout(
           supabase.auth.getSession()
         );
-        
+
         const currentSession = sessionResult?.data?.session ?? null;
 
         if (!isMounted) return;
-        
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
         // If user exists, try to find their company (with timeout)
         if (currentSession?.user) {
           try {
-            const companyResult = await withTimeout(
-              supabase.from('company_settings').select('id').limit(1)
+            const profileResult = await withTimeout(
+              Promise.resolve(supabase.from('profiles').select('company_id').eq('user_id', currentSession.user.id).maybeSingle())
             );
-            if (isMounted && companyResult?.data && companyResult.data.length > 0) {
-              setCompanyId(companyResult.data[0].id);
+            // @ts-ignore
+            if (isMounted && profileResult?.data?.company_id) {
+              // @ts-ignore
+              setCompanyId(profileResult.data.company_id);
             }
           } catch {
             // Ignore - companyId stays null
@@ -72,14 +74,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!isMounted) return;
         setSession(newSession);
         setUser(newSession?.user ?? null);
-        
+
         if (newSession?.user) {
           try {
-            const companyResult = await withTimeout(
-              supabase.from('company_settings').select('id').limit(1)
+            const profileResult = await withTimeout(
+              Promise.resolve(supabase.from('profiles').select('company_id').eq('user_id', newSession.user.id).maybeSingle())
             );
-            if (isMounted && companyResult?.data && companyResult.data.length > 0) {
-              setCompanyId(companyResult.data[0].id);
+            // @ts-ignore
+            if (isMounted && profileResult?.data?.company_id) {
+              // @ts-ignore
+              setCompanyId(profileResult.data.company_id);
             }
           } catch {
             // Ignore
@@ -102,46 +106,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string, fullName?: string, companyName?: string) => {
-    const { data, error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, options?: { fullName?: string, companyName?: string, mode?: 'create' | 'join', companyCode?: string }) => {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, company_name: companyName },
+        data: {
+          full_name: options?.fullName,
+          company_name: options?.companyName,
+          mode: options?.mode || 'create',
+          company_code: options?.companyCode
+        },
         emailRedirectTo: window.location.origin + '/dashboard'
       }
     });
     if (error) throw error;
-
-    // Create company_settings for the new user
-    if (data?.user) {
-      try {
-        const { data: existing } = await supabase
-          .from('company_settings')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
-
-        if (!existing) {
-          await supabase.from('company_settings').insert({
-            company_name: companyName || 'My Company',
-            email: email,
-            currency: '₹',
-            theme_color: '#166534'
-          });
-        }
-
-        await supabase.from('team_members').upsert({
-          user_id: data.user.id,
-          email: email,
-          full_name: fullName || 'User',
-          role: 'admin',
-          is_active: true
-        }, { onConflict: 'user_id' });
-      } catch {
-        // Non-critical
-      }
-    }
   };
 
   const signOut = async () => {
