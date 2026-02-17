@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -51,6 +51,29 @@ export default function Meetings() {
   const [view, setView] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+
+  // Calendar UI Refs and State
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-scroll to 8 AM on load or view change
+  useEffect(() => {
+    if (view === 'Week' || view === 'Day') {
+      // Small timeout to ensure DOM is ready
+      setTimeout(() => {
+        const timeSlot8 = document.getElementById('time-slot-8');
+        if (timeSlot8) {
+          timeSlot8.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [view]);
 
   const fetchMeetings = useCallback(async () => {
     try {
@@ -191,7 +214,7 @@ export default function Meetings() {
             {/* --- WEEK VIEW --- */}
             {view === 'Week' && (
               <>
-                <div className="grid grid-cols-8 border-b border-slate-100 bg-white z-10 pr-2">
+                <div className="grid grid-cols-8 border-b border-slate-100 bg-white z-10 pr-2 sticky top-0">
                   <div className="p-4 border-r border-slate-50"></div>
                   {weekDays.map(day => (
                     <div key={day.toString()} className="p-4 text-center border-r border-slate-50 last:border-0">
@@ -202,17 +225,36 @@ export default function Meetings() {
                     </div>
                   ))}
                 </div>
-                <ScrollArea className="flex-1">
-                  <div className="grid grid-cols-8">
+                <ScrollArea className="flex-1" ref={scrollAreaRef}>
+                  <div className="grid grid-cols-8 relative min-h-[1200px]">
+                    {/* Time labels column */}
                     <div className="border-r border-slate-50 bg-slate-50/30">
                       {timeSlots.map(hour => (
-                        <div key={hour} className="h-28 text-xs text-slate-400 font-medium p-4 border-b border-slate-100 text-center">
-                          {format(setHours(new Date(), hour), 'HH:00')}
+                        <div
+                          key={hour}
+                          id={`time-slot-${hour}`}
+                          className="h-28 text-xs text-slate-400 font-medium p-4 border-b border-slate-100 text-center sticky left-0"
+                        >
+                          {format(setHours(new Date(), hour), 'h a')}
                         </div>
                       ))}
                     </div>
+
+                    {/* Days columns */}
                     {weekDays.map(day => (
                       <div key={day.toString()} className="border-r border-slate-50 last:border-0 relative">
+                        {/* Current time indicator line */}
+                        {isSameDay(day, currentTime) && (
+                          <div
+                            className="absolute z-20 w-full border-t-2 border-red-500 pointer-events-none flex items-center"
+                            style={{
+                              top: `${(currentTime.getHours() + (currentTime.getMinutes() / 60)) * 112}px`
+                            }}
+                          >
+                            <div className="absolute -left-1 w-2 h-2 bg-red-500 rounded-full" />
+                          </div>
+                        )}
+
                         {timeSlots.map(hour => (
                           <div key={hour} className="h-28 border-b border-slate-50/50"></div>
                         ))}
@@ -253,16 +295,35 @@ export default function Meetings() {
 
             {/* --- DAY VIEW --- */}
             {view === 'Day' && (
-              <ScrollArea className="flex-1">
-                <div className="flex">
+              <ScrollArea className="flex-1" ref={scrollAreaRef}>
+                <div className="flex min-h-[1200px] relative">
                   <div className="w-20 border-r border-slate-50 bg-slate-50/30">
                     {timeSlots.map(hour => (
-                      <div key={hour} className="h-32 text-xs text-slate-400 font-medium p-4 border-b border-slate-100 text-center">
-                        {format(setHours(new Date(), hour), 'HH:00')}
+                      <div
+                        key={hour}
+                        id={`time-slot-${hour}`}
+                        className="h-32 text-xs text-slate-400 font-medium p-4 border-b border-slate-100 text-center sticky left-0"
+                      >
+                        {format(setHours(new Date(), hour), 'h a')}
                       </div>
                     ))}
                   </div>
                   <div className="flex-1 relative bg-white">
+                    {/* Current time indicator line */}
+                    {isSameDay(date, currentTime) && (
+                      <div
+                        className="absolute z-20 w-full border-t-2 border-red-500 pointer-events-none flex items-center"
+                        style={{
+                          top: `${(currentTime.getHours() + (currentTime.getMinutes() / 60)) * 128}px`
+                        }}
+                      >
+                        <div className="absolute -left-1 w-2 h-2 bg-red-500 rounded-full" />
+                        <span className="absolute left-0 -top-6 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                          {format(currentTime, 'h:mm a')}
+                        </span>
+                      </div>
+                    )}
+
                     {timeSlots.map(hour => (
                       <div key={hour} className="h-32 border-b border-slate-50/50 w-full"></div>
                     ))}
