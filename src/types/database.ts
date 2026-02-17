@@ -196,6 +196,7 @@ export interface Profile {
   user_id: string;
   email: string | null;
   full_name: string | null;
+  avatar_url: string | null;
   company_id?: string; // Link to company
   created_at: string;
   updated_at: string;
@@ -209,12 +210,28 @@ export interface Task {
   entity_type: string | null;
   entity_id: string | null;
   assigned_to: string | null;
+  created_by: string | null;
   due_date: string | null;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   completed_at: string | null;
+  delegated_from: string | null;
+  parent_task_id: string | null;
+  watchers: string[];
+  tags: string[];
+  estimated_hours: number | null;
+  actual_hours: number | null;
+  progress_percentage: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface TaskAssignment {
+  id: string;
+  task_id: string;
+  user_id: string;
+  assigned_at: string;
+  assigned_by: string | null;
 }
 
 export interface Meeting {

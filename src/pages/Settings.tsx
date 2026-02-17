@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { Building2, Mail, CreditCard, Bell, Users } from 'lucide-react';
+import { Building2, Mail, CreditCard, Bell, Users, CheckSquare } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -51,9 +51,14 @@ export default function Settings() {
       description: 'Manage company structure and reporting lines',
       icon: Users,
       path: '/settings/hierarchy',
-      color: 'text-indigo-600',
-      path: '/settings/hierarchy',
       color: 'text-indigo-600'
+    },
+    {
+      title: 'Task Settings',
+      description: 'Configure task email notifications',
+      icon: CheckSquare,
+      path: '/settings/tasks',
+      color: 'text-slate-700'
     }
   ];
 

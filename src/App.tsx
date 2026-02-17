@@ -38,6 +38,7 @@ import Workflows from "./pages/Workflows";
 import WorkflowEditor from "./pages/WorkflowEditor";
 import Meetings from "./pages/Meetings";
 import Hierarchy from "./pages/settings/Hierarchy";
+import TaskSettings from "./pages/TaskSettings";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/settings/automation" element={<ProtectedRoute><AutomationSettings /></ProtectedRoute>} />
             <Route path="/settings/automation/diagnostics" element={<ProtectedRoute><AutomationDiagnostics /></ProtectedRoute>} />
             <Route path="/settings/notifications" element={<ProtectedRoute><NotificationPreferences /></ProtectedRoute>} />
+            <Route path="/settings/tasks" element={<ProtectedRoute><TaskSettings /></ProtectedRoute>} />
             <Route path="/settings/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
             <Route path="/settings/workflows/:id" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
             <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />

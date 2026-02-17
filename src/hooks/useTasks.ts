@@ -41,7 +41,7 @@ export function useTask(id: string | undefined) {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  const { companyId } = useAuth();
+  const { companyId, user } = useAuth();
 
   return useMutation({
     mutationFn: async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'completed_at'>) => {
@@ -49,7 +49,7 @@ export function useCreateTask() {
 
       const { data, error } = await supabase
         .from('tasks')
-        .insert({ ...task, company_id: companyId })
+        .insert({ ...task, company_id: companyId, created_by: user?.id || null } as any)
         .select()
         .single();
 

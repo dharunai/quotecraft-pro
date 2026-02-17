@@ -2,49 +2,55 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  MoreVertical,
   Plus,
-  Search,
-  Settings,
-  Phone,
-  Mail,
-  Maximize2,
   Clock,
   MapPin,
-  MoreHorizontal
+  Video,
+  Phone,
+  Users,
+  Briefcase,
+  FileText,
 } from 'lucide-react';
-import { format, addDays, startOfWeek, isSameDay, parseISO, setHours, setMinutes, isWithinInterval, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
+import { format, addDays, startOfWeek, isSameDay, parseISO, setHours, isWithinInterval, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isBefore, isAfter } from 'date-fns';
 import { useMeetings } from '@/hooks/useMeetings';
 import { Meeting } from '@/types/database';
 import { MeetingDialog } from '@/components/meetings/MeetingDialog';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data for Quick Connects to match reference
-const quickConnects = [
-  { id: 1, name: 'Adams, andrew', role: 'Customer call', time: 'Su, 12.03 2:30 pm', status: 'Created', avatar: '/avatars/01.png' },
-  { id: 2, name: 'Andrew, Sal', role: 'Follow up mail', time: 'Su, 12.03 2:30 pm', status: 'Was Assigned', avatar: '/avatars/02.png' },
-  { id: 3, name: 'Araujo, Stan', role: 'Customer call', time: 'Su, 12.03 2:30 pm', status: 'Created', avatar: '/avatars/03.png' },
-  { id: 4, name: 'Attard, Mark', role: 'Flow up mail', time: 'Su, 12.03 2:30 pm', status: '', avatar: '/avatars/04.png' },
-  { id: 5, name: 'Hasan Azan', role: 'Customer call', time: 'Su, 12.03 2:30 pm', status: '', avatar: '/avatars/05.png' },
-];
-
-// UPDATED: Full 24-hour range
 const timeSlots = Array.from({ length: 24 }, (_, i) => i);
+
+const statusColors: Record<string, string> = {
+  scheduled: 'bg-blue-50 text-blue-700 border-blue-200',
+  completed: 'bg-green-50 text-green-700 border-green-200',
+  cancelled: 'bg-red-50 text-red-700 border-red-200',
+  rescheduled: 'bg-amber-50 text-amber-700 border-amber-200',
+};
+
+const meetingTypeIcon = (meeting: Meeting) => {
+  if (meeting.meeting_link) return <Video className="h-3.5 w-3.5 text-blue-500" />;
+  if (meeting.location) return <MapPin className="h-3.5 w-3.5 text-emerald-500" />;
+  return <Phone className="h-3.5 w-3.5 text-slate-400" />;
+};
 
 export default function Meetings() {
   const { getMeetings, loading } = useMeetings();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [isMounting, setIsMounting] = useState(true);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [deals, setDeals] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
 
   const [date, setDate] = useState(new Date());
   const [view, setView] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
 
   const fetchMeetings = useCallback(async () => {
     try {
@@ -59,12 +65,43 @@ export default function Meetings() {
     }
   }, []);
 
+  // Fetch supporting data
   useEffect(() => {
     fetchMeetings();
+    const fetchSupporting = async () => {
+      const [leadsRes, dealsRes, profilesRes] = await Promise.all([
+        supabase.from('leads').select('id, company_name, contact_name'),
+        (supabase as any).from('deals').select('id, stage, deal_value, lead:leads(company_name)'),
+        supabase.from('profiles').select('*'),
+      ]);
+      if (leadsRes.data) setLeads(leadsRes.data);
+      if (dealsRes.data) setDeals(dealsRes.data);
+      if (profilesRes.data) setProfiles(profilesRes.data);
+    };
+    fetchSupporting();
   }, [fetchMeetings]);
 
   const handleRefresh = () => {
     fetchMeetings();
+  };
+
+  // Helper lookups
+  const getLeadName = (leadId: string | null) => {
+    if (!leadId) return null;
+    const lead = leads.find((l: any) => l.id === leadId);
+    return lead ? lead.company_name : null;
+  };
+
+  const getDealInfo = (dealId: string | null) => {
+    if (!dealId) return null;
+    const deal = deals.find((d: any) => d.id === dealId);
+    return deal ? `${deal.lead?.company_name || 'Deal'} — ${deal.stage}` : null;
+  };
+
+  const getProfileName = (userId: string | null) => {
+    if (!userId) return null;
+    const profile = profiles.find((p: any) => p.id === userId);
+    return profile ? (profile.full_name || profile.email || 'Unknown') : null;
   };
 
   const weekStart = startOfWeek(date, { weekStartsOn: 1 });
@@ -88,11 +125,31 @@ export default function Meetings() {
     });
   };
 
+  // Next upcoming meeting
+  const nextMeeting = useMemo(() => {
+    const now = new Date();
+    const upcoming = meetings
+      .filter(m => {
+        try { return isAfter(parseISO(m.start_time), now) && m.status === 'scheduled'; }
+        catch { return false; }
+      })
+      .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
+    return upcoming[0] || null;
+  }, [meetings]);
+
+  // Sorted meetings for sidebar
+  const sortedMeetings = useMemo(() => {
+    return [...meetings].sort((a, b) => {
+      try { return parseISO(b.start_time).getTime() - parseISO(a.start_time).getTime(); }
+      catch { return 0; }
+    });
+  }, [meetings]);
+
   return (
     <AppLayout>
       <div className="flex h-[calc(100vh-2rem)] gap-6 p-2 font-sans overflow-hidden">
 
-        {/* Main Calendar Section (75%) */}
+        {/* Main Calendar Section */}
         <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
           {/* Calendar Header */}
           <div className="p-6 flex items-center justify-between border-b border-slate-100">
@@ -134,7 +191,7 @@ export default function Meetings() {
             {/* --- WEEK VIEW --- */}
             {view === 'Week' && (
               <>
-                <div className="grid grid-cols-8 border-b border-slate-100 bg-white z-10 pr-2"> {/* Added pr-2 for scrollbar alignment */}
+                <div className="grid grid-cols-8 border-b border-slate-100 bg-white z-10 pr-2">
                   <div className="p-4 border-r border-slate-50"></div>
                   {weekDays.map(day => (
                     <div key={day.toString()} className="p-4 text-center border-r border-slate-50 last:border-0">
@@ -166,16 +223,15 @@ export default function Meetings() {
                             const startHour = start.getHours();
                             const startMinutes = start.getMinutes();
                             const duration = (end.getTime() - start.getTime()) / 3600000;
-
-                            // UPDATED: Logic for 24h view 
-                            // Top is simply hours * 112 (plus minutes proportion)
-                            // 112px is row height
                             const top = (startHour + (startMinutes / 60)) * 112;
                             const height = duration * 112;
+                            const isSelected = selectedMeetingId === meeting.id;
 
                             return (
                               <div key={meeting.id}
-                                className="absolute left-1 right-1 p-2 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow z-10 flex flex-col justify-between overflow-hidden"
+                                onClick={() => setSelectedMeetingId(meeting.id)}
+                                className={`absolute left-1 right-1 p-2 rounded-xl border shadow-sm hover:shadow-md transition-all z-10 flex flex-col justify-between overflow-hidden cursor-pointer ${isSelected ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' : 'bg-white border-slate-100'
+                                  }`}
                                 style={{ top: `${top}px`, height: `${height}px`, minHeight: '40px' }}>
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-6 w-6 border border-slate-100"><AvatarFallback className="text-[9px]">{meeting.title?.substring(0, 2)}</AvatarFallback></Avatar>
@@ -217,14 +273,15 @@ export default function Meetings() {
                         const startHour = start.getHours();
                         const startMinutes = start.getMinutes();
                         const duration = (end.getTime() - start.getTime()) / 3600000;
-
-                        // 128px per hour in Day view
                         const top = (startHour + (startMinutes / 60)) * 128;
                         const height = duration * 128;
+                        const isSelected = selectedMeetingId === meeting.id;
 
                         return (
                           <div key={meeting.id}
-                            className="absolute left-4 right-4 p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 shadow-sm z-10 flex flex-col justify-between"
+                            onClick={() => setSelectedMeetingId(meeting.id)}
+                            className={`absolute left-4 right-4 p-4 rounded-xl border shadow-sm z-10 flex flex-col justify-between cursor-pointer ${isSelected ? 'bg-blue-50/70 border-blue-200 ring-2 ring-blue-200' : 'bg-indigo-50/50 border-indigo-100'
+                              }`}
                             style={{ top: `${top}px`, height: `${height}px`, minHeight: '60px' }}>
                             <div>
                               <h3 className="font-bold text-indigo-900">{meeting.title}</h3>
@@ -260,7 +317,10 @@ export default function Meetings() {
                         </div>
                         <div className="space-y-1">
                           {dayMeetings.slice(0, 3).map(m => (
-                            <div key={m.id} className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 truncate font-medium">
+                            <div key={m.id}
+                              onClick={() => setSelectedMeetingId(m.id)}
+                              className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium cursor-pointer ${selectedMeetingId === m.id ? 'bg-blue-200 text-blue-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                }`}>
                               {m.title}
                             </div>
                           ))}
@@ -275,7 +335,7 @@ export default function Meetings() {
               </div>
             )}
 
-            {/* --- YEAR VIEW (Placeholder) --- */}
+            {/* --- YEAR VIEW --- */}
             {view === 'Year' && (
               <div className="flex-1 flex items-center justify-center text-slate-400 flex-col gap-2">
                 <CalendarIcon className="h-12 w-12 opacity-20" />
@@ -286,79 +346,147 @@ export default function Meetings() {
           </div>
         </div>
 
-        {/* Sidebar (25%) */}
-        <div className="w-80 flex flex-col gap-6">
-          {/* Header */}
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2">
-              <h2 className="font-bold text-slate-900">All Contacts</h2>
-              <span className="text-xs text-muted-foreground">(398)</span>
-            </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4 text-slate-400" />
-            </Button>
-          </div>
+        {/* Sidebar — Meetings List */}
+        <div className="w-80 flex flex-col gap-4 overflow-hidden">
 
-          {/* Featured Card */}
-          <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
-            <div className="absolute top-4 left-4 z-10">
-              <Badge variant="secondary" className="bg-white/80 backdrop-blur text-slate-800 shadow-sm border-0 font-medium">Sale</Badge>
-            </div>
-            <div className="h-32 bg-slate-100 rounded-2xl mb-4 flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-              <MapPin className="h-8 w-8 text-slate-300" />
-            </div>
-
-            <h3 className="font-bold text-slate-900">Big Residential</h3>
-            <p className="text-xs text-muted-foreground mt-1 mb-4">2:30 pm</p>
-
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" className="rounded-full border-slate-200 text-slate-600 font-normal">Property viewed</Badge>
-              <div className="flex -space-x-2">
-                <Avatar className="h-6 w-6 border-2 border-white"><AvatarFallback className="bg-slate-200 text-[8px]">JD</AvatarFallback></Avatar>
-                <Avatar className="h-6 w-6 border-2 border-white"><AvatarFallback className="bg-slate-300 text-[8px]">+12</AvatarFallback></Avatar>
+          {/* Next Meeting Card */}
+          {nextMeeting && (
+            <div className="bg-gradient-to-br from-slate-900 to-slate-700 p-5 rounded-3xl text-white shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-8 -mt-8"></div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Next Meeting</p>
+              <h3 className="font-bold text-base">{nextMeeting.title}</h3>
+              <div className="flex items-center gap-2 mt-2 text-slate-300 text-xs">
+                <CalendarIcon className="h-3 w-3" />
+                {(() => {
+                  try { return format(parseISO(nextMeeting.start_time), 'EEE, MMM d · h:mm a'); }
+                  catch { return 'TBD'; }
+                })()}
               </div>
+              {(nextMeeting.meeting_link || nextMeeting.location) && (
+                <div className="flex items-center gap-2 mt-1 text-slate-400 text-xs">
+                  {nextMeeting.meeting_link ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+                  <span className="truncate">{nextMeeting.meeting_link || nextMeeting.location}</span>
+                </div>
+              )}
+              {nextMeeting.lead_id && getLeadName(nextMeeting.lead_id) && (
+                <div className="flex items-center gap-2 mt-1 text-slate-400 text-xs">
+                  <Briefcase className="h-3 w-3" />
+                  <span className="truncate">{getLeadName(nextMeeting.lead_id)}</span>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* Quick Connects List */}
+          {/* Meetings List */}
           <div className="flex-1 bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="font-bold text-slate-900">Quick Connects</h3>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full border border-slate-100"><Search className="h-3 w-3" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full border border-slate-100"><Settings className="h-3 w-3" /></Button>
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900">Meetings</h3>
+                <p className="text-[10px] text-muted-foreground">{meetings.length} total</p>
               </div>
+              <Button
+                onClick={() => setIsDialogOpen(true)}
+                size="icon"
+                variant="outline"
+                className="h-8 w-8 rounded-full border-slate-200"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
             </div>
 
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {quickConnects.map(contact => (
-                  <div key={contact.id} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 bg-slate-50">
-                        <AvatarFallback className="text-xs font-bold text-slate-700">{contact.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">{contact.name}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{contact.role}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20">
-                        <Phone className="h-3 w-3" />
-                      </Button>
-                    </div>
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-2">
+                {sortedMeetings.length === 0 ? (
+                  <div className="text-center py-10">
+                    <CalendarIcon className="h-10 w-10 text-slate-200 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No meetings yet</p>
+                    <Button variant="link" size="sm" onClick={() => setIsDialogOpen(true)} className="text-xs mt-1">
+                      Schedule your first meeting
+                    </Button>
                   </div>
-                ))}
+                ) : (
+                  sortedMeetings.map(meeting => {
+                    const isSelected = selectedMeetingId === meeting.id;
+                    let startStr = '', dateStr = '';
+                    try {
+                      const s = parseISO(meeting.start_time);
+                      const e = parseISO(meeting.end_time);
+                      startStr = `${format(s, 'h:mm a')} – ${format(e, 'h:mm a')}`;
+                      dateStr = format(s, 'EEE, MMM d');
+                    } catch { }
+
+                    const leadName = getLeadName(meeting.lead_id);
+                    const dealInfo = getDealInfo(meeting.deal_id);
+                    const organizer = getProfileName(meeting.organizer_id);
+
+                    return (
+                      <div
+                        key={meeting.id}
+                        onClick={() => {
+                          setSelectedMeetingId(meeting.id);
+                          // Navigate calendar to meeting date
+                          try { setDate(parseISO(meeting.start_time)); } catch { }
+                        }}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-50 hover:bg-slate-50 hover:border-slate-200'
+                          }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate">{meeting.title}</p>
+                            <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              <span>{dateStr} · {startStr}</span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 shrink-0 ${statusColors[meeting.status]}`}>
+                            {meeting.status}
+                          </Badge>
+                        </div>
+
+                        {/* Meeting details */}
+                        <div className="mt-2 space-y-1">
+                          {(meeting.meeting_link || meeting.location) && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                              {meetingTypeIcon(meeting)}
+                              <span className="truncate">{meeting.meeting_link || meeting.location}</span>
+                            </div>
+                          )}
+                          {leadName && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                              <Briefcase className="h-3 w-3 shrink-0 text-amber-500" />
+                              <span className="truncate">Lead: {leadName}</span>
+                            </div>
+                          )}
+                          {dealInfo && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                              <Briefcase className="h-3 w-3 shrink-0 text-emerald-500" />
+                              <span className="truncate">Deal: {dealInfo}</span>
+                            </div>
+                          )}
+                          {organizer && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                              <Users className="h-3 w-3 shrink-0 text-violet-500" />
+                              <span className="truncate">By: {organizer}</span>
+                            </div>
+                          )}
+                          {meeting.description && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                              <FileText className="h-3 w-3 shrink-0 text-slate-400" />
+                              <span className="truncate">{meeting.description.split('\n')[0]}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </ScrollArea>
           </div>
         </div>
       </div>
 
-      {/* Existing Dialog Integration */}
+      {/* Meeting Dialog */}
       {isDialogOpen && (
         <MeetingDialog
           open={isDialogOpen}
