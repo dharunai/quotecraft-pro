@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { getAvatarUrl } from '@/lib/avatars';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Calendar as CalendarIcon,
@@ -276,7 +277,10 @@ export default function Meetings() {
                                   }`}
                                 style={{ top: `${top}px`, height: `${height}px`, minHeight: '40px' }}>
                                 <div className="flex items-center gap-2">
-                                  <Avatar className="h-6 w-6 border border-slate-100"><AvatarFallback className="text-[9px]">{meeting.title?.substring(0, 2)}</AvatarFallback></Avatar>
+                                  <Avatar className="h-6 w-6 border border-slate-100">
+                                    <AvatarImage src={getAvatarUrl(getLeadName(meeting.lead_id) || meeting.title || 'Meeting')} />
+                                    <AvatarFallback className="text-[9px]">{meeting.title?.substring(0, 2)}</AvatarFallback>
+                                  </Avatar>
                                   <div className="overflow-hidden">
                                     <p className="text-[10px] font-bold text-slate-900 truncate">{meeting.title}</p>
                                     <p className="text-[9px] text-slate-500 truncate">{format(start, 'h:mm')} - {format(end, 'h:mm')}</p>

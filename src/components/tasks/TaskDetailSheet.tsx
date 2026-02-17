@@ -18,6 +18,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { MessageSquare, Clock, Send, AtSign, CheckCircle2, Circle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseMentions, processMentions } from '@/lib/taskMentions';
+import { getAvatarUrl } from '@/lib/avatars';
 
 interface Task {
     id: string;
@@ -238,7 +239,7 @@ export function TaskDetailSheet({ task, open, onOpenChange, onTaskUpdate }: Task
                             {comments.map((comment) => (
                                 <div key={comment.id} className="flex gap-3">
                                     <Avatar className="h-8 w-8">
-                                        <AvatarImage src={comment.profiles.avatar_url || undefined} />
+                                        <AvatarImage src={comment.profiles.avatar_url || getAvatarUrl(comment.profiles.full_name || 'User')} />
                                         <AvatarFallback>{comment.profiles.full_name?.charAt(0) || 'U'}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 space-y-1">

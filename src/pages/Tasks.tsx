@@ -26,6 +26,7 @@ import {
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useCompleteTask } from '@/hooks/useTasks';
 import { useTeamHierarchy } from '@/hooks/useTeamHierarchy';
 import { Task, TaskAssignment } from '@/types/database';
+import { getAvatarUrl } from '@/lib/avatars';
 import { format } from 'date-fns';
 import { RecentActivityWidget } from '@/components/activity/ActivityTimeline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -648,15 +649,15 @@ export default function Tasks() {
                             <TableCell className="pl-6 py-3">
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-8 w-8 bg-slate-100 border border-slate-200">
-                                  {assigneeName ? (
-                                    <AvatarFallback className="text-xs text-slate-500">
-                                      {assigneeName.substring(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                  ) : (
+                                  {task.assigned_to ? (
                                     <>
-                                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.id}`} />
-                                      <AvatarFallback>TK</AvatarFallback>
+                                      <AvatarImage src={getAvatarUrl(assigneeName || task.assigned_to)} />
+                                      <AvatarFallback className="text-xs text-slate-500">
+                                        {assigneeName?.substring(0, 2).toUpperCase()}
+                                      </AvatarFallback>
                                     </>
+                                  ) : (
+                                    <AvatarFallback className="text-xs">?</AvatarFallback>
                                   )}
                                 </Avatar>
                                 <div>
@@ -706,6 +707,7 @@ export default function Tasks() {
                                     const name = getProfileName(c.user_id);
                                     return (
                                       <Avatar key={c.id} className="h-6 w-6 border-2 border-white">
+                                        <AvatarImage src={getAvatarUrl(name || c.user_id)} />
                                         <AvatarFallback className="text-[9px] bg-blue-100 text-blue-700">
                                           {name ? name.substring(0, 2).toUpperCase() : '??'}
                                         </AvatarFallback>

@@ -32,6 +32,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Deal } from '@/types/database';
+import { getAvatarUrl } from '@/lib/avatars';
 
 const STAGES = [
   { id: 'qualified', label: 'Qualified', color: 'bg-black' },
@@ -280,6 +281,7 @@ export default function Pipeline() {
                             <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-100">
                               <div className="flex items-center gap-1.5">
                                 <Avatar className="w-5 h-5">
+                                  <AvatarImage src={getAvatarUrl(deal.lead?.contact_name || 'Prospect')} />
                                   <AvatarFallback className="text-[9px] bg-indigo-50 text-indigo-700 font-bold">
                                     {deal.lead?.contact_name?.[0] || 'U'}
                                   </AvatarFallback>

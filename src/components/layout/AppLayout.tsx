@@ -15,7 +15,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getAvatarUrl } from '@/lib/avatars';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate();
@@ -108,6 +109,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                                         <Avatar className="h-9 w-9">
+                                            <AvatarImage src={getAvatarUrl(user?.email || 'user')} alt={user?.email || 'User'} />
                                             <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                                                 {userInitials}
                                             </AvatarFallback>
@@ -117,6 +119,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 <DropdownMenuContent align="end" className="w-56">
                                     <div className="flex items-center gap-2 p-2">
                                         <Avatar className="h-8 w-8">
+                                            <AvatarImage src={getAvatarUrl(user?.email || 'user')} alt={user?.email || 'User'} />
                                             <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                                                 {userInitials}
                                             </AvatarFallback>
