@@ -24,3 +24,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Project specific debug files
+*.zip
+debug_*.cjs
+verify_*.cjs
+verify_*.js
+verify_*.ts
+test_*.js
+test_*.ts

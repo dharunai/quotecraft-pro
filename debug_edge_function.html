@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edge Function Debugger</title>
+</head>
+<body>
+    <h1>Edge Function Debugger</h1>
+    <p>Open Console (F12) to see results.</p>
+    <button id="testBtn">Test Connection</button>
+    <div id="output"></div>
+
+    <script type="module">
+        import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+        // Hardcoded for debug - derived from your .env
+        const SUPABASE_URL = "https://anqdcadmweehttbmmdey.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFucWRjYWRtd2VlaHR0Ym1tZGV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzOTU1OTUsImV4cCI6MjA4NDk3MTU5NX0.X0HDffK0KzzXC8diFWikYmXuSi5vwCdP9U2i594XIFY";
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const out = document.getElementById('output');
+            out.innerHTML = 'Testing...';
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    out.innerHTML += '<br>❌ No session. Please login to app first or hardcode token.';
+                    return;
+                }
+
+                out.innerHTML += '<br>✅ Got Session Token';
+
+                const functionUrl = `${SUPABASE_URL}/functions/v1/google-oauth?action=generate-url`;
+                out.innerHTML += `<br>Fetching: ${functionUrl}`;
+
+                const res = await fetch(functionUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (res.ok) {
+                    const json = await res.json();
+                    out.innerHTML += `<br>✅ Success! Response: <pre>${JSON.stringify(json, null, 2)}</pre>`;
+                } else {
+                    const text = await res.text();
+                    out.innerHTML += `<br>❌ Error ${res.status}: ${text}`;
+                }
+
+            } catch (err) {
+                out.innerHTML += `<br>❌ Exception: ${err.message}`;
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>

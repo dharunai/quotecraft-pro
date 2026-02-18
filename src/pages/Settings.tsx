@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { PermissionGuard } from '@/components/PermissionGuard';
-import { Building2, Mail, CreditCard, Bell, Users, CheckSquare } from 'lucide-react';
+import { Building2, Mail, CreditCard, Bell, Users, CheckSquare, Plug } from 'lucide-react';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -59,6 +59,13 @@ export default function Settings() {
       icon: CheckSquare,
       path: '/settings/tasks',
       color: 'text-slate-700'
+    },
+    {
+      title: 'Integrations',
+      description: 'Connect Google Workspace, WhatsApp, & more',
+      icon: Plug,
+      path: '/settings/integrations',
+      color: 'text-pink-600'
     }
   ];
 
