@@ -33,3 +33,16 @@ verify_*.js
 verify_*.ts
 test_*.js
 test_*.ts
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/

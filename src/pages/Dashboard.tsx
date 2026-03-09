@@ -8,12 +8,18 @@ import { useProducts } from '@/hooks/useProducts';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useTasks } from '@/hooks/useTasks';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useTeamHierarchy } from '@/hooks/useTeamHierarchy';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { useAIInsights, useRevenueForecast } from '@/hooks/useAIInsights';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format, subMonths, isSameMonth, addMonths, parseISO, startOfMonth, isWithinInterval, addDays, startOfYear, endOfYear } from 'date-fns';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend,
+  BarChart, Bar
 } from 'recharts';
 import { DateRange } from "react-day-picker";
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
@@ -35,9 +41,14 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit, Save, X } from 'lucide-react';
+import {
+  Edit, Save, PlusCircle, Sparkles, Trophy, Activity,
+  ArrowUpRight, ArrowDownRight, Users, Target, FileText,
+  Calendar, CheckSquare, Briefcase, TrendingUp, GripHorizontal,
+  AlertTriangle, Layers, TrendingDown
+} from 'lucide-react';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']; // Modern SaaS palette
 
 // --- Drag & Drop Generic Component ---
 function SortableItem(props: any) {
@@ -65,11 +76,11 @@ function SortableItem(props: any) {
   const dragListeners = props.isEditMode ? listeners : {};
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...dragListeners} className={`${props.className} relative group`}>
+    <div ref={setNodeRef} style={style} {...attributes} {...dragListeners} className={`${props.className} relative group h-full`}>
       {props.isEditMode && (
         <div className="absolute top-2 right-2 z-20">
-          <div className="bg-black/10 p-1 rounded hover:bg-black/20 transition-colors">
-            <Edit className="h-3 w-3 text-slate-500" />
+          <div className="bg-slate-100 p-1 rounded-md hover:bg-slate-200 transition-colors shadow-sm cursor-grab">
+            <GripHorizontal className="h-4 w-4 text-slate-500" />
           </div>
         </div>
       )}
@@ -79,13 +90,33 @@ function SortableItem(props: any) {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { data: leads = [] } = useLeads();
   const { data: quotations = [] } = useQuotations();
   const { data: deals = [] } = useDeals();
   const { data: products = [] } = useProducts();
   const { data: tasks = [] } = useTasks();
   const { data: settings } = useCompanySettings();
+  const { allProfiles } = useTeamHierarchy();
   const currency = settings?.currency || '₹';
+  const { insights, nextBestActions, isLoading: aiLoading, isServiceDown } = useAIInsights();
+  const wonDeals = useMemo(() => deals.filter(d => d.stage === 'won'), [deals]);
+  const { forecast, isLoading: forecastLoading, hasEnoughData } = useRevenueForecast(wonDeals);
+
+  // --- Real-time Activities Data ---
+  const { data: recentActivities = [] } = useQuery({
+    queryKey: ['recent-activities-dashboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
 
   // --- State ---
   const [isEditMode, setIsEditMode] = useState(false);
@@ -98,11 +129,13 @@ export default function Dashboard() {
 
   // --- Drag & Drop State ---
   const [kpiOrder, setKpiOrder] = useState([
-    'totalSales', 'winRate', 'pipelineValue', 'openDeals', 'weightedValue', 'avgDaysToClose'
+    'totalSales', 'openDeals', 'winRate', 'pipelineValue', 'weightedValue', 'avgDaysToClose'
   ]);
 
   const [chartOrder, setChartOrder] = useState([
-    'wonDealsTrend', 'salesPipeline', 'dealsProjection', 'dealLossReasons', 'upcomingTasks'
+    'wonDealsTrend', 'salesPipeline', 'dealsProjection', 'dealLossReasons',
+    'stalledDeals', 'leadSourcePerformance', 'revenueForecast',
+    'upcomingTasks', 'recentActivity', 'leaderboard'
   ]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -114,29 +147,19 @@ export default function Dashboard() {
     })
   );
 
-  // --- Filter Logic ---
-  const filteredDeals = useMemo(() => {
-    if (!dateRange?.from) return deals;
-    // Basic filtering can happen here if needed, but we do precise filtering in metrics
-    return deals;
-  }, [deals, dateRange]);
-
   // --- KPI Metrics Calculation ---
   const pipelineMetrics = useMemo(() => {
-    // Determine effective date range
     const from = dateRange?.from || new Date(0);
     const to = dateRange?.to || new Date(2100, 0, 1);
 
     const activeDeals = deals.filter(d => d.stage !== 'lost' && d.stage !== 'won');
 
-    // Won deals strictly in period
     const wonDealsInPeriod = deals.filter(d =>
       d.stage === 'won' &&
       d.won_date &&
       isWithinInterval(parseISO(d.won_date), { start: from, end: to })
     );
 
-    // Lost deals in period
     const lostDealsInPeriod = deals.filter(d =>
       d.stage === 'lost' &&
       d.lost_date &&
@@ -158,7 +181,7 @@ export default function Dashboard() {
     }, 0);
 
     const avgDaysToClose = closedDealsWithDates.length > 0
-      ? Math.round(totalDaysToClose / closedDealsWithDates.length)
+      ? Math.max(0, Math.round(totalDaysToClose / closedDealsWithDates.length))
       : 0;
 
     return {
@@ -166,11 +189,37 @@ export default function Dashboard() {
       wonDealsCount: wonDealsInPeriod.length,
       winRate,
       avgDaysToClose,
-      pipelineValue, // Pipeline is usually "snapshot", so we show current active
+      pipelineValue,
       openDealsCount: activeDeals.length,
       weightedValue,
     };
   }, [deals, dateRange]);
+
+  // --- Dynamic KPI Trends ---
+  const kpiTrends = useMemo(() => {
+    const today = new Date();
+    const currentMonthStart = startOfMonth(today);
+    const lastMonthStart = subMonths(currentMonthStart, 1);
+
+    // Revenue
+    const currentMonthWon = deals.filter(d => d.stage === 'won' && d.won_date && parseISO(d.won_date) >= currentMonthStart);
+    const lastMonthWon = deals.filter(d => d.stage === 'won' && d.won_date && parseISO(d.won_date) >= lastMonthStart && parseISO(d.won_date) < currentMonthStart);
+    const currentRev = currentMonthWon.reduce((s, d) => s + (d.deal_value || 0), 0);
+    const lastRev = lastMonthWon.reduce((s, d) => s + (d.deal_value || 0), 0);
+    const revTrend = lastRev > 0 ? ((currentRev - lastRev) / lastRev) * 100 : 0;
+
+    // Win Rate
+    const currentClosed = deals.filter(d => (d.stage === 'won' || d.stage === 'lost') && (d.won_date || d.lost_date) && parseISO(d.won_date || d.lost_date || '') >= currentMonthStart);
+    const lastClosed = deals.filter(d => (d.stage === 'won' || d.stage === 'lost') && (d.won_date || d.lost_date) && parseISO(d.won_date || d.lost_date || '') >= lastMonthStart && parseISO(d.won_date || d.lost_date || '') < currentMonthStart);
+    const currentWinRate = currentClosed.length ? (currentMonthWon.length / currentClosed.length) * 100 : 0;
+    const lastWinRate = lastClosed.length ? (lastMonthWon.length / lastClosed.length) * 100 : 0;
+    const winRateTrend = currentWinRate - lastWinRate;
+
+    return {
+      revenue: { value: revTrend, text: `${revTrend >= 0 ? '+' : ''}${revTrend.toFixed(1)}% from last month` },
+      winRate: { value: winRateTrend, text: `${winRateTrend >= 0 ? '+' : ''}${winRateTrend.toFixed(1)}% from last month` },
+    };
+  }, [deals]);
 
 
   // --- Chart Data Preparation ---
@@ -208,11 +257,10 @@ export default function Dashboard() {
 
   const dealsProjection = useMemo(() => {
     const data = [];
-    const startDate = dateRange?.to ? dateRange.to : new Date(); // Start projection from end of selected range (or today)
+    const startDate = dateRange?.to ? dateRange.to : new Date();
 
     for (let i = 0; i < 12; i++) {
       const date = addMonths(startDate, i);
-      // Filter active deals expecting to close in this month
       const monthDeals = deals.filter(d =>
         d.stage !== 'won' && d.stage !== 'lost' &&
         d.expected_close_date &&
@@ -229,7 +277,6 @@ export default function Dashboard() {
   }, [deals, dateRange]);
 
   const lossReasonsData = useMemo(() => {
-    // Filter lost deals by date range
     const from = dateRange?.from || new Date(0);
     const to = dateRange?.to || new Date(2100, 0, 1);
 
@@ -261,9 +308,79 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [tasks]);
 
+  // Stalled Deals: no update in last 5 days
+  const stalledDeals = useMemo(() => {
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+    return deals.filter(
+      d => !['won', 'lost'].includes(d.stage) &&
+        d.updated_at && new Date(d.updated_at) < fiveDaysAgo
+    ).slice(0, 5);
+  }, [deals]);
+
+  // Lead Source Performance — grouped by lead status (no lead_source field in DB)
+  // We track conversion from contacted/qualified → won stages
+  const leadSourceData = useMemo(() => {
+    const groups: Record<string, { total: number; converted: number }> = {};
+    leads.forEach(lead => {
+      // Use company_name initial letter bucket OR just use status-based grouping
+      // Since there's no lead_source field, we group by how the lead came in:
+      // The notes field or just show meaningful segments
+      // Best proxy: group by 'is_qualified' and 'status' stages
+      const bucket =
+        lead.status === 'won' ? 'Won Leads' :
+          lead.status === 'qualified' ? 'Qualified' :
+            lead.status === 'proposal' ? 'Proposal' :
+              lead.status === 'contacted' ? 'Contacted' :
+                lead.status === 'lost' ? 'Lost' :
+                  'New';
+      if (!groups[bucket]) groups[bucket] = { total: 0, converted: 0 };
+      groups[bucket].total++;
+      if (lead.status === 'won' || lead.status === 'qualified') groups[bucket].converted++;
+    });
+    return Object.entries(groups)
+      .map(([name, v]) => ({
+        name,
+        total: v.total,
+        converted: v.converted,
+        rate: v.total > 0 ? Math.round((v.converted / v.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6);
+  }, [leads]);
+
+  const leaderboardData = useMemo(() => {
+    const from = dateRange?.from || new Date(0);
+    const to = dateRange?.to || new Date(2100, 0, 1);
+
+    const wonDealsInPeriod = deals.filter(d =>
+      d.stage === 'won' &&
+      d.won_date &&
+      isWithinInterval(parseISO(d.won_date), { start: from, end: to })
+    );
+
+    const revenueByUser = wonDealsInPeriod.reduce((acc, deal) => {
+      const userId = deal.created_by; // Use created_by as owner of deal based on db schema
+      if (!userId) return acc;
+      acc[userId] = (acc[userId] || 0) + (deal.deal_value || 0);
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(revenueByUser)
+      .map(([userId, revenue]) => {
+        const profile = allProfiles.find(p => p.user_id === userId);
+        return {
+          id: userId,
+          name: profile?.full_name || profile?.email || 'Unknown User',
+          revenue,
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [deals, dateRange, allProfiles]);
+
   // --- Handlers ---
   function handleDragEnd(event: DragEndEvent) {
-    if (!isEditMode) return; // double check logic
+    if (!isEditMode) return;
 
     const { active, over } = event;
     setActiveId(null);
@@ -275,7 +392,7 @@ export default function Dashboard() {
           const newIndex = items.indexOf(over?.id as string);
           return arrayMove(items, oldIndex, newIndex);
         });
-      } else {
+      } else if (chartOrder.includes(active.id as string)) {
         setChartOrder((items) => {
           const oldIndex = items.indexOf(active.id as string);
           const newIndex = items.indexOf(over?.id as string);
@@ -287,48 +404,83 @@ export default function Dashboard() {
 
   // --- Render Functions for Dynamic Widgets ---
   const renderKpiCard = (id: string) => {
-    const cardContent = (title: string, value: string | number, bgClass: string) => (
-      <Card className={`h-full border-none shadow-sm relative overflow-hidden transition-all ${isEditMode ? 'hover:ring-2 hover:ring-primary/20' : ''}`}>
-        {/* Abstract Background for Nano look */}
-        <div className={`absolute inset-0 opacity-10 ${bgClass}`}
-          style={{
-            backgroundImage: 'url(/abstract_nano_bg.webp)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            mixBlendMode: 'overlay'
-          }} />
-
-        <CardHeader className="pb-1 relative z-10">
-          <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="relative z-10">
-          <div className="text-xl font-bold text-slate-900">{value}</div>
-        </CardContent>
-
-        {/* Decorative nano-line */}
-        <div className={`absolute bottom-0 left-0 h-0.5 w-full ${bgClass.replace('bg-', 'bg-gradient-to-r from-transparent to-')}`} />
-      </Card>
-    );
+    let title = '';
+    let value: string | number = '';
+    let trend = '';
+    let isPositive = true;
 
     switch (id) {
-      case 'totalSales': return cardContent('Total Sales', `${currency}${pipelineMetrics.totalSales.toLocaleString('en-IN')}`, 'bg-primary');
-      case 'winRate': return cardContent('Win Rate', `${pipelineMetrics.winRate}%`, 'bg-blue-500');
-      case 'pipelineValue': return cardContent('Pipeline Value', `${currency}${pipelineMetrics.pipelineValue.toLocaleString('en-IN')}`, 'bg-purple-500');
-      case 'openDeals': return cardContent('Open Deals', pipelineMetrics.openDealsCount, 'bg-indigo-500');
-      case 'weightedValue': return cardContent('Weighted Value', `${currency}${Math.round(pipelineMetrics.weightedValue).toLocaleString('en-IN')}`, 'bg-sky-500');
-      case 'avgDaysToClose': return cardContent('Avg Days to Close', pipelineMetrics.avgDaysToClose, 'bg-teal-500');
+      case 'totalSales':
+        title = 'Total Revenue';
+        value = `${currency}${pipelineMetrics.totalSales.toLocaleString('en-IN')}`;
+        trend = kpiTrends.revenue.text;
+        isPositive = kpiTrends.revenue.value >= 0;
+        break;
+      case 'openDeals':
+        title = 'Open Deals';
+        value = pipelineMetrics.openDealsCount;
+        trend = 'Active opportunities';
+        isPositive = true;
+        break;
+      case 'winRate':
+        title = 'Win Rate';
+        value = `${pipelineMetrics.winRate}%`;
+        trend = kpiTrends.winRate.text;
+        isPositive = kpiTrends.winRate.value >= 0;
+        break;
+      case 'pipelineValue':
+        title = 'Pipeline Value';
+        value = `${currency}${pipelineMetrics.pipelineValue.toLocaleString('en-IN')}`;
+        trend = `${deals.filter(d => d.stage !== 'won' && d.stage !== 'lost').length} active deals`;
+        isPositive = true;
+        break;
+      case 'weightedValue': // Used as Forecast Revenue
+        title = 'Forecast Revenue';
+        value = `${currency}${Math.round(pipelineMetrics.weightedValue).toLocaleString('en-IN')}`;
+        trend = `Expected value based on prob.`;
+        isPositive = true;
+        break;
+      case 'avgDaysToClose':
+        title = 'Avg Days to Close';
+        value = pipelineMetrics.avgDaysToClose;
+        trend = 'Average sales cycle';
+        isPositive = true;
+        break;
       default: return null;
     }
+
+    return (
+      <Card className={`h-full border border-border bg-card shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] transition-all overflow-hidden relative ${isEditMode ? 'ring-2 ring-primary/20' : ''}`}>
+        <CardHeader className="pb-1 pt-4 px-5">
+          <CardTitle className="text-[13px] font-medium text-muted-foreground">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="pb-4 px-5">
+          <div className="text-2xl font-bold text-foreground tracking-tight">{value}</div>
+          <div className="flex items-center mt-1.5 text-[11px] font-medium">
+            {trend.includes('%') || trend.includes('days') ? (
+              <span className={`inline-flex items-center gap-0.5 ${isPositive ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+                {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                {trend}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">{trend}</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   const renderChartCard = (id: string) => {
-    // Helper to wrap charts with consistent styling
-    const ChartWrapper = ({ title, children, className = '' }: any) => (
-      <Card key={id} className={`h-full border-none shadow-sm transition-all ${isEditMode ? 'hover:ring-2 hover:ring-primary/20' : ''} ${className}`}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-slate-800">{title}</CardTitle>
+    const ChartWrapper = ({ title, icon, children, className = '' }: any) => (
+      <Card className={`h-full border border-border bg-card shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] transition-all overflow-hidden flex flex-col ${isEditMode ? 'ring-2 ring-primary/20' : ''} ${className}`}>
+        <CardHeader className="py-3 px-5 flex flex-row items-center justify-between border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
+          <CardTitle className="text-[14px] font-semibold text-foreground flex items-center gap-2">
+            {icon && <span>{icon}</span>}
+            {title}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4 px-5 pb-5 flex-1 h-full w-full">
           {children}
         </CardContent>
       </Card>
@@ -337,21 +489,22 @@ export default function Dashboard() {
     switch (id) {
       case 'wonDealsTrend':
         return (
-          <ChartWrapper title="Won Deals Trend" className={chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}>
-            <div className="h-[250px]">
+          <ChartWrapper title="Revenue Trend" icon={<TrendingUp className="h-4 w-4 text-indigo-500" />} className={chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}>
+            <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={wonDealsTrend}>
+                <AreaChart data={wonDealsTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} />
-                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Area type="monotone" dataKey="value" stroke="#0f172a" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+                  <XAxis dataKey="month" fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                  <YAxis fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(value) => `${value >= 1000 ? (value / 1000) + 'k' : value}`} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
+                  <Area type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -359,25 +512,26 @@ export default function Dashboard() {
         );
       case 'salesPipeline':
         return (
-          <ChartWrapper title="Sales Pipeline">
-            <div className="h-[250px]">
+          <ChartWrapper title="Pipeline Distribution" icon={<PieChart className="h-4 w-4 text-emerald-500" />}>
+            <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pipelineData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
+                    innerRadius={65}
+                    outerRadius={85}
+                    paddingAngle={3}
                     dataKey="value"
+                    stroke="none"
                   >
                     {pipelineData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none' }} />
-                  <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
+                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }} itemStyle={{ color: 'hsl(var(--foreground))' }} />
+                  <Legend verticalAlign="bottom" height={36} iconSize={8} iconType="circle" wrapperStyle={{ fontSize: '11px', color: 'hsl(var(--foreground))' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -385,102 +539,368 @@ export default function Dashboard() {
         );
       case 'dealsProjection':
         return (
-          <ChartWrapper title="Deals Projection" className={chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}>
-            <div className="h-[250px]">
+          <ChartWrapper title="Deal Forecast" icon={<Target className="h-4 w-4 text-amber-500" />} className={chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}>
+            <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dealsProjection}>
-                  <defs>
-                    <linearGradient id="colorProj" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#64748b" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#64748b" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} />
-                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none' }} />
-                  <Area type="monotone" dataKey="value" stroke="#64748b" strokeWidth={2} fillOpacity={1} fill="url(#colorProj)" />
-                </AreaChart>
+                <BarChart data={dealsProjection} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                  <YAxis fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(value) => `${value >= 1000 ? (value / 1000) + 'k' : value}`} />
+                  <RechartsTooltip cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
+                  <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={45} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </ChartWrapper>
         );
       case 'dealLossReasons':
         return (
-          <ChartWrapper title="Deal Loss Reasons">
-            <div className="h-[250px] flex items-center justify-center">
+          <ChartWrapper title="Deal Loss Reasons" icon={<TrendingUp className="h-4 w-4 text-rose-500" />}>
+            <div className="h-[250px] w-full">
               {lossReasonsData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={lossReasonsData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {lossReasonsData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none' }} />
-                    <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
-                  </PieChart>
+                  <BarChart data={lossReasonsData} layout="vertical" margin={{ top: 0, right: 10, left: 30, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} fontSize={11} tick={{ fill: 'hsl(var(--muted-foreground))' }} width={90} />
+                    <RechartsTooltip cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
+                    <Bar dataKey="value" fill="#f43f5e" radius={[0, 4, 4, 0]} barSize={24} />
+                  </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="text-muted-foreground text-xs">No lost deals data</div>
+                <div className="flex h-full items-center justify-center text-muted-foreground text-xs">No lost deals data</div>
               )}
             </div>
           </ChartWrapper>
         );
       case 'upcomingTasks':
         return (
-          <ChartWrapper title="Upcoming Tasks">
-            <div className="space-y-3">
-              {upcomingTasksData.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-8">No upcoming tasks</p>
-              ) : (
-                upcomingTasksData.map(task => (
-                  <div key={task.id} className="flex items-start gap-3 border-b border-slate-50 pb-2 last:border-0 last:pb-0">
-                    <div className={`w-1.5 h-1.5 mt-1.5 rounded-full ${task.priority === 'high' || task.priority === 'urgent' ? 'bg-red-500' : 'bg-slate-400'
-                      }`} />
-                    <div>
-                      <p className="text-xs font-medium text-slate-700">{task.title}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {task.due_date ? format(new Date(task.due_date), 'MMM d') : 'No date'}
-                      </p>
+          <ChartWrapper title="Upcoming Tasks" icon={<CheckSquare className="h-4 w-4 text-sky-500" />}>
+            <div className="space-y-3 h-full flex flex-col">
+              <div className="flex-1 space-y-3">
+                {upcomingTasksData.length === 0 ? (
+                  <p className="text-[13px] text-muted-foreground text-center py-8">No upcoming tasks</p>
+                ) : (
+                  upcomingTasksData.map(task => (
+                    <div key={task.id} className="flex items-start gap-3 border-b border-border/50 pb-3 last:border-0 last:pb-0">
+                      <div className={`w-2 h-2 mt-1.5 rounded-full ${task.priority === 'high' || task.priority === 'urgent' ? 'bg-rose-500' : 'bg-slate-300'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-foreground truncate">{task.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : 'No date'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-              <Button variant="ghost" size="sm" className="w-full text-xs h-7 text-slate-500 hover:text-slate-900" asChild>
-                <Link to="/tasks">View All</Link>
+                  ))
+                )}
+              </div>
+              <Button variant="outline" size="sm" className="w-full text-xs" asChild>
+                <Link to="/tasks">View All Tasks</Link>
               </Button>
             </div>
           </ChartWrapper>
         );
+      case 'recentActivity':
+        return (
+          <ChartWrapper title="Recent Activity" icon={<Activity className="h-4 w-4 text-muted-foreground" />}>
+            <div className="space-y-4 h-full flex flex-col">
+              <div className="flex-1 space-y-4">
+                {recentActivities.length === 0 ? (
+                  <p className="text-[13px] text-muted-foreground text-center py-8">No recent activity</p>
+                ) : (
+                  recentActivities.map((activity: any) => {
+                    let iconColor = 'bg-blue-500';
+                    if (activity.entity_type === 'deal') iconColor = 'bg-emerald-500';
+                    if (activity.entity_type === 'quotation') iconColor = 'bg-purple-500';
+
+                    return (
+                      <div key={activity.id} className="flex gap-3 text-[13px]">
+                        <div className={`w-2 h-2 mt-1.5 rounded-full ${iconColor} flex-shrink-0`} />
+                        <div>
+                          <span className="font-semibold text-foreground">
+                            {activity.performed_by_name || 'System'}
+                          </span>{' '}
+                          <span className="text-foreground">{activity.description}</span>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            {format(new Date(activity.created_at), 'MMM d, h:mm a')}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <Button variant="outline" size="sm" className="w-full text-xs" disabled>View Full Timeline</Button>
+            </div>
+          </ChartWrapper>
+        );
+
+      case 'leaderboard':
+        return (
+          <ChartWrapper title="Sales Leaderboard" icon={<Trophy className="h-4 w-4 text-amber-500" />}>
+            <div className="space-y-4 h-full flex flex-col justify-start pt-2">
+              {leaderboardData.length === 0 ? (
+                <p className="text-[13px] text-muted-foreground text-center py-8">No won deals in this period</p>
+              ) : (
+                leaderboardData.map((user, index) => {
+                  const isTop = index === 0;
+                  return (
+                    <div key={user.id} className={`flex items-center justify-between p-2 rounded-lg ${isTop ? 'bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30' : 'px-2 py-1'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isTop ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                          {index + 1}
+                        </div>
+                        <div className={`text-[13px] text-foreground ${isTop ? 'font-semibold' : 'font-medium'}`}>
+                          {user.name}
+                        </div>
+                      </div>
+                      <div className={`text-[13px] ${isTop ? 'font-bold text-emerald-600' : 'font-semibold text-foreground'}`}>
+                        {currency}{user.revenue.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </ChartWrapper>
+        );
+      case 'stalledDeals':
+        return (
+          <ChartWrapper title="Deals Needing Attention" icon={<AlertTriangle className="h-4 w-4 text-rose-500" />}>
+            <div className="space-y-3 h-full flex flex-col">
+              <div className="flex-1 space-y-2">
+                {stalledDeals.length === 0 ? (
+                  <p className="text-[13px] text-muted-foreground text-center py-8">🎉 All deals are active!</p>
+                ) : (
+                  stalledDeals.map(deal => (
+                    <div key={deal.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-rose-50/60 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-foreground truncate">{deal.lead?.company_name || 'Unknown'}</p>
+                        <p className="text-[11px] text-muted-foreground capitalize">{deal.stage} · {currency}{(deal.deal_value || 0).toLocaleString('en-IN')}</p>
+                      </div>
+                      <Link to={`/deals/${deal.id}`}>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs text-rose-600 hover:bg-rose-100 border border-rose-200 dark:border-rose-700 flex-none">
+                          Follow Up
+                        </Button>
+                      </Link>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="outline" size="sm" className="w-full text-xs" asChild>
+                <Link to="/pipeline">View Pipeline</Link>
+              </Button>
+            </div>
+          </ChartWrapper>
+        );
+
+      case 'leadSourcePerformance':
+        return (
+          <ChartWrapper title="Lead Source Performance" icon={<Layers className="h-4 w-4 text-violet-500" />}>
+            {leadSourceData.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-xs">No lead source data</div>
+            ) : (
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={leadSourceData} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false}
+                      tick={{ fill: 'hsl(var(--muted-foreground))' }} angle={-20} textAnchor="end" dy={8} />
+                    <YAxis fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <RechartsTooltip
+                      contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                      formatter={(value: any, name: string) => [
+                        name === 'rate' ? `${value}%` : value,
+                        name === 'total' ? 'Total Leads' : name === 'converted' ? 'Converted' : 'Conv. Rate'
+                      ]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                    <Bar dataKey="total" name="Total" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={30} />
+                    <Bar dataKey="converted" name="Converted" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={30} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </ChartWrapper>
+        );
+
+      case 'revenueForecast':
+        return (
+          <ChartWrapper title="AI Revenue Forecast" icon={<TrendingUp className="h-4 w-4 text-indigo-500" />}
+            className={chartOrder.indexOf(id) === 0 ? 'md:col-span-2' : ''}>
+            <div className="flex flex-col h-full gap-4">
+              {!hasEnoughData ? (
+                <p className="text-[13px] text-muted-foreground text-center py-6">Need at least 2 months of won deals to generate forecast.</p>
+              ) : forecastLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map(i => <div key={i} className="h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded animate-pulse" />)}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3">
+                      <p className="text-[11px] text-indigo-500 font-medium">30-Day Forecast</p>
+                      <p className="text-xl font-bold text-indigo-700 dark:text-indigo-300 mt-0.5">
+                        {currency}{forecast.forecast_30.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
+                      <p className="text-[11px] text-emerald-500 font-medium">90-Day Forecast</p>
+                      <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                        {currency}{forecast.forecast_90.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                  </div>
+                  {forecast.series.length > 0 && (
+                    <div className="flex-1 h-[160px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={forecast.series} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis dataKey="date" fontSize={9} axisLine={false} tickLine={false}
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            tickFormatter={v => v.slice(5)} interval={6} />
+                          <YAxis fontSize={10} axisLine={false} tickLine={false}
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            tickFormatter={v => `${v >= 1000 ? (v / 1000) + 'k' : v}`} />
+                          <RechartsTooltip contentStyle={{ fontSize: '11px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                            formatter={(v: any) => [`${currency}${Number(v).toLocaleString('en-IN')}`, 'Forecast']} />
+                          <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2}
+                            fillOpacity={1} fill="url(#forecastGrad)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground text-right">Powered by Prophet · Open-source</p>
+                </>
+              )}
+            </div>
+          </ChartWrapper>
+        );
+
       default: return null;
     }
   };
 
   return (
     <AppLayout>
-      <div className="space-y-5 font-sans">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">Dashboard</h1>
-          <div className="flex items-center space-x-2">
+      <div className="space-y-6 font-sans pb-8">
+
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">Overview of your sales performance and tasks.</p>
+          </div>
+          <div className="flex items-center gap-2">
             <Button
               variant={isEditMode ? "default" : "outline"}
               size="sm"
-              className="h-8 text-xs gap-1"
+              className="h-9 gap-1.5 shadow-sm"
               onClick={() => setIsEditMode(!isEditMode)}
             >
-              {isEditMode ? <Save className="h-3 w-3" /> : <Edit className="h-3 w-3" />}
-              {isEditMode ? 'Save Layout' : 'Customize'}
+              {isEditMode ? <Save className="h-3.5 w-3.5" /> : <Edit className="h-3.5 w-3.5" />}
+              {isEditMode ? 'Save Layout' : 'Customize Dashboard'}
             </Button>
             <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+          </div>
+        </div>
+
+        {/* Quick Actions Bar */}
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+          <Button variant="outline" className="bg-card shadow-sm gap-2 border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 flex-none h-10 px-4" asChild>
+            <Link to="/leads?new=true">
+              <PlusCircle className="h-4 w-4 text-primary" /> <span className="font-medium text-[13px]">Add Lead</span>
+            </Link>
+          </Button>
+          <Button variant="outline" className="bg-card shadow-sm gap-2 border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 flex-none h-10 px-4" asChild>
+            <Link to="/deals">
+              <Briefcase className="h-4 w-4 text-emerald-500" /> <span className="font-medium text-[13px]">Create Deal</span>
+            </Link>
+          </Button>
+          <Button variant="outline" className="bg-card shadow-sm gap-2 border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 flex-none h-10 px-4" asChild>
+            <Link to="/meetings?new=true">
+              <Calendar className="h-4 w-4 text-purple-500" /> <span className="font-medium text-[13px]">Schedule Meeting</span>
+            </Link>
+          </Button>
+          <Button variant="outline" className="bg-card shadow-sm gap-2 border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 flex-none h-10 px-4" asChild>
+            <Link to="/tasks?new=true">
+              <CheckSquare className="h-4 w-4 text-blue-500" /> <span className="font-medium text-[13px]">Create Task</span>
+            </Link>
+          </Button>
+          <Button variant="outline" className="bg-card shadow-sm gap-2 border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 flex-none h-10 px-4" asChild>
+            <Link to="/quotations?new=true">
+              <FileText className="h-4 w-4 text-orange-500" /> <span className="font-medium text-[13px]">Generate Quote</span>
+            </Link>
+          </Button>
+        </div>
+
+        {/* AI Sales Insights & Next Best Action */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/50 rounded-xl p-4 sm:p-5 flex flex-col gap-3 shadow-sm relative overflow-hidden h-full">
+            <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-indigo-100/40 dark:from-indigo-900/20 to-transparent pointer-events-none" />
+            <div className="flex items-center gap-2 mb-1 relative z-10">
+              <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg shrink-0">
+                <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h3 className="text-[14px] font-semibold text-indigo-900 dark:text-indigo-200">AI Sales Insights</h3>
+              {aiLoading && <span className="ml-auto text-[11px] text-indigo-400 animate-pulse">Analyzing...</span>}
+              {isServiceDown && <span className="ml-auto text-[11px] text-rose-400">⚠ AI Service offline</span>}
+            </div>
+            <div className="relative z-10 flex flex-col gap-2">
+              {aiLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map(i => <div key={i} className="h-5 bg-indigo-100 dark:bg-indigo-800/30 rounded animate-pulse" />)}
+                </div>
+              ) : isServiceDown ? (
+                <p className="text-[13px] text-rose-600/80 dark:text-rose-400/80">Could not reach the Python AI service. Make sure it is running on <code className="bg-rose-100 dark:bg-rose-900/30 px-1 rounded text-[11px]">localhost:8000</code>.</p>
+              ) : insights.length > 0 ? (
+                insights.slice(0, 3).map((insight) => (
+                  <div key={insight.id} className="text-[13px] text-indigo-800 dark:text-indigo-300 leading-relaxed flex items-start gap-2">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 dark:bg-indigo-500 shrink-0" />
+                    <span>{insight.message}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[13px] text-indigo-700/70 dark:text-indigo-300/70">Gathering enough data to generate insights...</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 rounded-xl p-4 sm:p-5 flex flex-col gap-3 shadow-sm relative overflow-hidden h-full">
+            <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-emerald-100/40 dark:from-emerald-900/20 to-transparent pointer-events-none" />
+            <div className="flex items-center gap-2 mb-1 relative z-10">
+              <div className="bg-emerald-100 dark:bg-emerald-900/50 p-2 rounded-lg shrink-0">
+                <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h3 className="text-[14px] font-semibold text-emerald-900 dark:text-emerald-200">Next Best Actions</h3>
+            </div>
+            <div className="relative z-10 flex flex-col gap-2">
+              {aiLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map(i => <div key={i} className="h-12 bg-emerald-100 dark:bg-emerald-800/30 rounded animate-pulse" />)}
+                </div>
+              ) : nextBestActions.length > 0 ? (
+                nextBestActions.slice(0, 3).map((action) => (
+                  <div key={action.id} className="text-[13px] flex items-center justify-between gap-3 bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-emerald-100 dark:border-emerald-800/30">
+                    <div>
+                      <span className="font-semibold text-emerald-800 dark:text-emerald-300">{action.action}</span>
+                      <p className="text-emerald-700/80 dark:text-emerald-400/80 text-[11px] mt-0.5">{action.reason}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800" asChild>
+                      <Link to={`/${action.entityType}s/${action.entityId}`}>View</Link>
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[13px] text-emerald-700/70 dark:text-emerald-300/70">No urgent actions recommended right now.</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -492,7 +912,7 @@ export default function Dashboard() {
         >
           {/* KPI Metrics - Sortable Grid */}
           <SortableContext items={kpiOrder} strategy={rectSortingStrategy} disabled={!isEditMode}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {kpiOrder.map(id => (
                 <SortableItem key={id} id={id} className="h-full" isEditMode={isEditMode}>
                   {renderKpiCard(id)}
@@ -503,12 +923,12 @@ export default function Dashboard() {
 
           {/* Charts Row - Sortable Grid */}
           <SortableContext items={chartOrder} strategy={rectSortingStrategy} disabled={!isEditMode}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-5">
-              {chartOrder.map((id, index) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6 items-stretch">
+              {chartOrder.map((id) => {
                 const isFirst = chartOrder.indexOf(id) === 0;
                 return (
                   <SortableItem key={id} id={id} className={
-                    ((id === 'wonDealsTrend' || id === 'dealsProjection') && isFirst) ? "md:col-span-2" : ""
+                    ((id === 'wonDealsTrend' || id === 'dealsProjection') && isFirst) ? "md:col-span-2 h-full" : "h-full"
                   } isEditMode={isEditMode}>
                     {renderChartCard(id)}
                   </SortableItem>
@@ -519,8 +939,10 @@ export default function Dashboard() {
 
           <DragOverlay>
             {activeId ? (
-              <Card className="opacity-80 w-full h-full bg-white shadow-2xl border-primary/20">
-                <CardHeader><CardTitle className="text-xs">Moving Widget...</CardTitle></CardHeader>
+              <Card className="opacity-90 w-full h-full bg-white dark:bg-card shadow-2xl border border-primary/20 scale-[1.02] cursor-grabbing">
+                <CardHeader className="py-3 px-5 border-b border-border bg-slate-50/50">
+                  <CardTitle className="text-sm">Moving Widget...</CardTitle>
+                </CardHeader>
               </Card>
             ) : null}
           </DragOverlay>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useLeads, useCreateLead, useDeleteLead } from '@/hooks/useLeads';
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
-import { Plus, Trash2, Eye, Upload, FileDown, TrendingUp } from 'lucide-react';
-
+import { Plus, Trash2, Eye, Upload, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Lead } from '@/types/database';
 import { PermissionGuard } from '@/components/PermissionGuard';
@@ -24,11 +23,29 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useRef } from 'react';
+import { useLeadScores } from '@/hooks/useAIInsights';
+function LeadScoreBadge({ leadId, scoreMap }: { leadId: string; scoreMap: Map<string, any> }) {
+  const score = scoreMap.get(leadId);
+  if (!score) return <span className="text-xs text-muted-foreground">—</span>;
+  const color =
+    score.label === 'Hot' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+      score.label === 'Warm' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+        'bg-slate-100 text-slate-600 border-slate-200';
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${score.label === 'Hot' ? 'bg-emerald-500' : score.label === 'Warm' ? 'bg-amber-500' : 'bg-slate-400'
+        }`} />
+      {score.label} {score.score}
+    </span>
+  );
+}
+
 export default function Leads() {
   const {
     data: leads = [],
     isLoading
   } = useLeads();
+  const { scoreMap } = useLeadScores(leads);
   const queryClient = useQueryClient();
 
   const { getFilter, setFilter, clearFilters, activeCount } = useFilters();
@@ -130,6 +147,15 @@ export default function Leads() {
   const deleteLead = useDeleteLead();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  React.useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsFormOpen(true);
+      setSearchParams({}); // Clear the parameter after opening
+    }
+  }, [searchParams, setSearchParams]);
+
   const handleCreate = (data: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
     createLead.mutate(data, {
       onSuccess: () => setIsFormOpen(false)
@@ -226,6 +252,7 @@ export default function Leads() {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Status</th>
+                <th>AI Score</th>
                 <th>Created</th>
                 <th className="w-24">Actions</th>
               </tr>
@@ -244,6 +271,9 @@ export default function Leads() {
                 <td className="text-muted-foreground">{lead.phone || '-'}</td>
                 <td>
                   <LeadStatusBadge status={lead.status} />
+                </td>
+                <td>
+                  <LeadScoreBadge leadId={lead.id} scoreMap={scoreMap} />
                 </td>
                 <td className="text-muted-foreground">
                   {format(new Date(lead.created_at), 'dd MMM yyyy')}

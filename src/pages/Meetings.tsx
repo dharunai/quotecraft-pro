@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -52,6 +53,14 @@ export default function Meetings() {
   const [view, setView] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  React.useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsDialogOpen(true);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Calendar UI Refs and State
   const scrollAreaRef = useRef<HTMLDivElement>(null);

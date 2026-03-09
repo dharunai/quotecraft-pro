@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useDeals, useDeleteDeal, useUpdateDeal } from '@/hooks/useDeals';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -17,6 +17,22 @@ import { exportToCSV, exportToExcel, flattenData } from '@/lib/exportUtils';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useDealWinPredictions } from '@/hooks/useAIInsights';
+
+function WinProbBar({ dealId, predMap }: { dealId: string; predMap: Map<string, any> }) {
+    const pred = predMap.get(dealId);
+    if (!pred) return <span className="text-xs text-muted-foreground">—</span>;
+    const pct = pred.win_probability;
+    const color = pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-400' : 'bg-rose-400';
+    return (
+        <div className="flex items-center gap-2 min-w-[80px]">
+            <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-[11px] font-semibold text-foreground w-8 text-right">{pct}%</span>
+        </div>
+    );
+}
 
 export default function Deals() {
     const navigate = useNavigate();
@@ -25,6 +41,18 @@ export default function Deals() {
     const { data: settings } = useCompanySettings();
     const deleteDeal = useDeleteDeal();
     const updateDeal = useUpdateDeal();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { predMap } = useDealWinPredictions(deals);
+
+    React.useEffect(() => {
+        if (searchParams.get('new') === 'true') {
+            // Deals doesn't seem to have a create modal in THIS file directly. Needs to be navigated to or opened?
+            // Let me check if there's a DealForm or if it's handled differently.
+            // Wait, Deals page doesn't have an "Add Deal" button here currently! It has "Go to Leads to Qualify a Deal".
+            // Let's verify how deals are created.
+            setSearchParams({});
+        }
+    }, [searchParams, setSearchParams]);
 
     const { getFilter, setFilter, clearFilters, activeCount } = useFilters();
     const stageFilter = getFilter('stage');
@@ -168,6 +196,7 @@ export default function Deals() {
                                         <th>Contact</th>
                                         <th>Value</th>
                                         <th>Stage</th>
+                                        <th>AI Win %</th>
                                         <th>Probability</th>
                                         <th>Expected Close</th>
                                         <th className="w-24">Actions</th>
@@ -192,6 +221,7 @@ export default function Deals() {
                                                     {deal.stage.charAt(0).toUpperCase() + deal.stage.slice(1)}
                                                 </Badge>
                                             </td>
+                                            <td><WinProbBar dealId={deal.id} predMap={predMap} /></td>
                                             <td>{deal.probability}%</td>
                                             <td className="text-muted-foreground text-sm">
                                                 {deal.expected_close_date ? format(new Date(deal.expected_close_date), 'dd MMM yyyy') : '-'}

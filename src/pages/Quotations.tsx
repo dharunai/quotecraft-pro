@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useQuotations, useCreateQuotation, useDeleteQuotation, useGenerateQuoteNumber } from '@/hooks/useQuotations';
 import { useLeads } from '@/hooks/useLeads';
@@ -29,6 +29,15 @@ export default function Quotations() {
   const [isSelectingLead, setIsSelectingLead] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  React.useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setIsSelectingLead(true);
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   const handleCreateQuotation = async () => {
     if (!selectedLeadId) return;
     try {

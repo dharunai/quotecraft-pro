@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -122,6 +123,15 @@ export default function Tasks() {
 
   // --- State ---
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  React.useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      openNewDialog();
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [detailSheetTask, setDetailSheetTask] = useState<Task | null>(null);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);

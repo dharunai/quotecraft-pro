@@ -57,7 +57,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
     return (
         <aside
             className={cn(
-                "fixed left-0 top-0 z-40 h-screen bg-gray-100 border-r border-border transition-all duration-300 ease-in-out flex flex-col",
+                "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col",
                 collapsed ? "w-16" : "w-64"
             )}
         >
@@ -127,8 +127,8 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                                 className={cn(
                                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                                     active
-                                        ? "bg-black text-white"
-                                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-200",
+                                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                                        : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                                     collapsed && "justify-center px-2"
                                 )}
                             >
