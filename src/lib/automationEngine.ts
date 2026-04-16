@@ -82,7 +82,7 @@ async function getMatchingRules(eventType: AutomationEvent): Promise<AutomationR
     }
 
     console.log(`[Automation] Found ${data?.length || 0} active rule(s) for ${eventType}:`, data);
-    return (data || []) as AutomationRule[];
+    return (data || []) as unknown as AutomationRule[];
   } catch (error) {
     console.error('[Automation] Error in getMatchingRules:', error);
     return [];
@@ -199,7 +199,7 @@ async function executeCreateTask(
 
     console.log(`[Automation] Creating task:`, taskData);
 
-    const { error, data } = await supabase.from('tasks').insert(taskData).select();
+    const { error, data } = await supabase.from('tasks' as any).insert(taskData as any).select();
 
     if (error) {
       console.error('[Automation] Error creating task:', error);
@@ -233,7 +233,7 @@ async function executeNotification(
     const message = action.value || `Automation triggered: ${rule.name}`;
     
     // Create notification in database
-    const { error } = await supabase.from('notifications').insert({
+    const { error } = await (supabase as any).from('notifications').insert({
       user_id: user.id,
       title: rule.name,
       message: message

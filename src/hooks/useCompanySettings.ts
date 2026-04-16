@@ -2,38 +2,61 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySettings } from '@/types/database';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
 
 export function useCompanySettings() {
-  const { companyId } = useAuth();
-
   return useQuery({
-    queryKey: ['company-settings', companyId],
-    queryFn: async (): Promise<CompanySettings & { company_code?: string } | null> => {
-      if (!companyId) return null;
-
+    queryKey: ['company-settings'],
+    queryFn: async (): Promise<CompanySettings | null> => {
       const { data, error } = await supabase
         .from('company_settings')
-        .select(`
-          *,
-          company:companies(company_code)
-        `)
-        .eq('company_id', companyId)
+        .select('*')
         .maybeSingle();
 
       if (error) {
         console.error("Error fetching company settings:", error);
         throw error;
-      };
+      }
 
-      // Flatten structure for easier usage
-      const settings = data as unknown as CompanySettings & { company: { company_code: string } };
+      if (!data) return null;
+
+      // Map DB columns to our CompanySettings type
       return {
-        ...settings,
-        company_code: settings.company?.company_code
-      };
+        id: data.id,
+        company_id: '',
+        company_name: data.company_name,
+        logo_url: data.logo_url,
+        address: data.address,
+        email: data.email,
+        phone: data.phone,
+        gst_number: data.gst_number,
+        pan: data.pan,
+        currency: data.currency,
+        tax_rate: data.tax_rate,
+        terms: data.terms,
+        theme_color: data.theme_color,
+        bank_name: data.bank_name,
+        account_number: data.account_number,
+        ifsc_code: data.ifsc_code,
+        account_holder_name: data.account_holder_name,
+        invoice_prefix: data.invoice_prefix,
+        default_due_days: data.default_due_days,
+        invoice_terms: data.invoice_terms,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        email_signature: data.email_signature,
+        quotation_email_subject: data.quotation_email_subject,
+        quotation_email_body: data.quotation_email_body,
+        invoice_email_subject: data.invoice_email_subject,
+        invoice_email_body: data.invoice_email_body,
+        enable_stock_alerts: data.enable_stock_alerts,
+        stock_alert_email: data.stock_alert_email,
+        alert_on_low_stock: data.alert_on_low_stock,
+        alert_on_out_of_stock: data.alert_on_out_of_stock,
+        show_logo_on_pdf: data.show_logo_on_pdf,
+        include_hsn_sac: data.include_hsn_sac,
+        pdf_footer_text: data.pdf_footer_text,
+      } as CompanySettings;
     },
-    enabled: !!companyId
   });
 }
 
@@ -42,10 +65,11 @@ export function useUpdateCompanySettings() {
 
   return useMutation({
     mutationFn: async (settings: Partial<CompanySettings> & { id: string }) => {
+      const { id, company_id, ...rest } = settings as any;
       const { data, error } = await supabase
         .from('company_settings')
-        .update(settings)
-        .eq('id', settings.id)
+        .update(rest)
+        .eq('id', id)
         .select()
         .single();
 
@@ -67,9 +91,7 @@ export function useUploadLogo() {
 
   return useMutation({
     mutationFn: async ({ file, settingsId }: { file: File; settingsId: string }) => {
-      // Try Supabase Storage first
       try {
-        // Ensure bucket exists by attempting upload
         const fileExt = file.name.split('.').pop();
         const fileName = `logo-${settingsId}-${Date.now()}.${fileExt}`;
 
@@ -96,7 +118,6 @@ export function useUploadLogo() {
         console.warn('Storage not available, using base64 fallback:', storageErr);
       }
 
-      // Fallback: Convert to base64 data URL and store directly
       const base64Url = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);

@@ -126,7 +126,9 @@ export const BusinessCardScanner: React.FC<BusinessCardScannerProps> = ({
       
       // Dynamically import Tesseract.js
       const { createWorker } = await import('tesseract.js');
-      const worker = await createWorker('eng');
+      const worker = await createWorker();
+      await worker.loadLanguage('eng');
+      await worker.initialize('eng');
       
       const result = await worker.recognize(capturedImage);
       const text = result.data.text;
