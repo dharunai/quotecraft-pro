@@ -450,20 +450,21 @@ export default function Dashboard() {
     }
 
     return (
-      <Card className={`h-full border border-border bg-card shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] transition-all overflow-hidden relative ${isEditMode ? 'ring-2 ring-primary/20' : ''}`}>
-        <CardHeader className="pb-1 pt-4 px-5">
-          <CardTitle className="text-[13px] font-medium text-muted-foreground">{title}</CardTitle>
+      <Card className={`group h-full border border-slate-200/60 dark:border-slate-800 bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-900/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden relative ${isEditMode ? 'ring-2 ring-primary/20 cursor-grab' : ''}`}>
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <CardHeader className="pb-1 pt-5 px-5">
+          <CardTitle className="text-[13px] font-medium text-slate-500 dark:text-slate-400">{title}</CardTitle>
         </CardHeader>
-        <CardContent className="pb-4 px-5">
-          <div className="text-2xl font-bold text-foreground tracking-tight">{value}</div>
-          <div className="flex items-center mt-1.5 text-[11px] font-medium">
+        <CardContent className="pb-5 px-5">
+          <div className="text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">{value}</div>
+          <div className="flex items-center mt-3 text-[11px] font-medium">
             {trend.includes('%') || trend.includes('days') ? (
-              <span className={`inline-flex items-center gap-0.5 ${isPositive ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${isPositive ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'}`}>
                 {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                 {trend}
               </span>
             ) : (
-              <span className="text-muted-foreground">{trend}</span>
+              <span className="text-slate-500 dark:text-slate-400">{trend}</span>
             )}
           </div>
         </CardContent>
@@ -473,14 +474,14 @@ export default function Dashboard() {
 
   const renderChartCard = (id: string) => {
     const ChartWrapper = ({ title, icon, children, className = '' }: any) => (
-      <Card className={`h-full border border-border bg-card shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] transition-all overflow-hidden flex flex-col ${isEditMode ? 'ring-2 ring-primary/20' : ''} ${className}`}>
-        <CardHeader className="py-3 px-5 flex flex-row items-center justify-between border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
-          <CardTitle className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-            {icon && <span>{icon}</span>}
+      <Card className={`h-full border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group ${isEditMode ? 'ring-2 ring-primary/20 cursor-grab' : ''} ${className}`}>
+        <CardHeader className="py-4 px-5 flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800/60 bg-transparent">
+          <CardTitle className="text-[14px] font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
+            {icon && <div className="p-1.5 bg-slate-50 dark:bg-slate-800 rounded-md group-hover:scale-110 transition-transform">{icon}</div>}
             {title}
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-4 px-5 pb-5 flex-1 h-full w-full">
+        <CardContent className="pt-5 px-5 pb-5 flex-1 h-full w-full">
           {children}
         </CardContent>
       </Card>
@@ -503,7 +504,7 @@ export default function Dashboard() {
                   <YAxis fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={(value) => `${value >= 1000 ? (value / 1000) + 'k' : value}`} />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} itemStyle={{ color: '#0f172a' }} cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }} />
                   <Area type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorValue)" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -520,9 +521,10 @@ export default function Dashboard() {
                     data={pipelineData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={65}
-                    outerRadius={85}
-                    paddingAngle={3}
+                    innerRadius={68}
+                    outerRadius={88}
+                    paddingAngle={4}
+                    cornerRadius={6}
                     dataKey="value"
                     stroke="none"
                   >
@@ -530,7 +532,7 @@ export default function Dashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }} itemStyle={{ color: 'hsl(var(--foreground))' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} itemStyle={{ color: '#0f172a' }} />
                   <Legend verticalAlign="bottom" height={36} iconSize={8} iconType="circle" wrapperStyle={{ fontSize: '11px', color: 'hsl(var(--foreground))' }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -547,8 +549,8 @@ export default function Dashboard() {
                   <XAxis dataKey="month" fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} dy={10} />
                   <YAxis fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={(value) => `${value >= 1000 ? (value / 1000) + 'k' : value}`} />
-                  <RechartsTooltip cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
-                  <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={45} />
+                  <RechartsTooltip cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} itemStyle={{ color: '#0f172a' }} />
+                  <Bar dataKey="value" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={35} animationDuration={1000} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -564,8 +566,8 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} fontSize={11} tick={{ fill: 'hsl(var(--muted-foreground))' }} width={90} />
-                    <RechartsTooltip cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
-                    <Bar dataKey="value" fill="#f43f5e" radius={[0, 4, 4, 0]} barSize={24} />
+                    <RechartsTooltip cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} itemStyle={{ color: '#0f172a' }} />
+                    <Bar dataKey="value" fill="#f43f5e" radius={[0, 6, 6, 0]} barSize={24} animationDuration={1000} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -709,15 +711,17 @@ export default function Dashboard() {
                       tick={{ fill: 'hsl(var(--muted-foreground))' }} angle={-20} textAnchor="end" dy={8} />
                     <YAxis fontSize={11} axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                     <RechartsTooltip
-                      contentStyle={{ fontSize: '12px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                      cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+                      contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                      itemStyle={{ color: '#0f172a' }}
                       formatter={(value: any, name: string) => [
                         name === 'rate' ? `${value}%` : value,
                         name === 'total' ? 'Total Leads' : name === 'converted' ? 'Converted' : 'Conv. Rate'
                       ]}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                    <Bar dataKey="total" name="Total" fill="#8b5cf6" radius={[3, 3, 0, 0]} maxBarSize={30} />
-                    <Bar dataKey="converted" name="Converted" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={30} />
+                    <Bar dataKey="total" name="Total" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={25} animationDuration={1000} />
+                    <Bar dataKey="converted" name="Converted" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={25} animationDuration={1000} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -768,7 +772,7 @@ export default function Dashboard() {
                           <YAxis fontSize={10} axisLine={false} tickLine={false}
                             tick={{ fill: 'hsl(var(--muted-foreground))' }}
                             tickFormatter={v => `${v >= 1000 ? (v / 1000) + 'k' : v}`} />
-                          <RechartsTooltip contentStyle={{ fontSize: '11px', borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                          <RechartsTooltip contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', fontSize: '13px', fontWeight: 500, borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} itemStyle={{ color: '#0f172a' }} cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }}
                             formatter={(v: any) => [`${currency}${Number(v).toLocaleString('en-IN')}`, 'Forecast']} />
                           <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2}
                             fillOpacity={1} fill="url(#forecastGrad)" />
@@ -841,9 +845,9 @@ export default function Dashboard() {
         </div>
 
         {/* AI Sales Insights & Next Best Action */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/50 rounded-xl p-4 sm:p-5 flex flex-col gap-3 shadow-sm relative overflow-hidden h-full">
-            <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-indigo-100/40 dark:from-indigo-900/20 to-transparent pointer-events-none" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-slate-900 border border-indigo-100/70 dark:border-indigo-800/40 rounded-2xl p-5 sm:p-6 flex flex-col gap-4 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden h-full">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
             <div className="flex items-center gap-2 mb-1 relative z-10">
               <div className="bg-indigo-100 dark:bg-indigo-900/50 p-2 rounded-lg shrink-0">
                 <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
@@ -872,8 +876,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 rounded-xl p-4 sm:p-5 flex flex-col gap-3 shadow-sm relative overflow-hidden h-full">
-            <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-emerald-100/40 dark:from-emerald-900/20 to-transparent pointer-events-none" />
+          <div className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-slate-900 border border-emerald-100/70 dark:border-emerald-800/40 rounded-2xl p-5 sm:p-6 flex flex-col gap-4 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden h-full">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
             <div className="flex items-center gap-2 mb-1 relative z-10">
               <div className="bg-emerald-100 dark:bg-emerald-900/50 p-2 rounded-lg shrink-0">
                 <Target className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -912,7 +916,7 @@ export default function Dashboard() {
         >
           {/* KPI Metrics - Sortable Grid */}
           <SortableContext items={kpiOrder} strategy={rectSortingStrategy} disabled={!isEditMode}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
               {kpiOrder.map(id => (
                 <SortableItem key={id} id={id} className="h-full" isEditMode={isEditMode}>
                   {renderKpiCard(id)}
@@ -923,7 +927,7 @@ export default function Dashboard() {
 
           {/* Charts Row - Sortable Grid */}
           <SortableContext items={chartOrder} strategy={rectSortingStrategy} disabled={!isEditMode}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 items-stretch">
               {chartOrder.map((id) => {
                 const isFirst = chartOrder.indexOf(id) === 0;
                 return (
