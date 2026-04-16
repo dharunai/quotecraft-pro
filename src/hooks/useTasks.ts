@@ -6,15 +6,13 @@ import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
 import { useAuth } from '@/contexts/AuthContext';
 
+const tasksTable = () => (supabase as any).from('tasks');
+
 export function useTasks() {
   return useQuery({
     queryKey: ['tasks'],
     queryFn: async (): Promise<Task[]> => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await tasksTable().select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as Task[];
     },
@@ -26,12 +24,7 @@ export function useTask(id: string | undefined) {
     queryKey: ['tasks', id],
     queryFn: async (): Promise<Task | null> => {
       if (!id) return null;
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
+      const { data, error } = await tasksTable().select('*').eq('id', id).maybeSingle();
       if (error) throw error;
       return data as Task | null;
     },
@@ -44,117 +37,72 @@ export function useCreateTask() {
   const { companyId, user } = useAuth();
 
   return useMutation({
-    mutationFn: async (task: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'completed_at'>) => {
-      if (!companyId) throw new Error('Company ID not found');
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({ ...task, company_id: companyId, created_by: user?.id || null } as any)
-        .select()
-        .single();
-
+    mutationFn: async (task: any) => {
+      const { data, error } = await tasksTable()
+        .insert({ ...task, company_id: companyId, created_by: user?.id || null })
+        .select().single();
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success('Task created successfully');
+      toast.success('Task created');
     },
-    onError: (error: Error) => {
-      toast.error('Failed to create task: ' + error.message);
-    },
+    onError: (e: Error) => toast.error('Failed: ' + e.message),
   });
 }
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, ...task }: Partial<Task> & { id: string }) => {
-      const updateData: Partial<Task> = { ...task };
-
-      // If marking as completed, set completed_at
+    mutationFn: async ({ id, ...task }: any) => {
+      const updateData: any = { ...task };
       if (task.status === 'completed') {
         updateData.completed_at = new Date().toISOString();
       }
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-
+      const { data, error } = await tasksTable().update(updateData).eq('id', id).select().single();
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success('Task updated successfully');
+      toast.success('Task updated');
     },
-    onError: (error: Error) => {
-      toast.error('Failed to update task: ' + error.message);
-    },
+    onError: (e: Error) => toast.error('Failed: ' + e.message),
   });
 }
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await tasksTable().delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success('Task deleted successfully');
+      toast.success('Task deleted');
     },
-    onError: (error: Error) => {
-      toast.error('Failed to delete task: ' + error.message);
-    },
+    onError: (e: Error) => toast.error('Failed: ' + e.message),
   });
 }
 
 export function useCompleteTask() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
+      const { data, error } = await tasksTable()
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', id).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task completed!');
-
-      const taskData = {
-        id: data.id,
-        title: data.title,
-      };
-
-      // Trigger automation for task_completed
-      await triggerAutomation('task_completed', { task: taskData });
-
-      // Trigger workflows for task_completed
-      await triggerWorkflows('task_completed', 'task', data.id, taskData);
+      await triggerAutomation('task_completed', { task: { id: data.id, title: data.title } });
+      await triggerWorkflows('task_completed', 'task', data.id, { id: data.id, title: data.title });
     },
-    onError: (error: Error) => {
-      toast.error('Failed to complete task: ' + error.message);
-    },
+    onError: (e: Error) => toast.error('Failed: ' + e.message),
   });
 }
