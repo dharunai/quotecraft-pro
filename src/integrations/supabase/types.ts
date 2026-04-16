@@ -217,39 +217,6 @@ export type Database = {
           },
         ]
       }
-      departments: {
-        Row: {
-          id: string
-          company_id: string
-          name: string
-          description: string | null
-          manager_id: string | null
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          company_id: string
-          name: string
-          description?: string | null
-          manager_id?: string | null
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          company_id?: string
-          name?: string
-          description?: string | null
-          manager_id?: string | null
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       email_logs: {
         Row: {
           body: string
@@ -591,13 +558,6 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
-          company_id: string | null
-          position: string | null
-          department_id: string | null
-          reports_to: string | null
-          hierarchy_level: number | null
-          can_assign_tasks: boolean | null
-          can_view_all_tasks: boolean | null
         }
         Insert: {
           created_at?: string
@@ -606,13 +566,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
-          company_id?: string | null
-          position?: string | null
-          department_id?: string | null
-          reports_to?: string | null
-          hierarchy_level?: number | null
-          can_assign_tasks?: boolean | null
-          can_view_all_tasks?: boolean | null
         }
         Update: {
           created_at?: string
@@ -621,13 +574,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
-          company_id?: string | null
-          position?: string | null
-          department_id?: string | null
-          reports_to?: string | null
-          hierarchy_level?: number | null
-          can_assign_tasks?: boolean | null
-          can_view_all_tasks?: boolean | null
         }
         Relationships: []
       }
@@ -813,392 +759,6 @@ export type Database = {
         }
         Relationships: []
       }
-      tasks: {
-        Row: {
-          id: string
-          title: string
-          description: string | null
-          entity_type: string | null
-          entity_id: string | null
-          assigned_to: string | null
-          due_date: string | null
-          priority: "low" | "medium" | "high" | "urgent"
-          status: "pending" | "in_progress" | "completed" | "cancelled"
-          completed_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          title: string
-          description?: string | null
-          entity_type?: string | null
-          entity_id?: string | null
-          assigned_to?: string | null
-          due_date?: string | null
-          priority?: "low" | "medium" | "high" | "urgent"
-          status?: "pending" | "in_progress" | "completed" | "cancelled"
-          completed_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          title?: string
-          description?: string | null
-          entity_type?: string | null
-          entity_id?: string | null
-          assigned_to?: string | null
-          due_date?: string | null
-          priority?: "low" | "medium" | "high" | "urgent"
-          status?: "pending" | "in_progress" | "completed" | "cancelled"
-          completed_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      task_assignments: {
-        Row: {
-          id: string
-          task_id: string
-          user_id: string
-          assigned_at: string
-          assigned_by: string | null
-        }
-        Insert: {
-          id?: string
-          task_id: string
-          user_id: string
-          assigned_at?: string
-          assigned_by?: string | null
-        }
-        Update: {
-          id?: string
-          task_id?: string
-          user_id?: string
-          assigned_at?: string
-          assigned_by?: string | null
-        }
-        Relationships: []
-      }
-      automation_rules: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          trigger_event: string
-          trigger_conditions: Json | null
-          actions: Json
-          is_active: boolean
-          execution_count: number
-          last_executed_at: string | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          trigger_event: string
-          trigger_conditions?: Json | null
-          actions: Json
-          is_active?: boolean
-          execution_count?: number
-          last_executed_at?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          trigger_event?: string
-          trigger_conditions?: Json | null
-          actions?: Json
-          is_active?: boolean
-          execution_count?: number
-          last_executed_at?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      notifications: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          message: string
-          type: "info" | "success" | "warning" | "error"
-          category: string | null
-          entity_type: string | null
-          entity_id: string | null
-          action_url: string | null
-          is_read: boolean
-          read_at: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          message: string
-          type: "info" | "success" | "warning" | "error"
-          category?: string | null
-          entity_type?: string | null
-          entity_id?: string | null
-          action_url?: string | null
-          is_read?: boolean
-          read_at?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          message?: string
-          type?: "info" | "success" | "warning" | "error"
-          category?: string | null
-          entity_type?: string | null
-          entity_id?: string | null
-          action_url?: string | null
-          is_read?: boolean
-          read_at?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      team_members: {
-        Row: {
-          id: string
-          user_id: string
-          full_name: string
-          email: string
-          role: "admin" | "sales" | "viewer"
-          is_active: boolean
-          invited_by: string | null
-          invited_at: string
-          last_login: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          full_name: string
-          email: string
-          role?: "admin" | "sales" | "viewer"
-          is_active?: boolean
-          invited_by?: string | null
-          invited_at?: string
-          last_login?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          full_name?: string
-          email?: string
-          role?: "admin" | "sales" | "viewer"
-          is_active?: boolean
-          invited_by?: string | null
-          invited_at?: string
-          last_login?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      workflow_definitions: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          trigger_type: "event" | "schedule" | "webhook" | "manual"
-          trigger_config: Json
-          flow_definition: Json
-          is_active: boolean
-          error_handling: "stop" | "continue" | "retry"
-          max_retries: number
-          retry_delay_seconds: number
-          timeout_seconds: number
-          version: number
-          published_at: string | null
-          execution_count: number
-          success_count: number
-          failure_count: number
-          last_executed_at: string | null
-          tags: string[] | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          trigger_type: "event" | "schedule" | "webhook" | "manual"
-          trigger_config?: Json
-          flow_definition?: Json
-          is_active?: boolean
-          error_handling?: "stop" | "continue" | "retry"
-          max_retries?: number
-          retry_delay_seconds?: number
-          timeout_seconds?: number
-          version?: number
-          published_at?: string | null
-          execution_count?: number
-          success_count?: number
-          failure_count?: number
-          last_executed_at?: string | null
-          tags?: string[] | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          trigger_type?: "event" | "schedule" | "webhook" | "manual"
-          trigger_config?: Json
-          flow_definition?: Json
-          is_active?: boolean
-          error_handling?: "stop" | "continue" | "retry"
-          max_retries?: number
-          retry_delay_seconds?: number
-          timeout_seconds?: number
-          version?: number
-          published_at?: string | null
-          execution_count?: number
-          success_count?: number
-          failure_count?: number
-          last_executed_at?: string | null
-          tags?: string[] | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      workflow_executions: {
-        Row: {
-          id: string
-          workflow_id: string
-          trigger_event: string
-          trigger_data: Json
-          entity_type: string | null
-          entity_id: string | null
-          steps_executed: Json
-          current_step_id: string | null
-          status: "running" | "completed" | "failed" | "cancelled" | "paused"
-          error_message: string | null
-          error_step_id: string | null
-          started_at: string
-          completed_at: string | null
-          duration_ms: number | null
-          retry_count: number
-          next_retry_at: string | null
-          output_data: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          workflow_id: string
-          trigger_event: string
-          trigger_data?: Json
-          entity_type?: string | null
-          entity_id?: string | null
-          steps_executed?: Json
-          current_step_id?: string | null
-          status: "running" | "completed" | "failed" | "cancelled" | "paused"
-          error_message?: string | null
-          error_step_id?: string | null
-          started_at?: string
-          completed_at?: string | null
-          duration_ms?: number | null
-          retry_count?: number
-          next_retry_at?: string | null
-          output_data?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          workflow_id?: string
-          trigger_event?: string
-          trigger_data?: Json
-          entity_type?: string | null
-          entity_id?: string | null
-          steps_executed?: Json
-          current_step_id?: string | null
-          status?: "running" | "completed" | "failed" | "cancelled" | "paused"
-          error_message?: string | null
-          error_step_id?: string | null
-          started_at?: string
-          completed_at?: string | null
-          duration_ms?: number | null
-          retry_count?: number
-          next_retry_at?: string | null
-          output_data?: Json | null
-          created_at?: string
-        }
-        Relationships: [{
-          foreignKeyName: "workflow_executions_workflow_id_fkey"
-          columns: ["workflow_id"]
-          referencedRelation: "workflow_definitions"
-          referencedColumns: ["id"]
-        }]
-      }
-      workflow_templates: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          category: "sales" | "marketing" | "support" | "operations" | "inventory" | "payments" | null
-          icon: string | null
-          template_definition: Json
-          configurable_fields: Json | null
-          required_integrations: string[] | null
-          is_featured: boolean
-          use_count: number
-          created_by: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          category?: "sales" | "marketing" | "support" | "operations" | "inventory" | "payments" | null
-          icon?: string | null
-          template_definition: Json
-          configurable_fields?: Json | null
-          required_integrations?: string[] | null
-          is_featured?: boolean
-          use_count?: number
-          created_by?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          category?: "sales" | "marketing" | "support" | "operations" | "inventory" | "payments" | null
-          icon?: string | null
-          template_definition?: Json
-          configurable_fields?: Json | null
-          required_integrations?: string[] | null
-          is_featured?: boolean
-          use_count?: number
-          created_by?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -1230,116 +790,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
