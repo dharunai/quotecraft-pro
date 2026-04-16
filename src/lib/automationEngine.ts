@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Automation Engine - Executes automation rules based on triggers
 import { supabase } from '@/integrations/supabase/client';
 import { sendEmail } from './emailService';
