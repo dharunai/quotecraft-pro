@@ -421,7 +421,7 @@ export default function Meetings() {
         </div>
 
         {/* Sidebar — Meetings List */}
-        <div className="w-80 flex flex-col gap-4 overflow-hidden">
+        <div className="w-full lg:w-80 flex flex-col gap-4 lg:overflow-hidden">
 
           {/* Next Meeting Card */}
           {nextMeeting && (
