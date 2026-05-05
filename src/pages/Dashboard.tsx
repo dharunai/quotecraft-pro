@@ -673,7 +673,7 @@ export default function Dashboard() {
             <div className="space-y-3 h-full flex flex-col">
               <div className="flex-1 space-y-2">
                 {stalledDeals.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground text-center py-8">🎉 All deals are active!</p>
+                  <p className="text-[13px] text-muted-foreground text-center py-8">All deals are active.</p>
                 ) : (
                   stalledDeals.map(deal => (
                     <div key={deal.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-rose-50/60 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30">
