@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, ScanLine } from 'lucide-react';
 import { BusinessCardScanner, ExtractedLeadInfo } from '@/components/leads/BusinessCardScanner';
 import { useOCRLeadCreation } from '@/hooks/useOCRLeadCreation';
 
@@ -16,105 +16,111 @@ export default function BusinessCardScannerPage() {
   const handleLeadExtracted = async (extractedInfo: ExtractedLeadInfo) => {
     try {
       const newLead = await createLeadFromOCR(extractedInfo);
-      setSuccessMessage(`Lead "${extractedInfo.Name}" created successfully!`);
-      
-      // Reset scanner
-      setScannerKey(prev => prev + 1);
-      
-      // Navigate to lead detail after 2 seconds
-      setTimeout(() => {
-        navigate(`/leads/${newLead.id}`);
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to create lead:', err);
+      setSuccessMessage(`Lead "${extractedInfo.Name}" created successfully.`);
+      setScannerKey((p) => p + 1);
+      setTimeout(() => navigate(`/leads/${newLead.id}`), 1500);
+    } catch (e) {
+      console.error(e);
     }
   };
 
+  const tips = [
+    'Ensure the card is well-lit and free of shadows',
+    'Keep the card flat and centered within the frame',
+    'Hold the camera steady to avoid blur',
+    'Review extracted fields carefully before saving',
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 md:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <AppLayout>
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate('/leads')}
-            className="h-10 w-10"
+            className="h-9 w-9 shrink-0"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Business Card Scanner</h1>
-            <p className="text-muted-foreground mt-1">
-              Capture or upload a business card to automatically extract contact information
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              Business Card Scanner
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Capture or upload a card to create a lead automatically.
             </p>
           </div>
         </div>
 
-        {/* Success Alert */}
+        {/* Alerts */}
         {successMessage && (
-          <Alert className="border-green-200 bg-green-50">
-            <Check className="w-4 h-4 text-green-600" />
-            <AlertDescription className="text-green-800 ml-2">{successMessage}</AlertDescription>
+          <Alert className="border-success/40 bg-success/5">
+            <Check className="h-4 w-4 text-success" />
+            <AlertDescription className="text-xs ml-2 text-foreground">
+              {successMessage}
+            </AlertDescription>
           </Alert>
         )}
-
-        {/* Error Alert */}
         {creationError && (
           <Alert variant="destructive">
-            <AlertDescription>{creationError}</AlertDescription>
+            <AlertDescription className="text-xs">{creationError}</AlertDescription>
           </Alert>
         )}
 
-        {/* Features Info */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">📸 Quick Capture</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Use your device camera to capture business cards instantly
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">🤖 AI-Powered</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Advanced OCR with optional Gemini AI for better accuracy
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">✨ Auto-Fill</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Automatically extract name, email, phone, and company info
-            </CardContent>
-          </Card>
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <BusinessCardScanner
+              key={scannerKey}
+              onLeadExtracted={handleLeadExtracted}
+              isLoading={isLoading}
+            />
+          </div>
+
+          <aside className="space-y-4">
+            <div className="rounded-lg border border-border bg-card p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <ScanLine className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">How it works</h3>
+              </div>
+              <ol className="space-y-2.5 text-xs text-muted-foreground">
+                <li className="flex gap-2.5">
+                  <span className="flex-none w-5 h-5 rounded-full bg-muted text-foreground text-[10px] font-semibold flex items-center justify-center">
+                    1
+                  </span>
+                  <span>Capture the card with your camera or upload an image.</span>
+                </li>
+                <li className="flex gap-2.5">
+                  <span className="flex-none w-5 h-5 rounded-full bg-muted text-foreground text-[10px] font-semibold flex items-center justify-center">
+                    2
+                  </span>
+                  <span>Run text extraction to detect name, email, phone and company.</span>
+                </li>
+                <li className="flex gap-2.5">
+                  <span className="flex-none w-5 h-5 rounded-full bg-muted text-foreground text-[10px] font-semibold flex items-center justify-center">
+                    3
+                  </span>
+                  <span>Review the fields, edit if needed, and create the lead.</span>
+                </li>
+              </ol>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/30 p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Tips for best results</h3>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                {tips.map((t) => (
+                  <li key={t} className="flex gap-2">
+                    <span className="text-foreground/40 mt-0.5">—</span>
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
         </div>
-
-        {/* Scanner Component */}
-        <BusinessCardScanner
-          key={scannerKey}
-          onLeadExtracted={handleLeadExtracted}
-          isLoading={isLoading}
-        />
-
-        {/* Instructions */}
-        <Card className="bg-muted/50">
-          <CardHeader>
-            <CardTitle className="text-base">Tips for Best Results</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p>✓ Ensure good lighting on the business card</p>
-            <p>✓ Position the card straight and centered in the frame</p>
-            <p>✓ Avoid shadows or glare on the card surface</p>
-            <p>✓ Review and edit extracted information before saving</p>
-            <p>✓ For better accuracy, enable Gemini AI if available</p>
-          </CardContent>
-        </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }
