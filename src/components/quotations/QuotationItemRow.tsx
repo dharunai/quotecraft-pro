@@ -10,9 +10,10 @@ interface QuotationItemRowProps {
   onUpdate: (item: Partial<QuotationItem> & { id: string }) => void;
   onDelete: (id: string) => void;
   isLoading?: boolean;
+  index?: number;
 }
 
-export function QuotationItemRow({ item, currency, onUpdate, onDelete, isLoading }: QuotationItemRowProps) {
+export function QuotationItemRow({ item, currency, onUpdate, onDelete, isLoading, index }: QuotationItemRowProps) {
   const [title, setTitle] = useState(item.title);
   const [description, setDescription] = useState(item.description || '');
   const [quantity, setQuantity] = useState(item.quantity.toString());
@@ -47,8 +48,11 @@ export function QuotationItemRow({ item, currency, onUpdate, onDelete, isLoading
   const lineTotal = (parseFloat(quantity) || 0) * (parseFloat(unitPrice) || 0);
 
   return (
-    <tr className="border-b border-border">
-      <td className="p-3">
+    <tr className="border-b border-border hover:bg-muted/30 transition-colors">
+      {typeof index === 'number' && (
+        <td className="px-4 py-2 text-xs text-muted-foreground align-top w-10">{index}</td>
+      )}
+      <td className="px-4 py-2">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
