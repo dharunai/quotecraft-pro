@@ -79,11 +79,23 @@ export function useCreateQuotation() {
 
   return useMutation({
     mutationFn: async (quotation: Omit<Quotation, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'lead'>) => {
-      if (!companyId) throw new Error('Company ID not found');
+      let currentCompanyId = companyId;
+      
+      if (!currentCompanyId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data } = await supabase.from('profiles').select('company_id').eq('user_id', session.user.id).maybeSingle();
+          if (data?.company_id) {
+            currentCompanyId = data.company_id;
+          }
+        }
+      }
+
+      if (!currentCompanyId) throw new Error('Company ID not found');
 
       const { data, error } = await supabase
         .from('quotations')
-        .insert({ ...quotation, company_id: companyId })
+        .insert({ ...quotation, company_id: currentCompanyId })
         .select(`*, lead:leads(*)`)
         .single();
 

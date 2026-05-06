@@ -60,12 +60,20 @@ export function useCreateLead() {
     mutationFn: async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (!companyId) throw new Error('Company ID not found');
+      let currentCompanyId = companyId;
+      if (!currentCompanyId && user) {
+        const { data } = await supabase.from('profiles').select('company_id').eq('user_id', user.id).maybeSingle();
+        if (data?.company_id) {
+          currentCompanyId = data.company_id;
+        }
+      }
+
+      if (!currentCompanyId) throw new Error('Company ID not found');
 
       const leadData = {
         ...lead,
         created_by: user?.id,
-        company_id: companyId
+        company_id: currentCompanyId
       };
 
       const { data, error } = await supabase
