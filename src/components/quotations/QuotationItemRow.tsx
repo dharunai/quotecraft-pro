@@ -10,9 +10,10 @@ interface QuotationItemRowProps {
   onUpdate: (item: Partial<QuotationItem> & { id: string }) => void;
   onDelete: (id: string) => void;
   isLoading?: boolean;
+  index?: number;
 }
 
-export function QuotationItemRow({ item, currency, onUpdate, onDelete, isLoading }: QuotationItemRowProps) {
+export function QuotationItemRow({ item, currency, onUpdate, onDelete, isLoading, index }: QuotationItemRowProps) {
   const [title, setTitle] = useState(item.title);
   const [description, setDescription] = useState(item.description || '');
   const [quantity, setQuantity] = useState(item.quantity.toString());
