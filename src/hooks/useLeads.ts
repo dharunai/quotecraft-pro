@@ -4,6 +4,7 @@ import { Lead } from '@/types/database';
 import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 // import { triggerWorkflows } from '@/lib/workflowEngine'; // Deprecated client-side engine
 
 // API Trigger Helper
@@ -59,16 +60,7 @@ export function useCreateLead() {
   return useMutation({
     mutationFn: async (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
       const { data: { user } } = await supabase.auth.getUser();
-
-      let currentCompanyId = companyId;
-      if (!currentCompanyId && user) {
-        const { data } = await supabase.from('profiles').select('company_id').eq('user_id', user.id).maybeSingle();
-        if (data?.company_id) {
-          currentCompanyId = data.company_id;
-        }
-      }
-
-      if (!currentCompanyId) throw new Error('Company ID not found');
+      const currentCompanyId = await getEffectiveCompanyId(companyId);
 
       const leadData = {
         ...lead,

@@ -5,6 +5,7 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 import { parseLeadInfoBasic, parseLeadInfoGemini } from './src/utils/ocrProcessor.ts';
+import { wrapInTemplate } from './src/utils/emailTemplate.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -51,8 +52,9 @@ app.post('/api/send-email', async (req, res) => {
         from: process.env.VITE_EMAIL_FROM || `${fromName || 'The Genworks CRM'} <onboarding@resend.dev>`,
         to: Array.isArray(to) ? to : [to],
         cc: cc?.filter((email: string) => email && email.includes('@')),
+        reply_to: process.env.VITE_EMAIL_REPLY_TO || process.env.VITE_EMAIL_FROM?.match(/<(.+)>|([^<\s]+@[^>\s]+)/)?.[0]?.replace(/[<>]/g, '') || undefined,
         subject,
-        html: body.replace(/\n/g, '<br>'),
+        html: wrapInTemplate(body, fromName || 'The Genworks CRM'),
         attachments: attachments?.map((att: { filename: string; content: string }) => ({
           filename: att.filename,
           content: att.content,

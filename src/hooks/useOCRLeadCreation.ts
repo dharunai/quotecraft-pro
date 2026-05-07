@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ExtractedLeadInfo } from '@/components/leads/BusinessCardScanner';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 
 export function useOCRLeadCreation() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +25,8 @@ export function useOCRLeadCreation() {
         throw new Error('User not authenticated');
       }
 
+      const currentCompanyId = await getEffectiveCompanyId(null);
+
       // Create the lead
       const { data, error: createError } = await supabase
         .from('leads')
@@ -39,6 +42,7 @@ export function useOCRLeadCreation() {
             score: 0,
             notes: `Created from business card OCR. Website: ${extractedInfo.Website}`,
             created_by: user.id,
+            company_id: currentCompanyId,
           },
         ])
         .select()

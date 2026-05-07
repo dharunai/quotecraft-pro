@@ -52,9 +52,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               Promise.resolve(supabase.from('profiles').select('company_id').eq('user_id', currentSession.user.id).maybeSingle())
             );
             // @ts-ignore
-            if (isMounted && profileResult?.data?.company_id) {
-              // @ts-ignore
-              setCompanyId(profileResult.data.company_id);
+            if (profileResult && 'data' in (profileResult as any)) {
+              const { data, error: profileError } = profileResult as any;
+              if (data?.company_id) {
+                setCompanyId(data.company_id);
+              } else {
+                // Try team_members as fallback
+                const { data: teamData } = await supabase
+                  .from('team_members')
+                  .select('company_id')
+                  .eq('user_id', currentSession.user.id)
+                  .maybeSingle();
+                
+                if (teamData?.company_id) {
+                  setCompanyId(teamData.company_id);
+                }
+              }
+              if (profileError) console.error('Error fetching profile:', profileError);
             }
           } catch {
             // Ignore - companyId stays null

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 
 export function useDeals() {
   return useQuery({
@@ -60,11 +61,11 @@ export function useCreateDeal() {
 
   return useMutation({
     mutationFn: async (deal: Omit<Deal, 'id' | 'created_at' | 'updated_at' | 'lead'>) => {
-      if (!companyId) throw new Error('Company ID not found');
+      const currentCompanyId = await getEffectiveCompanyId(companyId);
 
       const { data, error } = await supabase
         .from('deals')
-        .insert({ ...deal, company_id: companyId })
+        .insert({ ...deal, company_id: currentCompanyId })
         .select('*, lead:leads(*)')
         .single();
       if (error) throw error;

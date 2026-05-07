@@ -113,6 +113,7 @@ export interface Quotation {
   subtotal: number;
   tax: number;
   total: number;
+  is_igst?: boolean;
   notes: string | null;
   created_by: string | null;
   created_at: string;

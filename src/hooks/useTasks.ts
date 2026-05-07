@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 
 const tasksTable = () => (supabase as any).from('tasks');
 
@@ -38,8 +39,9 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (task: any) => {
+      const currentCompanyId = await getEffectiveCompanyId(companyId);
       const { data, error } = await tasksTable()
-        .insert({ ...task, company_id: companyId, created_by: user?.id || null })
+        .insert({ ...task, company_id: currentCompanyId, created_by: user?.id || null })
         .select().single();
       if (error) throw error;
       return data;

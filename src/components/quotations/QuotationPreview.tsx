@@ -17,7 +17,11 @@ export function QuotationPreview({
   const taxRate = settings.tax_rate || 0;
   const taxAmount = subtotal * taxRate / 100;
   const total = subtotal + taxAmount;
-  return <div className="quotation-preview bg-white text-gray-900 max-w-4xl mx-auto" id="quotation-print">
+  const isIgst = quotation.is_igst || false;
+  const cgst = taxAmount / 2;
+  const sgst = taxAmount / 2;
+  
+  return <div className="quotation-preview bg-white text-gray-900 max-w-[21cm] mx-auto min-h-[29.7cm] shadow-sm border border-gray-200 print:shadow-none print:border-none print:m-0 print:w-full print:max-w-full" id="quotation-print">
       {/* Header */}
       <div className="quotation-header flex justify-between items-start" style={{
       borderColor: settings.theme_color
@@ -107,14 +111,39 @@ export function QuotationPreview({
               })}
               </span>
             </div>
-            {taxRate > 0 && <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">GST ({taxRate}%)</span>
-                <span className="font-medium">
-                  {settings.currency}{taxAmount.toLocaleString('en-IN', {
-                minimumFractionDigits: 2
-              })}
-                </span>
-              </div>}
+            {taxRate > 0 && (
+              <>
+                {isIgst ? (
+                  <div className="flex justify-between py-2 border-b border-gray-200 text-sm">
+                    <span className="text-gray-600">IGST ({taxRate}%)</span>
+                    <span className="font-medium">
+                      {settings.currency}{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between py-2 border-b border-gray-200 text-sm">
+                      <span className="text-gray-600">CGST ({(taxRate / 2).toFixed(1)}%)</span>
+                      <span className="font-medium">
+                        {settings.currency}{cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-gray-200 text-sm">
+                      <span className="text-gray-600">SGST ({(taxRate / 2).toFixed(1)}%)</span>
+                      <span className="font-medium">
+                        {settings.currency}{sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between py-2 border-b border-gray-200 text-sm">
+                  <span className="text-gray-600 font-medium">Total Tax</span>
+                  <span className="font-medium">
+                    {settings.currency}{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between py-3 text-lg font-bold" style={{
             color: settings.theme_color
           }}>

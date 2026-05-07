@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Meeting, MeetingParticipant } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 import { sendEmail } from '@/lib/emailService';
 import { format, parseISO } from 'date-fns';
 
@@ -64,12 +65,14 @@ export function useMeetings() {
   const createMeeting = async (meeting: Omit<Meeting, 'id' | 'created_at' | 'updated_at'>, participants: Omit<MeetingParticipant, 'id' | 'meeting_id'>[]) => {
     setLoading(true);
     try {
+      const currentCompanyId = await getEffectiveCompanyId(companyId);
+      
       // 1. Create the meeting
       const { data: newMeeting, error: meetingError } = await meetingsTable()
         .insert({
           ...meeting,
           organizer_id: user?.id,
-          company_id: companyId
+          company_id: currentCompanyId
         })
         .select()
         .single();

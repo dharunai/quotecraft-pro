@@ -149,12 +149,7 @@ async function executeSendEmail(
     const result = await sendEmail({
       to: recipientEmail,
       subject,
-      body: `<div style="font-family: sans-serif; padding: 20px;">
-        <h2>The Genworks CRM Notification</h2>
-        <p>${body.replace(/\n/g, '<br>')}</p>
-        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-        <p style="color: #666; font-size: 12px;">This is an automated email triggered by: ${rule.name}</p>
-      </div>`,
+      body: body,
       fromName: 'The Genworks CRM',
     });
 

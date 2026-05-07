@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { wrapInTemplate } from '../utils/emailTemplate.ts';
 
 // Initialize Supabase Client (Service Role for backend)
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
@@ -54,10 +55,44 @@ async function sendEmail(data: any, context: ExecutionContext) {
     const subject = resolveVariables(data.subject, context);
     const body = resolveVariables(data.body, context);
 
-    // Call functionality from existing index.ts (or replicate fetch logic)
-    // For now, logging. In real implementation, invoke email service.
-    console.log(`[Email] To: ${to}, Subject: ${subject}`);
-    return { success: true, output: { sent: true, to } };
+    const apiKey = process.env.VITE_RESEND_API_KEY;
+    const fromEmail = process.env.VITE_EMAIL_FROM || 'The Genworks CRM <onboarding@resend.dev>';
+
+    if (!apiKey) {
+        console.error('[Workflow Email] Resend API Key missing');
+        return { success: false, error: 'Email service not configured' };
+    }
+
+    try {
+        console.log(`[Workflow Email] Sending to: ${to}, Subject: ${subject}`);
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                from: fromEmail,
+                to: [to],
+                reply_to: process.env.VITE_EMAIL_REPLY_TO || fromEmail?.match(/<(.+)>|([^<\s]+@[^>\s]+)/)?.[0]?.replace(/[<>]/g, '') || undefined,
+                subject: subject,
+                html: wrapInTemplate(body, 'The Genworks CRM'),
+            }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error('[Workflow Email] Resend error:', result);
+            return { success: false, error: (result as any).message || 'Failed to send email' };
+        }
+
+        console.log(`[Workflow Email] ✅ Sent successfully: ${(result as any).id}`);
+        return { success: true, output: { sent: true, messageId: (result as any).id } };
+    } catch (err: any) {
+        console.error('[Workflow Email] Exception:', err);
+        return { success: false, error: err.message };
+    }
 }
 
 async function createTask(data: any, context: ExecutionContext) {

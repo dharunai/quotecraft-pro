@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 
 interface CreateActivityParams {
   entityType: 'lead' | 'deal' | 'quotation' | 'invoice' | 'product';
@@ -24,6 +25,8 @@ export function useLogActivity() {
       oldValue,
       newValue,
     }: CreateActivityParams) => {
+      const currentCompanyId = await getEffectiveCompanyId(null); // Fallback to profile
+      
       const { data, error } = await supabase.from('activities').insert({
         entity_type: entityType,
         entity_id: entityId,
@@ -33,6 +36,7 @@ export function useLogActivity() {
         new_value: newValue ? JSON.stringify(newValue) : null,
         performed_by: user?.id || null,
         performed_by_name: user?.user_metadata?.full_name || user?.email || null,
+        company_id: currentCompanyId,
       }).select().single();
 
       if (error) throw error;

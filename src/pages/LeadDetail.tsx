@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads';
@@ -12,13 +12,98 @@ import { triggerWorkflows } from '@/lib/workflowEngine';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, addDays } from 'date-fns';
-import { ArrowLeft, Trash2, Plus, TrendingUp, Mail, Phone, MapPin, Calendar, FileText, Save } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, TrendingUp, Mail, Phone, MapPin, Building2, User, FileText, Save, Edit2, Check, X, ExternalLink, ChevronDown } from 'lucide-react';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+// ── Inline field component ──────────────────────────────────────────────────
+function InlineField({ label, value, onChange, onSave, type = 'text', placeholder = '—', icon: Icon, fullWidth = false }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSave: () => void;
+  type?: string;
+  placeholder?: string;
+  icon?: React.ComponentType<any>;
+  fullWidth?: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+
+  useEffect(() => { setDraft(value); }, [value]);
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  const commit = () => {
+    onChange(draft);
+    setEditing(false);
+    onSave();
+  };
+  const cancel = () => { setDraft(value); setEditing(false); };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && type !== 'textarea') { e.preventDefault(); commit(); }
+    if (e.key === 'Escape') cancel();
+    if (e.key === 'Tab') { e.preventDefault(); commit(); }
+  };
+
+  return (
+    <div className={cn('group relative', fullWidth ? 'col-span-2' : '')}>
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+        {Icon && <Icon className="h-3 w-3" />}{label}
+      </p>
+      {editing ? (
+        <div className="flex items-start gap-1">
+          {type === 'textarea' ? (
+            <textarea
+              ref={inputRef as any}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={handleKey}
+              rows={3}
+              className="w-full text-sm border border-blue-400 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white resize-none"
+            />
+          ) : (
+            <input
+              ref={inputRef as any}
+              type={type}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={handleKey}
+              className="w-full text-sm border border-blue-400 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+            />
+          )}
+          <button onClick={commit} className="mt-1 p-1 rounded bg-blue-600 text-white hover:bg-blue-700"><Check className="h-3.5 w-3.5" /></button>
+          <button onClick={cancel} className="mt-1 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50"><X className="h-3.5 w-3.5" /></button>
+        </div>
+      ) : (
+        <div
+          onClick={() => setEditing(true)}
+          className="cursor-pointer group/field flex items-center gap-2 min-h-[28px] rounded px-2 py-1 -mx-2 hover:bg-blue-50 hover:ring-1 hover:ring-blue-200 transition-all"
+        >
+          <span className={cn('text-sm flex-1', value ? 'text-slate-800' : 'text-slate-400 italic')}>{value || placeholder}</span>
+          <Edit2 className="h-3 w-3 text-slate-300 opacity-0 group-hover/field:opacity-100 transition-opacity flex-shrink-0" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Status selector ──────────────────────────────────────────────────────────
+const STATUS_OPTIONS: { value: string; label: string; color: string }[] = [
+  { value: 'new', label: 'New', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+  { value: 'contacted', label: 'Contacted', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { value: 'qualified', label: 'Qualified', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { value: 'proposal', label: 'Proposal', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  { value: 'won', label: 'Won', color: 'bg-green-100 text-green-800 border-green-300' },
+  { value: 'lost', label: 'Lost', color: 'bg-red-50 text-red-700 border-red-200' },
+];
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -33,14 +118,16 @@ export default function LeadDetail() {
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
-  // Inline Edit States
+  // Field states
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [status, setStatus] = useState<string>('new');
 
   const [dealValue, setDealValue] = useState('');
   const [expectedCloseDate, setExpectedCloseDate] = useState(
@@ -55,29 +142,27 @@ export default function LeadDetail() {
       setPhone(lead.phone || '');
       setAddress(lead.address || '');
       setNotes(lead.notes || '');
+      setStatus(lead.status || 'new');
+      setIsDirty(false);
     }
   }, [lead]);
 
   const leadQuotations = quotations.filter(q => q.lead_id === id);
 
-  const handleSave = () => {
+  const saveField = useCallback((fields: Record<string, any>) => {
     if (!id) return;
-    updateLead.mutate({
-      id,
-      company_name: companyName,
-      contact_name: contactName,
-      email,
-      phone,
-      address,
-      notes
-    });
+    updateLead.mutate({ id, ...fields });
+  }, [id, updateLead]);
+
+  const handleStatusChange = (newStatus: string) => {
+    setStatus(newStatus);
+    if (!id) return;
+    updateLead.mutate({ id, status: newStatus as any });
   };
 
   const handleDelete = () => {
     if (!id) return;
-    deleteLead.mutate(id, {
-      onSuccess: () => navigate('/leads'),
-    });
+    deleteLead.mutate(id, { onSuccess: () => navigate('/leads') });
   };
 
   const handleCreateQuotation = async () => {
@@ -87,302 +172,297 @@ export default function LeadDetail() {
       createQuotation.mutate({
         quote_number: quoteNumber,
         lead_id: id,
-        deal_id: null,
-        invoice_id: null,
+        deal_id: null, invoice_id: null,
         status: 'draft',
         quote_date: new Date().toISOString().split('T')[0],
-        valid_until: null,
-        subtotal: 0,
-        tax: 0,
-        total: 0,
-        notes: null,
-      }, {
-        onSuccess: (data) => {
-          navigate(`/quotations/${data.id}`);
-        },
-      });
-    } catch (error) {
-      console.error('Failed to create quotation:', error);
-    }
+        valid_until: null, subtotal: 0, tax: 0, total: 0, notes: null,
+      }, { onSuccess: (data) => navigate(`/quotations/${data.id}`) });
+    } catch (error) { console.error(error); }
   };
 
   const handleQualifyLead = () => {
     if (!id) return;
-
     createDeal.mutate({
       lead_id: id,
       deal_value: dealValue ? parseFloat(dealValue) : null,
-      stage: 'qualified',
-      probability: 25,
+      stage: 'qualified', probability: 25,
       expected_close_date: expectedCloseDate || null,
-      won_date: null,
-      lost_date: null,
-      lost_reason: null,
-      notes: null,
-      created_by: null,
+      won_date: null, lost_date: null, lost_reason: null, notes: null, created_by: null,
     }, {
       onSuccess: async (deal) => {
         updateLead.mutate({ id, is_qualified: true });
-        await handleAutomationEvent('lead_qualified', 'lead', id!, {
-          ...lead,
-          is_qualified: true,
-          deal_value: dealValue ? parseFloat(dealValue) : null
-        });
-        await triggerWorkflows('lead_qualified', 'lead', id!, {
-          is_qualified: true,
-          deal_value: dealValue ? parseFloat(dealValue) : null
-        });
+        await handleAutomationEvent('lead_qualified', 'lead', id!, { ...lead, is_qualified: true });
         setIsQualifying(false);
         navigate(`/deals/${deal.id}`);
       },
     });
   };
 
-  if (isLoading) {
-    return (
-      <AppLayout>
-        <p className="text-muted-foreground p-8">Loading lead...</p>
-      </AppLayout>
-    );
-  }
+  const currentStatusConfig = STATUS_OPTIONS.find(s => s.value === status);
 
-  if (!lead) {
-    return (
-      <AppLayout>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">Lead not found</p>
-          <Link to="/leads">
-            <Button variant="outline" className="rounded-sm">Back to Leads</Button>
-          </Link>
-        </div>
-      </AppLayout>
-    );
-  }
+  if (isLoading) return <AppLayout><p className="text-muted-foreground p-8">Loading lead...</p></AppLayout>;
+  if (!lead) return (
+    <AppLayout>
+      <div className="text-center py-12">
+        <p className="text-muted-foreground mb-4">Lead not found</p>
+        <Link to="/leads"><Button variant="outline">Back to Leads</Button></Link>
+      </div>
+    </AppLayout>
+  );
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-[1600px] mx-auto p-4 font-sans">
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">{lead.company_name}</h1>
-              <p className="text-muted-foreground">{lead.contact_name}</p>
+      <div className="bg-slate-50/60 -m-4 md:-m-6 min-h-[calc(100vh-3.5rem)]">
+        {/* ── Top header bar ── */}
+        <div className="bg-white border-b border-slate-200 px-6 py-3">
+          <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <Link to="/leads">
+                <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700 -ml-2">
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Leads
+                </Button>
+              </Link>
+              <span className="text-slate-300">›</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  {lead.company_name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base font-bold text-slate-900 truncate leading-tight">{lead.company_name}</h1>
+                  <p className="text-xs text-slate-500 leading-tight">{lead.contact_name}</p>
+                </div>
+              </div>
             </div>
-            <LeadStatusBadge status={lead.status} />
-            {lead.is_qualified && (
-              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-0 rounded-sm">Qualified</Badge>
-            )}
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Link to="/leads">
-              <Button variant="outline" size="sm" className="rounded-sm bg-white hover:bg-slate-50">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Status selector */}
+              <Select value={status} onValueChange={handleStatusChange}>
+                <SelectTrigger className={cn('h-8 text-xs font-semibold border rounded-full px-3 w-auto gap-1', currentStatusConfig?.color)}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map(s => (
+                    <SelectItem key={s.value} value={s.value} className="text-xs">{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {lead.is_qualified && (
+                <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold px-2.5 py-0.5">
+                  ✓ Qualified
+                </Badge>
+              )}
+
+              {!lead.is_qualified && (
+                <Button size="sm" onClick={() => setIsQualifying(true)} className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-full px-4">
+                  <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+                  Qualify
+                </Button>
+              )}
+
+              <Button size="sm" onClick={handleCreateQuotation} variant="outline" className="h-8 text-xs rounded-full px-4 border-slate-200">
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Quotation
               </Button>
-            </Link>
 
-            {!lead.is_qualified && (
-              <Button onClick={() => setIsQualifying(true)} className="rounded-sm bg-slate-900 hover:bg-slate-800 text-white">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Qualify Lead
+              <Button size="sm" variant="ghost" onClick={() => setIsDeleting(true)} className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full px-3">
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
-            )}
-
-            <Button variant="outline" onClick={() => setIsDeleting(true)} className="rounded-sm border-slate-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-100">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Lead
-            </Button>
+            </div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        {/* ── Main content ── */}
+        <div className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Main Info Column (Left) - INLINE EDITOR */}
-          <Card className="lg:col-span-2 rounded-sm border-slate-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold text-slate-900">Lead Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Company Name</label>
-                  <Input
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    className="rounded-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Contact Name</label>
-                  <Input
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    className="rounded-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email Address</label>
-                  <Input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="rounded-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Phone Number</label>
-                  <Input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="rounded-sm"
-                  />
-                </div>
-                <div className="col-span-2 space-y-2">
-                  <label className="text-sm font-medium">Office Address</label>
-                  <Input
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="rounded-sm"
-                  />
-                </div>
-                <div className="col-span-2 space-y-2">
-                  <label className="text-sm font-medium">Notes</label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={4}
-                    className="rounded-sm"
-                    placeholder="Add notes about this lead..."
-                  />
-                </div>
+          {/* ── Left column ── */}
+          <div className="lg:col-span-2 space-y-5">
+
+            {/* Contact Information */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-500" />
+                  Contact Information
+                </h2>
+                <span className="text-xs text-slate-400">Click any field to edit · Enter to save · Esc to cancel</span>
               </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                <InlineField label="Company Name" value={companyName} onChange={setCompanyName} onSave={() => saveField({ company_name: companyName })} icon={Building2} placeholder="Enter company name" />
+                <InlineField label="Contact Name" value={contactName} onChange={setContactName} onSave={() => saveField({ contact_name: contactName })} icon={User} placeholder="Enter contact name" />
+                <InlineField label="Email Address" value={email} onChange={setEmail} onSave={() => saveField({ email })} type="email" icon={Mail} placeholder="email@company.com" />
+                <InlineField label="Phone Number" value={phone} onChange={setPhone} onSave={() => saveField({ phone })} type="tel" icon={Phone} placeholder="+91 98765 43210" />
+                <InlineField label="Office Address" value={address} onChange={setAddress} onSave={() => saveField({ address })} icon={MapPin} placeholder="Street, City, State — PIN" fullWidth />
+              </div>
+            </div>
 
-              <div className="flex justify-end pt-4 border-t border-slate-100">
-                <Button onClick={handleSave} disabled={updateLead.isPending} className="rounded-sm bg-slate-900 text-white hover:bg-slate-800">
-                  <Save className="h-4 w-4 mr-2" />
-                  {updateLead.isPending ? 'Saving...' : 'Save Changes'}
+            {/* Notes */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100">
+                <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  Notes
+                </h2>
+              </div>
+              <div className="p-5">
+                <InlineField label="Internal Notes" value={notes} onChange={setNotes} onSave={() => saveField({ notes })} type="textarea" placeholder="Add notes about this lead..." fullWidth />
+              </div>
+            </div>
+
+            {/* Lead Metadata */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100">
+                <h2 className="text-sm font-bold text-slate-800">Lead Details</h2>
+              </div>
+              <div className="p-5 grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 text-sm">
+                {[
+                  { label: 'Lead ID', value: `#${id?.slice(0,8).toUpperCase()}` },
+                  { label: 'Created', value: lead.created_at ? format(new Date(lead.created_at), 'dd MMM yyyy') : '—' },
+                  { label: 'Last Updated', value: lead.updated_at ? format(new Date(lead.updated_at), 'dd MMM yyyy') : '—' },
+                  { label: 'Quotations', value: String(leadQuotations.length) },
+                  { label: 'Qualified', value: lead.is_qualified ? 'Yes' : 'No' },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{label}</p>
+                    <p className="text-slate-700 font-medium">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right sidebar ── */}
+          <div className="space-y-5">
+
+            {/* Quotations */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-800">Quotations</h2>
+                <Button size="sm" onClick={handleCreateQuotation} disabled={createQuotation.isPending}
+                  className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3">
+                  <Plus className="h-3 w-3 mr-1" />
+                  New
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Sidebar Column (Right) */}
-          <div className="space-y-6">
-            {/* Quotations Card */}
-            <Card className="rounded-sm border-slate-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-bold text-slate-900">Quotations</CardTitle>
-                <Button size="sm" onClick={handleCreateQuotation} disabled={createQuotation.isPending} className="rounded-sm h-8 px-3 text-xs bg-slate-900 hover:bg-slate-800">
-                  <Plus className="h-3 w-3 mr-1.5" />
-                  Create
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {leadQuotations.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground text-sm">
-                      No quotations found
+              <div className="divide-y divide-slate-100">
+                {leadQuotations.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <FileText className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400">No quotations yet</p>
+                    <button onClick={handleCreateQuotation} className="mt-2 text-xs text-blue-500 hover:underline">Create first quotation →</button>
+                  </div>
+                ) : leadQuotations.map((q) => (
+                  <Link key={q.id} to={`/quotations/${q.id}`}
+                    className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors group">
+                    <div>
+                      <p className="text-xs font-bold text-slate-700 font-mono">{q.quote_number}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{format(new Date(q.quote_date), 'dd MMM yyyy')}</p>
                     </div>
-                  ) : (
-                    leadQuotations.map((quotation) => (
-                      <Link
-                        key={quotation.id}
-                        to={`/quotations/${quotation.id}`}
-                        className="block p-3 rounded-sm border border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-200 transition-all group"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-xs font-bold text-slate-700">{quotation.quote_number}</span>
-                          <QuotationStatusBadge status={quotation.status} />
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {format(new Date(quotation.quote_date), 'MMM d, yyyy')}
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex items-center gap-2">
+                      <QuotationStatusBadge status={q.status} />
+                      <ExternalLink className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100">
+                <h2 className="text-sm font-bold text-slate-800">Quick Actions</h2>
+              </div>
+              <div className="p-4 space-y-2">
+                {!lead.is_qualified && (
+                  <button onClick={() => setIsQualifying(true)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-emerald-50 hover:text-emerald-700 text-sm text-slate-600 transition-colors group">
+                    <TrendingUp className="h-4 w-4 text-slate-400 group-hover:text-emerald-500" />
+                    Qualify & Create Deal
+                  </button>
+                )}
+                <button onClick={handleCreateQuotation}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-blue-50 hover:text-blue-700 text-sm text-slate-600 transition-colors group">
+                  <FileText className="h-4 w-4 text-slate-400 group-hover:text-blue-500" />
+                  Create Quotation
+                </button>
+                {email && (
+                  <a href={`mailto:${email}`}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-sky-50 hover:text-sky-700 text-sm text-slate-600 transition-colors group">
+                    <Mail className="h-4 w-4 text-slate-400 group-hover:text-sky-500" />
+                    Send Email
+                  </a>
+                )}
+                {phone && (
+                  <a href={`tel:${phone}`}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-green-50 hover:text-green-700 text-sm text-slate-600 transition-colors group">
+                    <Phone className="h-4 w-4 text-slate-400 group-hover:text-green-500" />
+                    Call {phone}
+                  </a>
+                )}
+                <button onClick={() => setIsDeleting(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-red-50 hover:text-red-600 text-sm text-slate-400 transition-colors group">
+                  <Trash2 className="h-4 w-4 group-hover:text-red-500" />
+                  Delete Lead
+                </button>
+              </div>
+            </div>
 
             {/* Activity Timeline */}
-            <Card className="rounded-sm border-slate-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-slate-900">Activity History</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100">
+                <h2 className="text-sm font-bold text-slate-800">Activity History</h2>
+              </div>
+              <div className="p-5">
                 <ActivityTimeline entityType="lead" entityId={id!} />
-              </CardContent>
-            </Card>
-          </div>
-
-        </div>
-
-        {/* Dialogs */}
-        <Dialog open={isQualifying} onOpenChange={setIsQualifying}>
-          <DialogContent className="rounded-sm">
-            <DialogHeader>
-              <DialogTitle>Qualify Lead</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Convert this lead into a deal in your sales pipeline.
-              </p>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Expected Deal Value</label>
-                <Input
-                  type="number"
-                  value={dealValue}
-                  onChange={(e) => setDealValue(e.target.value)}
-                  placeholder="Enter estimated value..."
-                  min="0"
-                  step="0.01"
-                  className="rounded-sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Expected Close Date</label>
-                <Input
-                  type="date"
-                  value={expectedCloseDate}
-                  onChange={(e) => setExpectedCloseDate(e.target.value)}
-                  className="rounded-sm"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={() => setIsQualifying(false)} className="rounded-sm">
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleQualifyLead}
-                  disabled={createDeal.isPending}
-                  className="bg-emerald-600 hover:bg-emerald-700 rounded-sm text-white"
-                >
-                  {createDeal.isPending ? 'Creating Deal...' : 'Create Deal'}
-                </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-
-        <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
-          <AlertDialogContent className="rounded-sm">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Lead</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete <span className="font-bold text-slate-900">"{lead.company_name}"</span>? This will also delete all associated quotations. <br /><br /><span className="text-red-600 font-medium">This action cannot be undone.</span>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="rounded-sm">Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 rounded-sm text-white">
-                Delete Lead
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          </div>
+        </div>
       </div>
+
+      {/* ── Qualify Lead Dialog ── */}
+      <Dialog open={isQualifying} onOpenChange={setIsQualifying}>
+        <DialogContent className="rounded-lg max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">Qualify Lead → Create Deal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-slate-500">Convert <span className="font-semibold text-slate-700">{lead.company_name}</span> into a deal in your pipeline.</p>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Expected Deal Value (₹)</label>
+              <Input type="number" value={dealValue} onChange={e => setDealValue(e.target.value)} placeholder="0.00" min="0" step="0.01" className="rounded-md" autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Expected Close Date</label>
+              <Input type="date" value={expectedCloseDate} onChange={e => setExpectedCloseDate(e.target.value)} className="rounded-md" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsQualifying(false)} className="rounded-md">Cancel</Button>
+              <Button onClick={handleQualifyLead} disabled={createDeal.isPending} className="rounded-md bg-emerald-600 hover:bg-emerald-700 text-white">
+                {createDeal.isPending ? 'Creating...' : 'Create Deal'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Confirm ── */}
+      <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
+        <AlertDialogContent className="rounded-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Lead</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete <span className="font-bold text-slate-900">"{lead.company_name}"</span>? All associated quotations will also be deleted.{' '}
+              <span className="text-red-600 font-medium">This cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-md">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="rounded-md bg-red-600 hover:bg-red-700 text-white">Delete Lead</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

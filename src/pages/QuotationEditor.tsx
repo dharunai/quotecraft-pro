@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Download, Save, Package, FileText, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -29,7 +31,8 @@ export default function QuotationEditor() {
   const navigate = useNavigate();
   const {
     data: quotation,
-    isLoading
+    isLoading,
+    isError
   } = useQuotation(id);
   const {
     data: items = [],
@@ -52,6 +55,7 @@ export default function QuotationEditor() {
   const [showProductBrowser, setShowProductBrowser] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [pdfData, setPdfData] = useState<string>('');
+  const [isIgst, setIsIgst] = useState(false);
   const handleConvertToInvoice = () => {
     if (!quotation) return;
     navigate(`/invoices/new?quotation_id=${quotation.id}&lead_id=${quotation.lead_id}${quotation.deal_id ? `&deal_id=${quotation.deal_id}` : ''}`);
@@ -62,6 +66,7 @@ export default function QuotationEditor() {
       setQuoteDate(quotation.quote_date);
       setValidUntil(quotation.valid_until || '');
       setNotes(quotation.notes || '');
+      setIsIgst(quotation.is_igst || false);
     }
   }, [quotation]);
   const handleSave = () => {
@@ -78,7 +83,8 @@ export default function QuotationEditor() {
       notes: notes || null,
       subtotal,
       tax,
-      total
+      total,
+      is_igst: isIgst
     }, {
       onSuccess: () => toast.success('Quotation saved')
     });
@@ -150,7 +156,8 @@ export default function QuotationEditor() {
         taxRate: taxRate,
         taxAmount: taxAmount,
         total: total,
-        notes: notes || null
+        notes: notes || null,
+        isIgst: isIgst
       }, settings, quotation.lead);
 
       const base64 = getPDFBase64(doc);
@@ -162,6 +169,16 @@ export default function QuotationEditor() {
     }
   };
   if (isLoading || !settings) {
+    if (isError) {
+      return <AppLayout>
+        <div className="text-center py-12">
+          <p className="text-destructive mb-4">Error loading quotation or settings</p>
+          <Link to="/quotations">
+            <Button variant="outline">Back to Quotations</Button>
+          </Link>
+        </div>
+      </AppLayout>;
+    }
     return <AppLayout>
       <p className="text-muted-foreground">Loading...</p>
     </AppLayout>;
@@ -267,51 +284,50 @@ export default function QuotationEditor() {
         </TabsList>
 
         <TabsContent value="editor" className="space-y-5">
-          <div className="grid lg:grid-cols-3 gap-5">
-            {/* From / Bill To */}
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Bill To</CardTitle>
-              </CardHeader>
-              <CardContent className="grid sm:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">From</p>
-                  <p className="font-medium text-sm">{settings.company_name}</p>
-                  {settings.address && <p className="text-sm text-muted-foreground whitespace-pre-line">{settings.address}</p>}
-                  {settings.gst_number && <p className="text-xs text-muted-foreground">GSTIN: {settings.gst_number}</p>}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Customer</p>
-                  <p className="font-medium text-sm">{quotation.lead.company_name}</p>
-                  <p className="text-sm text-muted-foreground">{quotation.lead.contact_name}</p>
-                  {quotation.lead.email && <p className="text-sm text-muted-foreground">{quotation.lead.email}</p>}
-                  {quotation.lead.phone && <p className="text-sm text-muted-foreground">{quotation.lead.phone}</p>}
-                  {quotation.lead.address && <p className="text-sm text-muted-foreground whitespace-pre-line">{quotation.lead.address}</p>}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick stats */}
+          <div className="grid grid-cols-1 gap-5">
+            {/* Document Header Info */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">At a Glance</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Items</span>
-                  <span className="font-medium">{items.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Qty</span>
-                  <span className="font-medium">{totalQty}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Issued</span>
-                  <span className="font-medium">{quoteDate ? format(new Date(quoteDate), 'dd MMM yyyy') : '—'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Valid Until</span>
-                  <span className="font-medium">{validUntil ? format(new Date(validUntil), 'dd MMM yyyy') : '—'}</span>
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row justify-between gap-8">
+                  <div className="space-y-6 flex-1">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">From</p>
+                      <p className="font-semibold text-base">{settings.company_name}</p>
+                      {settings.address && <p className="text-sm text-muted-foreground whitespace-pre-line mt-1">{settings.address}</p>}
+                      {settings.gst_number && <p className="text-xs text-muted-foreground mt-2">GSTIN: {settings.gst_number}</p>}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Bill To</p>
+                      <p className="font-semibold text-base">{quotation.lead.company_name}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{quotation.lead.contact_name}</p>
+                      <div className="mt-2 space-y-1">
+                        {quotation.lead.email && <p className="text-sm text-muted-foreground">{quotation.lead.email}</p>}
+                        {quotation.lead.phone && <p className="text-sm text-muted-foreground">{quotation.lead.phone}</p>}
+                      </div>
+                      {quotation.lead.address && <p className="text-sm text-muted-foreground whitespace-pre-line mt-2">{quotation.lead.address}</p>}
+                    </div>
+                  </div>
+                  
+                  <div className="w-full md:w-80">
+                    <div className="bg-muted/30 border border-border rounded-lg p-5 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Quote Number</span>
+                        <span className="font-semibold">{quotation.quote_number}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Date</span>
+                        <span className="font-medium">{quoteDate ? format(new Date(quoteDate), 'dd MMM yyyy') : '—'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Valid Until</span>
+                        <span className="font-medium">{validUntil ? format(new Date(validUntil), 'dd MMM yyyy') : '—'}</span>
+                      </div>
+                      <div className="pt-4 mt-2 border-t border-border flex justify-between items-center">
+                        <span className="text-sm font-semibold">Grand Total</span>
+                        <span className="text-lg font-bold text-primary">{fmt(total)}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -401,18 +417,34 @@ export default function QuotationEditor() {
                 </div>
                 {taxRate > 0 && (
                   <>
-                    <div className="pt-2 border-t border-dashed border-border">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1.5">GST Breakdown ({taxRate}%)</p>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">CGST ({(taxRate / 2).toFixed(1)}%)</span>
-                        <span className="font-medium">{fmt(cgst)}</span>
+                    <div className="pt-3 mt-1 border-t border-dashed border-border">
+                      <div className="flex items-center justify-between mb-4">
+                        <Label htmlFor="igst-toggle" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground cursor-pointer">Inter-state (IGST)</Label>
+                        <Switch id="igst-toggle" checked={isIgst} onCheckedChange={setIsIgst} />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">SGST ({(taxRate / 2).toFixed(1)}%)</span>
-                        <span className="font-medium">{fmt(sgst)}</span>
-                      </div>
-                      <div className="flex justify-between mt-1 pt-1 border-t border-border">
-                        <span className="text-muted-foreground">Total Tax</span>
+                      
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">GST Breakdown ({taxRate}%)</p>
+                      
+                      {isIgst ? (
+                        <div className="flex justify-between mb-2">
+                          <span className="text-muted-foreground">IGST ({taxRate}%)</span>
+                          <span className="font-medium">{fmt(taxAmount)}</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 mb-2">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">CGST ({(taxRate / 2).toFixed(1)}%)</span>
+                            <span className="font-medium">{fmt(cgst)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">SGST ({(taxRate / 2).toFixed(1)}%)</span>
+                            <span className="font-medium">{fmt(sgst)}</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between pt-2 border-t border-border mt-2">
+                        <span className="text-muted-foreground font-medium">Total Tax</span>
                         <span className="font-medium">{fmt(taxAmount)}</span>
                       </div>
                     </div>
@@ -431,7 +463,8 @@ export default function QuotationEditor() {
           <QuotationPreview quotation={{
             ...quotation,
             status,
-            notes
+            notes,
+            is_igst: isIgst
           }} items={items} settings={settings} lead={quotation.lead} />
         </TabsContent>
       </Tabs>
@@ -471,7 +504,8 @@ export default function QuotationEditor() {
       {quotation.lead && <QuotationPreview quotation={{
         ...quotation,
         status,
-        notes
+        notes,
+        is_igst: isIgst
       }} items={items} settings={settings} lead={quotation.lead} />}
     </div>
   </AppLayout>;

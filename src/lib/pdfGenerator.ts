@@ -14,6 +14,7 @@ interface QuotationPDFData {
   taxAmount: number;
   total: number;
   notes: string | null;
+  isIgst?: boolean;
 }
 
 interface InvoicePDFData {
@@ -224,9 +225,26 @@ export async function generateQuotationPDF(
   yPos += 5;
 
   if (data.taxRate > 0) {
-    doc.text(`Tax (${data.taxRate}%):`, totalsX, yPos);
+    if (data.isIgst) {
+      doc.text(`IGST (${data.taxRate}%):`, totalsX, yPos);
+      doc.text(formatCurrency(data.taxAmount, currency), pageWidth - margin, yPos, { align: 'right' });
+      yPos += 5;
+    } else {
+      const halfRate = data.taxRate / 2;
+      const halfTax = data.taxAmount / 2;
+      doc.text(`CGST (${halfRate}%):`, totalsX, yPos);
+      doc.text(formatCurrency(halfTax, currency), pageWidth - margin, yPos, { align: 'right' });
+      yPos += 5;
+      doc.text(`SGST (${halfRate}%):`, totalsX, yPos);
+      doc.text(formatCurrency(halfTax, currency), pageWidth - margin, yPos, { align: 'right' });
+      yPos += 5;
+    }
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total Tax:`, totalsX, yPos);
     doc.text(formatCurrency(data.taxAmount, currency), pageWidth - margin, yPos, { align: 'right' });
     yPos += 5;
+    doc.setFont('helvetica', 'normal');
   }
 
   doc.setLineWidth(0.3);

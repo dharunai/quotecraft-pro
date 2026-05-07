@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 
 // Categories
 export function useProductCategories() {
@@ -25,7 +26,7 @@ export function useCreateProductCategory() {
 
     return useMutation({
         mutationFn: async (category: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>) => {
-            if (!companyId) throw new Error('Company ID not found');
+            const currentCompanyId = await getEffectiveCompanyId(companyId);
             const { data, error } = await supabase
                 .from('product_categories')
                 .insert({ ...category, company_id: companyId })
@@ -135,10 +136,10 @@ export function useCreateProduct() {
 
     return useMutation({
         mutationFn: async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category'>) => {
-            if (!companyId) throw new Error('Company ID not found');
+            const currentCompanyId = await getEffectiveCompanyId(companyId);
             const { data, error } = await supabase
                 .from('products')
-                .insert({ ...product, company_id: companyId })
+                .insert({ ...product, company_id: currentCompanyId })
                 .select()
                 .single();
             if (error) throw error;

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { triggerAutomation } from '@/lib/automationEngine';
 import { triggerWorkflows } from '@/lib/workflowEngine';
 import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 
 export function useQuotations() {
   return useQuery({
@@ -79,19 +80,7 @@ export function useCreateQuotation() {
 
   return useMutation({
     mutationFn: async (quotation: Omit<Quotation, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'lead'>) => {
-      let currentCompanyId = companyId;
-      
-      if (!currentCompanyId) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data } = await supabase.from('profiles').select('company_id').eq('user_id', session.user.id).maybeSingle();
-          if (data?.company_id) {
-            currentCompanyId = data.company_id;
-          }
-        }
-      }
-
-      if (!currentCompanyId) throw new Error('Company ID not found');
+      const currentCompanyId = await getEffectiveCompanyId(companyId);
 
       const { data, error } = await supabase
         .from('quotations')
