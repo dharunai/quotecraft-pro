@@ -288,7 +288,8 @@ export default function InvoiceEditor() {
         taxAmount,
         grandTotal,
         notes: notes || null,
-        termsConditions: termsConditions || null
+        termsConditions: termsConditions || null,
+        payment_notes: paymentNotes || null
       }, settings, selectedLead);
 
       downloadPDF(doc, `Invoice-${invoiceNumber || 'New'}.pdf`);
@@ -318,7 +319,8 @@ export default function InvoiceEditor() {
         taxAmount: taxAmount,
         grandTotal: grandTotal,
         notes: notes || null,
-        termsConditions: termsConditions || null
+        termsConditions: termsConditions || null,
+        payment_notes: paymentNotes || null
       }, settings, selectedLead);
 
       const base64 = getPDFBase64(doc);

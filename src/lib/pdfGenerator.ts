@@ -266,6 +266,21 @@ export async function generateQuotationPDF(
   doc.setFont('helvetica', 'bold');
   doc.text(numberToWords(data.total), margin, yPos);
   
+  // Notes & Terms
+  if (data.notes) {
+    yPos += 10;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(180, 180, 180);
+    doc.text('NOTES & TERMS', margin, yPos);
+    yPos += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    const noteLines = doc.splitTextToSize(data.notes, pageWidth - margin * 2);
+    doc.text(noteLines, margin, yPos);
+    yPos += noteLines.length * 4 + 10;
+  }
+
   // Footer
   doc.setFontSize(10);
   doc.setFont('helvetica', 'italic');
@@ -486,9 +501,9 @@ export async function generateInvoicePDF(
     yPos += 5;
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    const pNotesLines = doc.splitTextToSize(data.payment_notes, pageWidth / 2 - margin);
+    const pNotesLines = doc.splitTextToSize(data.payment_notes, pageWidth - margin * 2);
     doc.text(pNotesLines, margin, yPos);
-    yPos += pNotesLines.length * 4 + 5;
+    yPos += pNotesLines.length * 4 + 8;
   }
   
   if (data.termsConditions) {

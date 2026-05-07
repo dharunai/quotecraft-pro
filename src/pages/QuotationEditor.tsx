@@ -162,16 +162,11 @@ export default function QuotationEditor() {
       quotation_id: id
     });
   };
-  const handleDownloadPDF = () => {
-    window.print();
-  };
-
-  const handleSendEmail = async () => {
-    if (!quotation || !settings || !quotation.lead || !id) return;
+  const handleDownloadPDF = async () => {
+    if (!quotation || !settings || !quotation.lead) return;
 
     try {
-      // Calculate totals for PDF
-      const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
+      const subtotal = localItems.reduce((sum, item) => sum + item.line_total, 0);
       const taxRate = settings.tax_rate || 0;
       const taxAmount = (subtotal * taxRate) / 100;
       const total = subtotal + taxAmount;
@@ -180,7 +175,37 @@ export default function QuotationEditor() {
         quoteNumber: quotation.quote_number,
         quoteDate: quoteDate,
         validUntil: validUntil || null,
-        items: items,
+        items: localItems,
+        subtotal: subtotal,
+        taxRate: taxRate,
+        taxAmount: taxAmount,
+        total: total,
+        notes: notes || null,
+        isIgst: isIgst
+      }, settings, quotation.lead);
+
+      doc.save(`Quotation-${quotation.quote_number}.pdf`);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!quotation || !settings || !quotation.lead || !id) return;
+
+    try {
+      // Calculate totals for PDF
+      const subtotal = localItems.reduce((sum, item) => sum + item.line_total, 0);
+      const taxRate = settings.tax_rate || 0;
+      const taxAmount = (subtotal * taxRate) / 100;
+      const total = subtotal + taxAmount;
+
+      const doc = await generateQuotationPDF({
+        quoteNumber: quotation.quote_number,
+        quoteDate: quoteDate,
+        validUntil: validUntil || null,
+        items: localItems,
         subtotal: subtotal,
         taxRate: taxRate,
         taxAmount: taxAmount,
