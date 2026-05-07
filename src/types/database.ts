@@ -153,6 +153,7 @@ export interface Invoice {
   payment_notes: string | null;
   terms_conditions: string | null;
   notes: string | null;
+  is_igst?: boolean;
   is_locked: boolean;
   created_by: string | null;
   created_at: string;

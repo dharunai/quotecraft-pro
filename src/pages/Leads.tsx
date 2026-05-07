@@ -300,11 +300,13 @@ export default function Leads() {
 
       {/* Create Lead Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Add New Lead</DialogTitle>
+        <DialogContent className="max-w-2xl h-[90vh] p-0 overflow-hidden flex flex-col border-none shadow-2xl">
+          <DialogHeader className="px-6 pt-6 pb-4 bg-muted/20 border-b shrink-0">
+            <DialogTitle className="text-xl font-bold tracking-tight">Create New Lead</DialogTitle>
           </DialogHeader>
-          <LeadForm onSubmit={handleCreate} onCancel={() => setIsFormOpen(false)} isLoading={createLead.isPending} />
+          <div className="flex-1 overflow-hidden px-6 flex flex-col min-h-0">
+            <LeadForm onSubmit={handleCreate} onCancel={() => setIsFormOpen(false)} isLoading={createLead.isPending} />
+          </div>
         </DialogContent>
       </Dialog>
 

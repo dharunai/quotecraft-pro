@@ -57,6 +57,8 @@ export default function Meetings() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<'video' | 'onsite' | 'phone' | null>(null);
 
   React.useEffect(() => {
     if (searchParams.get('new') === 'true') {
@@ -153,14 +155,6 @@ export default function Meetings() {
     if (view === 'Month') setDate(curr => direction === 'prev' ? subMonths(curr, 1) : addMonths(curr, 1));
   };
 
-  const getDayMeetings = (day: Date) => {
-    return meetings.filter(m => {
-      try {
-        return isSameDay(parseISO(m.start_time), day);
-      } catch (e) { return false; }
-    });
-  };
-
   // Next upcoming meeting
   const nextMeeting = useMemo(() => {
     const now = new Date();
@@ -173,17 +167,184 @@ export default function Meetings() {
     return upcoming[0] || null;
   }, [meetings]);
 
+  const filteredMeetings = useMemo(() => {
+    return meetings.filter(m => {
+      const matchesSearch = m.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (m.description?.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = !statusFilter || m.status.toLowerCase() === statusFilter.toLowerCase();
+      
+      let matchesType = true;
+      if (typeFilter === 'video') matchesType = !!m.meeting_link;
+      else if (typeFilter === 'onsite') matchesType = !!m.location && !m.meeting_link;
+      else if (typeFilter === 'phone') matchesType = !m.location && !m.meeting_link;
+      
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }, [meetings, searchTerm, statusFilter, typeFilter]);
+
   // Sorted meetings for sidebar
   const sortedMeetings = useMemo(() => {
-    return [...meetings].sort((a, b) => {
+    return [...filteredMeetings].sort((a, b) => {
       try { return parseISO(b.start_time).getTime() - parseISO(a.start_time).getTime(); }
       catch { return 0; }
     });
-  }, [meetings]);
+  }, [filteredMeetings]);
+
+  const getDayMeetings = (day: Date) => {
+    return filteredMeetings.filter(m => {
+      try {
+        return isSameDay(parseISO(m.start_time), day);
+      } catch (e) { return false; }
+    });
+  };
 
   return (
     <AppLayout>
       <div className="flex h-[calc(100vh-2rem)] gap-6 p-2 font-sans overflow-hidden">
+        {/* Left Sidebar — Filters, Types, Upcoming */}
+        <div className="w-full lg:w-80 flex flex-col gap-4 lg:overflow-hidden shrink-0">
+          
+          {/* Quick Actions & Search */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setIsDialogOpen(true)} className="h-20 flex-col gap-2 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
+                <Plus className="h-5 w-5" />
+                <span className="text-[10px] font-bold">Schedule</span>
+              </Button>
+              <Button variant="outline" onClick={() => setDate(new Date())} className="h-20 flex-col gap-2 rounded-2xl border-slate-100 hover:bg-slate-50 text-slate-600">
+                <CalendarIcon className="h-5 w-5" />
+                <span className="text-[10px] font-bold">Jump Today</span>
+              </Button>
+            </div>
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search events..."
+                className="h-10 pl-9 text-xs bg-slate-50/50 border-slate-100 rounded-xl focus:ring-primary/10"
+              />
+            </div>
+          </div>
+
+          {/* Meeting Types & Filters */}
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 space-y-5">
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Meeting Types</h3>
+              <div className="space-y-2">
+                <div 
+                  onClick={() => setTypeFilter(typeFilter === 'video' ? null : 'video')}
+                  className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all border ${typeFilter === 'video' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-100' : 'bg-blue-50/50 border-blue-100/50 hover:bg-blue-100'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-blue-500 flex items-center justify-center text-white"><Video className="h-4 w-4" /></div>
+                    <span className="text-xs font-semibold text-blue-900">Video Call</span>
+                  </div>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-none text-[10px]">{meetings.filter(m => m.meeting_link).length}</Badge>
+                </div>
+                <div 
+                  onClick={() => setTypeFilter(typeFilter === 'onsite' ? null : 'onsite')}
+                  className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all border ${typeFilter === 'onsite' ? 'bg-emerald-100 border-emerald-300 ring-2 ring-emerald-100' : 'bg-emerald-50/50 border-emerald-100/50 hover:bg-emerald-100'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center text-white"><MapPin className="h-4 w-4" /></div>
+                    <span className="text-xs font-semibold text-emerald-900">On-site</span>
+                  </div>
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-none text-[10px]">{meetings.filter(m => m.location && !m.meeting_link).length}</Badge>
+                </div>
+                <div 
+                  onClick={() => setTypeFilter(typeFilter === 'phone' ? null : 'phone')}
+                  className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all border ${typeFilter === 'phone' ? 'bg-slate-200 border-slate-300 ring-2 ring-slate-100' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-slate-400 flex items-center justify-center text-white"><Phone className="h-4 w-4" /></div>
+                    <span className="text-xs font-semibold text-slate-700">Discovery Call</span>
+                  </div>
+                  <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none text-[10px]">{meetings.filter(m => !m.location && !m.meeting_link).length}</Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Quick Filters</h3>
+              <div className="flex flex-wrap gap-2">
+                {['Scheduled', 'Completed', 'Cancelled'].map(filter => {
+                  const isActive = statusFilter === filter;
+                  return (
+                    <Badge 
+                      key={filter} 
+                      variant="outline" 
+                      onClick={() => setStatusFilter(isActive ? null : filter)}
+                      className={`px-3 py-1 rounded-full cursor-pointer transition-all text-[10px] font-bold ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'}`}
+                    >
+                      {filter}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Upcoming Meetings List */}
+          <div className="flex-1 bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Upcoming</h3>
+                <p className="text-[10px] text-muted-foreground font-medium">{meetings.filter(m => m.status === 'scheduled').length} events</p>
+              </div>
+              <div className="h-8 w-8 rounded-full bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                <Clock className="h-3.5 w-3.5 text-primary" />
+              </div>
+            </div>
+
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-3">
+                {sortedMeetings.filter(m => m.status === 'scheduled').length === 0 ? (
+                  <div className="text-center py-12 px-4">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-3">
+                      <CalendarIcon className="h-6 w-6 text-slate-200" />
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">No upcoming meetings scheduled for this period.</p>
+                  </div>
+                ) : (
+                  sortedMeetings.filter(m => m.status === 'scheduled').slice(0, 10).map(meeting => {
+                    const isSelected = selectedMeetingId === meeting.id;
+                    let startStr = '', dateStr = '';
+                    try {
+                      const s = parseISO(meeting.start_time);
+                      startStr = format(s, 'h:mm a');
+                      dateStr = format(s, 'MMM d');
+                    } catch { }
+
+                    return (
+                      <div
+                        key={meeting.id}
+                        onClick={() => {
+                          setSelectedMeetingId(meeting.id);
+                          try { setDate(parseISO(meeting.start_time)); } catch { }
+                        }}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer group ${isSelected ? 'bg-blue-50 border-blue-200 ring-4 ring-blue-50' : 'bg-white border-slate-100 hover:border-slate-300'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center shrink-0 group-hover:bg-white transition-colors">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{dateStr.split(' ')[0]}</span>
+                            <span className="text-sm font-black text-slate-900 leading-none">{dateStr.split(' ')[1]}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate">{meeting.title}</p>
+                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">{startStr} · {getLeadName(meeting.lead_id) || 'Internal'}</p>
+                          </div>
+                          <div className={`h-2 w-2 rounded-full shrink-0 ${isSelected ? 'bg-blue-500 animate-pulse' : 'bg-slate-200'}`} />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
 
         {/* Main Calendar Section */}
         <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -191,44 +352,30 @@ export default function Meetings() {
           <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100">
             <div className="px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-semibold tracking-tight text-slate-900">Calendar</h1>
-                <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-0.5 border border-slate-100">
-                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white" onClick={() => navigateDate('prev')}><ChevronLeft className="h-4 w-4" /></Button>
-                  <button onClick={() => setDate(new Date())} className="text-xs font-medium px-3 py-1 rounded-md hover:bg-white transition-colors">Today</button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white" onClick={() => navigateDate('next')}><ChevronRight className="h-4 w-4" /></Button>
+                <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-0.5 border border-slate-200">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-white transition-all shadow-none" onClick={() => navigateDate('prev')}><ChevronLeft className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-white transition-all shadow-none" onClick={() => navigateDate('next')}><ChevronRight className="h-4 w-4" /></Button>
                 </div>
-                <p className="text-sm font-medium text-slate-700 hidden md:block">
+                <h2 className="text-lg font-bold tracking-tight text-slate-900">
                   {view === 'Month' ? format(date, 'MMMM yyyy') :
                     view === 'Day' ? format(date, 'EEEE, MMM d, yyyy') :
                       view === 'Week' ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}` :
                         'All Upcoming'}
-                </p>
+                </h2>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                  <Input
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    placeholder="Search meetings…"
-                    className="h-8 w-48 pl-8 text-xs bg-slate-50 border-slate-100"
-                  />
-                </div>
-                <div className="bg-slate-100 p-0.5 rounded-lg flex gap-0.5">
+              <div className="flex items-center gap-3">
+                <div className="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200">
                   {(['Day', 'Week', 'Month', 'Agenda'] as const).map(v => (
                     <button
                       key={v}
                       onClick={() => setView(v)}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${view === v ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${view === v ? 'bg-white text-slate-900 shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
                     >
                       {v}
                     </button>
                   ))}
                 </div>
-                <Button onClick={() => setIsDialogOpen(true)} size="sm" className="h-8 rounded-lg shadow-sm">
-                  <Plus className="mr-1.5 h-4 w-4" /> Add Meeting
-                </Button>
               </div>
             </div>
           </div>
@@ -457,144 +604,7 @@ export default function Meetings() {
           </div>
         </div>
 
-        {/* Sidebar — Meetings List */}
-        <div className="w-full lg:w-80 flex flex-col gap-4 lg:overflow-hidden">
 
-          {/* Next Meeting Card */}
-          {nextMeeting && (
-            <div className="bg-gradient-to-br from-slate-900 to-slate-700 p-5 rounded-3xl text-white shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-8 -mt-8"></div>
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Next Meeting</p>
-              <h3 className="font-bold text-base">{nextMeeting.title}</h3>
-              <div className="flex items-center gap-2 mt-2 text-slate-300 text-xs">
-                <CalendarIcon className="h-3 w-3" />
-                {(() => {
-                  try { return format(parseISO(nextMeeting.start_time), 'EEE, MMM d · h:mm a'); }
-                  catch { return 'TBD'; }
-                })()}
-              </div>
-              {(nextMeeting.meeting_link || nextMeeting.location) && (
-                <div className="flex items-center gap-2 mt-1 text-slate-400 text-xs">
-                  {nextMeeting.meeting_link ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
-                  <span className="truncate">{nextMeeting.meeting_link || nextMeeting.location}</span>
-                </div>
-              )}
-              {nextMeeting.lead_id && getLeadName(nextMeeting.lead_id) && (
-                <div className="flex items-center gap-2 mt-1 text-slate-400 text-xs">
-                  <Briefcase className="h-3 w-3" />
-                  <span className="truncate">{getLeadName(nextMeeting.lead_id)}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Meetings List */}
-          <div className="flex-1 bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-900">Meetings</h3>
-                <p className="text-[10px] text-muted-foreground">{meetings.length} total</p>
-              </div>
-              <Button
-                onClick={() => setIsDialogOpen(true)}
-                size="icon"
-                variant="outline"
-                className="h-8 w-8 rounded-full border-slate-200"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            <ScrollArea className="flex-1">
-              <div className="p-3 space-y-2">
-                {sortedMeetings.length === 0 ? (
-                  <div className="text-center py-10">
-                    <CalendarIcon className="h-10 w-10 text-slate-200 mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">No meetings yet</p>
-                    <Button variant="link" size="sm" onClick={() => setIsDialogOpen(true)} className="text-xs mt-1">
-                      Schedule your first meeting
-                    </Button>
-                  </div>
-                ) : (
-                  sortedMeetings.map(meeting => {
-                    const isSelected = selectedMeetingId === meeting.id;
-                    let startStr = '', dateStr = '';
-                    try {
-                      const s = parseISO(meeting.start_time);
-                      const e = parseISO(meeting.end_time);
-                      startStr = `${format(s, 'h:mm a')} – ${format(e, 'h:mm a')}`;
-                      dateStr = format(s, 'EEE, MMM d');
-                    } catch { }
-
-                    const leadName = getLeadName(meeting.lead_id);
-                    const dealInfo = getDealInfo(meeting.deal_id);
-                    const organizer = getProfileName(meeting.organizer_id);
-
-                    return (
-                      <div
-                        key={meeting.id}
-                        onClick={() => {
-                          setSelectedMeetingId(meeting.id);
-                          // Navigate calendar to meeting date
-                          try { setDate(parseISO(meeting.start_time)); } catch { }
-                        }}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-50 hover:bg-slate-50 hover:border-slate-200'
-                          }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-slate-900 truncate">{meeting.title}</p>
-                            <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
-                              <Clock className="h-3 w-3 shrink-0" />
-                              <span>{dateStr} · {startStr}</span>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 shrink-0 ${statusColors[meeting.status]}`}>
-                            {meeting.status}
-                          </Badge>
-                        </div>
-
-                        {/* Meeting details */}
-                        <div className="mt-2 space-y-1">
-                          {(meeting.meeting_link || meeting.location) && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                              {meetingTypeIcon(meeting)}
-                              <span className="truncate">{meeting.meeting_link || meeting.location}</span>
-                            </div>
-                          )}
-                          {leadName && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                              <Briefcase className="h-3 w-3 shrink-0 text-amber-500" />
-                              <span className="truncate">Lead: {leadName}</span>
-                            </div>
-                          )}
-                          {dealInfo && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                              <Briefcase className="h-3 w-3 shrink-0 text-emerald-500" />
-                              <span className="truncate">Deal: {dealInfo}</span>
-                            </div>
-                          )}
-                          {organizer && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                              <Users className="h-3 w-3 shrink-0 text-violet-500" />
-                              <span className="truncate">By: {organizer}</span>
-                            </div>
-                          )}
-                          {meeting.description && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                              <FileText className="h-3 w-3 shrink-0 text-slate-400" />
-                              <span className="truncate">{meeting.description.split('\n')[0]}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
       </div>
 
       {/* Meeting Dialog */}

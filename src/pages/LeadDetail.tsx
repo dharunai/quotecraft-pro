@@ -217,13 +217,6 @@ export default function LeadDetail() {
         <div className="bg-white border-b border-slate-200 px-6 py-3">
           <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <Link to="/leads">
-                <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700 -ml-2">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Leads
-                </Button>
-              </Link>
-              <span className="text-slate-300">›</span>
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {lead.company_name?.charAt(0).toUpperCase()}
@@ -269,6 +262,15 @@ export default function LeadDetail() {
               <Button size="sm" variant="ghost" onClick={() => setIsDeleting(true)} className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full px-3">
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
+
+              <div className="w-px h-6 bg-slate-200 mx-1" />
+
+              <Link to="/leads">
+                <Button variant="ghost" size="sm" className="h-8 text-slate-500 hover:text-slate-700 rounded-full px-3">
+                  <ArrowLeft className="h-4 w-4 mr-1.5" />
+                  Back
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

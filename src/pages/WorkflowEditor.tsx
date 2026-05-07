@@ -134,9 +134,6 @@ export default function WorkflowEditor() {
         {/* Canvas Area */}
         <div className="flex-1 relative border-r border-gray-100">
           <div className="absolute top-6 left-8 z-10 flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/workflows')} className="h-8 w-8 hover:bg-gray-100">
-              <ArrowLeft className="w-4 h-4 text-gray-600" />
-            </Button>
             <h1 className="text-lg font-bold mb-0 text-gray-900 tracking-tight">Customise automation</h1>
           </div>
 
@@ -159,6 +156,7 @@ export default function WorkflowEditor() {
           </ReactFlow>
 
           <div className="absolute bottom-6 right-6 flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/workflows')} className="text-xs">Back to Workflows</Button>
             <Button variant="outline" onClick={() => setSelectedNodeId(null)} className="text-xs">Cancel</Button>
             <Button className="bg-black hover:bg-gray-800 text-xs" onClick={onSave}>Save Automation</Button>
           </div>

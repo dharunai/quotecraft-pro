@@ -80,18 +80,23 @@ export default function ProductCategories() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/products">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Products
-              </Button>
-            </Link>
             <h1 className="text-2xl font-bold">Product Categories</h1>
           </div>
-          <Button onClick={() => handleOpenForm()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Category
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => handleOpenForm()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+
+            <div className="h-6 w-px bg-border mx-1" />
+
+            <Link to="/products">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {isLoading ? (

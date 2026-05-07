@@ -93,14 +93,16 @@ export default function TaskSettings() {
     return (
         <AppLayout>
             <div className="max-w-2xl space-y-4">
-                <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/settings')}>
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
+                <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-lg font-bold">Task Settings</h1>
                         <p className="text-xs text-muted-foreground">Manage task-related preferences</p>
                     </div>
+
+                    <Button variant="ghost" size="sm" className="h-8 text-muted-foreground hover:text-foreground rounded-full px-3" onClick={() => navigate('/settings')}>
+                        <ArrowLeft className="h-4 w-4 mr-1.5" />
+                        Back
+                    </Button>
                 </div>
 
                 {/* Email Notifications Toggle */}

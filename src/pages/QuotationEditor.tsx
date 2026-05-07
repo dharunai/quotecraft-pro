@@ -209,13 +209,6 @@ export default function QuotationEditor() {
       <div className="bg-card border border-border rounded-lg">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 border-b border-border">
           <div className="flex items-center gap-3 min-w-0">
-            <Link to="/quotations">
-              <Button variant="ghost" size="sm" className="h-8">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Quotes
-              </Button>
-            </Link>
-            <div className="h-6 w-px bg-border" />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-semibold tracking-tight truncate">{quotation.quote_number}</h1>
@@ -243,6 +236,15 @@ export default function QuotationEditor() {
               <Save className="h-4 w-4 mr-2" />
               {updateQuotation.isPending ? 'Saving…' : 'Save'}
             </Button>
+
+            <div className="h-6 w-px bg-border mx-1" />
+
+            <Link to="/quotations">
+              <Button variant="ghost" size="sm" className="h-8 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                Back
+              </Button>
+            </Link>
           </div>
         </div>
 
