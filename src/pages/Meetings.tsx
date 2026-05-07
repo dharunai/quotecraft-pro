@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getAvatarUrl } from '@/lib/avatars';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -19,6 +20,7 @@ import {
   Users,
   Briefcase,
   FileText,
+  Search,
 } from 'lucide-react';
 import { format, addDays, startOfWeek, isSameDay, parseISO, setHours, isWithinInterval, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isBefore, isAfter } from 'date-fns';
 import { useMeetings } from '@/hooks/useMeetings';
