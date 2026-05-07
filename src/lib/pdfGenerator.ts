@@ -32,8 +32,8 @@ interface InvoicePDFData {
   payment_notes?: string | null;
 }
 
-function formatCurrency(amount: number, currency = 'Rs. '): string {
-  return currency + amount.toLocaleString('en-IN', {
+function formatCurrency(amount: number, currency = '₹'): string {
+  return currency + ' ' + amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -71,7 +71,7 @@ export async function generateQuotationPDF(
   const pageWidth = doc.internal.pageSize.width;
   const margin = 15;
   let yPos = 15;
-  const currency = settings.currency === '₹' ? 'Rs. ' : (settings.currency || 'Rs. ');
+  const currency = settings.currency || '₹';
   const themeColor = settings.theme_color || '#166534';
 
   // Top Accent Bar
@@ -299,7 +299,7 @@ export async function generateInvoicePDF(
   const pageWidth = doc.internal.pageSize.width;
   const margin = 15;
   let yPos = 15;
-  const currency = settings.currency === '₹' ? 'Rs. ' : (settings.currency || 'Rs. ');
+  const currency = settings.currency || '₹';
   const themeColor = settings.theme_color || '#166534';
 
   // Top Accent Bar
