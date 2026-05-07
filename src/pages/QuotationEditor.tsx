@@ -117,14 +117,43 @@ export default function QuotationEditor() {
       onSuccess: () => refetchItems()
     });
   };
-  const handleUpdateItem = (data: {
-    id: string;
-  } & Record<string, unknown>) => {
+  const [localItems, setLocalItems] = useState<typeof items>([]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      setLocalItems(items);
+    }
+  }, [items]);
+
+  const handleUpdateLocalItem = (itemId: string, field: string, value: unknown) => {
+    setLocalItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        const updatedItem = { ...item, [field]: value };
+        if (field === 'quantity' || field === 'unit_price') {
+          const quantity = field === 'quantity' ? Number(value) : updatedItem.quantity;
+          const unitPrice = field === 'unit_price' ? Number(value) : updatedItem.unit_price;
+          updatedItem.line_total = quantity * unitPrice;
+        }
+        return updatedItem;
+      }
+      return item;
+    }));
+  };
+
+  const handleSyncItem = (itemId: string, field: string, value: unknown) => {
     if (!id) return;
-    updateItem.mutate({
-      ...data,
-      quotation_id: id
-    } as Parameters<typeof updateItem.mutate>[0]);
+    const item = localItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    const updateData: Record<string, unknown> = { [field]: value };
+
+    if (field === 'quantity' || field === 'unit_price') {
+      const quantity = field === 'quantity' ? Number(value) : item.quantity;
+      const unitPrice = field === 'unit_price' ? Number(value) : item.unit_price;
+      updateData.line_total = quantity * unitPrice;
+    }
+
+    updateItem.mutate({ id: itemId, quotation_id: id, ...updateData } as any);
   };
   const handleDeleteItem = (itemId: string) => {
     if (!id) return;
@@ -194,14 +223,14 @@ export default function QuotationEditor() {
     </AppLayout>;
   }
   const currency = settings.currency || '₹';
-  const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
+  const subtotal = localItems.reduce((sum, item) => sum + item.line_total, 0);
   const taxRate = settings.tax_rate || 0;
   const taxAmount = subtotal * taxRate / 100;
   const total = subtotal + taxAmount;
   const fmt = (n: number) => `${currency}${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const cgst = taxAmount / 2;
   const sgst = taxAmount / 2;
-  const totalQty = items.reduce((s, i) => s + (i.quantity || 0), 0);
+  const totalQty = localItems.reduce((s, i) => s + (i.quantity || 0), 0);
 
   return <AppLayout>
     <div className="space-y-5 no-print">
@@ -374,12 +403,13 @@ export default function QuotationEditor() {
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((item, idx) => (
+                      {localItems.map((item, idx) => (
                         <QuotationItemRow
                           key={item.id}
                           item={item}
                           currency={currency}
-                          onUpdate={handleUpdateItem}
+                          onUpdate={handleUpdateLocalItem}
+                          onSync={handleSyncItem}
                           onDelete={handleDeleteItem}
                           index={idx + 1}
                         />
@@ -467,7 +497,7 @@ export default function QuotationEditor() {
             status,
             notes,
             is_igst: isIgst
-          }} items={items} settings={settings} lead={quotation.lead} />
+          }} items={localItems} settings={settings} lead={quotation.lead} />
         </TabsContent>
       </Tabs>
 
