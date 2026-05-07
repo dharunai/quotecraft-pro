@@ -134,7 +134,7 @@ export default function Leads() {
         email: row.email || row.Email || '',
         phone: row.phone || row.Phone || '',
         status: row.status || row.Status || 'new',
-        is_qualified: row.is_qualified === 'Yes' || row.is_qualified === true || false,
+        is_qualified: row.is_qualified === 'Yes' || row.is_qualified === true || row['Is Qualified'] === 'Yes' || row['Qualified'] === 'Yes' || false,
         created_by: user.id,
         company_id: effectiveCompanyId
       })).filter(l => l.company_name); // Only import if company name exists
