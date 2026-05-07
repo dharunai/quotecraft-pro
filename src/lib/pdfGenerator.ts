@@ -217,47 +217,64 @@ export async function generateQuotationPDF(
   yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
   // Totals
-  const totalsX = pageWidth - margin - 60;
+  // Totals section with box
+  const totalsWidth = 70;
+  const totalsX = pageWidth - margin - totalsWidth;
+  const boxPadding = 4;
+  const rowHeight = 6;
+  
+  // Calculate box height
+  let boxHeight = rowHeight * 2; // Subtotal + Grand Total
+  if (data.taxRate > 0) {
+    boxHeight += data.isIgst ? rowHeight * 2 : rowHeight * 4; // Tax rows + Total Tax row
+  }
+  
+  // Draw Box Background & Border
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.1);
+  doc.setFillColor(250, 250, 250);
+  doc.rect(totalsX, yPos - 4, totalsWidth, boxHeight, 'FD');
+
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Subtotal:', totalsX, yPos);
-  doc.text(formatCurrency(data.subtotal, currency), pageWidth - margin, yPos, { align: 'right' });
-  yPos += 5;
+  doc.setTextColor(100, 100, 100);
+  doc.setFont('helvetica', 'bold');
+  
+  // Helper for row
+  const drawRow = (label: string, value: number, isLast = false, isGst = false) => {
+    doc.text(label, totalsX + boxPadding, yPos);
+    doc.text(formatCurrency(value, currency), pageWidth - margin - boxPadding, yPos, { align: 'right' });
+    yPos += rowHeight;
+  };
+
+  drawRow('Subtotal:', data.subtotal);
 
   if (data.taxRate > 0) {
+    doc.setDrawColor(230, 230, 230);
+    doc.line(totalsX, yPos - 4, totalsX + totalsWidth, yPos - 4);
+    
     if (data.isIgst) {
-      doc.text(`IGST (${data.taxRate}%):`, totalsX, yPos);
-      doc.text(formatCurrency(data.taxAmount, currency), pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
+      drawRow(`IGST (${data.taxRate}%):`, data.taxAmount, false, true);
     } else {
       const halfRate = data.taxRate / 2;
       const halfTax = data.taxAmount / 2;
-      doc.text(`CGST (${halfRate}%):`, totalsX, yPos);
-      doc.text(formatCurrency(halfTax, currency), pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
-      doc.text(`SGST (${halfRate}%):`, totalsX, yPos);
-      doc.text(formatCurrency(halfTax, currency), pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
+      drawRow(`CGST (${halfRate}%):`, halfTax, false, true);
+      drawRow(`SGST (${halfRate}%):`, halfTax, false, true);
     }
     
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total Tax:`, totalsX, yPos);
-    doc.text(formatCurrency(data.taxAmount, currency), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    drawRow(`Total Tax:`, data.taxAmount);
   }
 
-  doc.setLineWidth(0.3);
-  doc.line(totalsX, yPos, pageWidth - margin, yPos);
-  yPos += 5;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text('Grand Total:', totalsX, yPos);
-  doc.setTextColor(themeColor);
-  doc.text(formatCurrency(data.total, currency), pageWidth - margin, yPos, { align: 'right' });
-
-  yPos += 15;
+  // Grand Total Highlight
+  doc.setFillColor(settings.theme_color || '#166534');
+  doc.rect(totalsX, yPos - 5, totalsWidth, rowHeight + 2, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.text('Grand Total:', totalsX + boxPadding, yPos);
+  doc.text(formatCurrency(data.total, currency), pageWidth - margin - boxPadding, yPos, { align: 'right' });
+  
+  yPos += rowHeight + 10;
+  doc.setTextColor(0, 0, 0);
   doc.setTextColor(0, 0, 0);
 
   // Terms
@@ -469,62 +486,62 @@ export async function generateInvoicePDF(
     margin: { left: margin, right: margin },
   });
 
-  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
-
-  // Totals section
-  const rightMargin = margin;
-  // Align labels with table columns (Rate + Amount ~ 55mm space)
-  const labelX = pageWidth - margin - 65;
-  const valueX = pageWidth - margin;     // Values end at right margin
+  // Totals section with box
+  const totalsWidth = 70;
+  const labelX = pageWidth - margin - totalsWidth;
+  const valueX = pageWidth - margin;
+  const boxPadding = 4;
+  const rowHeight = 6;
+  
+  // Calculate box height
+  let boxHeight = rowHeight * 2; // Subtotal + Grand Total
+  if (data.taxEnabled && data.taxRate > 0) {
+    boxHeight += rowHeight * 4; // CGST + SGST + Total Tax + padding
+  }
+  
+  // Draw Box Background & Border
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.1);
+  doc.setFillColor(250, 250, 250);
+  doc.rect(labelX, yPos - 4, totalsWidth, boxHeight, 'FD');
 
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.setFont('helvetica', 'bold');
 
-  // Helper to draw a totals row
-  const drawTotalRow = (label: string, value: number, isBold = false, isGst = false) => {
-    if (isBold) doc.setFont('helvetica', 'bold');
-    else doc.setFont('helvetica', 'normal');
-
-    doc.text(label, labelX, yPos);
-    doc.text(formatCurrency(value, currency), valueX, yPos, { align: 'right' });
-    yPos += isGst ? 5 : 6;
+  // Helper for row
+  const drawRow = (label: string, value: number, isLast = false, isGst = false) => {
+    doc.text(label, labelX + boxPadding, yPos);
+    doc.text(formatCurrency(value, currency), valueX - boxPadding, yPos, { align: 'right' });
+    yPos += rowHeight;
   };
 
-  drawTotalRow('Taxable Value:', data.subtotal);
-  yPos += 2; // Extra space
+  drawRow('Taxable Value:', data.subtotal);
 
-  // GST Breakdown
   if (data.taxEnabled && data.taxRate > 0) {
-    doc.setFont('helvetica', 'bold');
-    doc.text('GST BREAKDOWN:', labelX, yPos);
-    yPos += 5;
-
+    doc.setDrawColor(230, 230, 230);
+    doc.line(labelX, yPos - 4, labelX + totalsWidth, yPos - 4);
+    
     const halfRate = data.taxRate / 2;
     const halfTax = data.taxAmount / 2;
-
-    drawTotalRow(`CGST @ ${halfRate}%`, halfTax, false, true);
-    drawTotalRow(`SGST @ ${halfRate}%`, halfTax, false, true);
-
-    // Separator line
-    const lineY = yPos - 3; // Adjust to be between text
-    doc.setLineWidth(0.3);
-    doc.line(labelX, lineY, valueX, lineY);
-
-    drawTotalRow('Total Tax:', data.taxAmount, false);
-    yPos += 2;
+    
+    drawRow(`CGST @ ${halfRate}%`, halfTax);
+    drawRow(`SGST @ ${halfRate}%`, halfTax);
+    
+    doc.setTextColor(80, 80, 80);
+    drawRow('Total Tax:', data.taxAmount);
   }
 
-  // Grand Total Line
-  doc.setLineWidth(0.5);
-  doc.line(labelX, yPos - 4, valueX, yPos - 4);
+  // Grand Total Highlight
+  doc.setFillColor(settings.theme_color || '#166534');
+  doc.rect(labelX, yPos - 5, totalsWidth, rowHeight + 2, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.text('Grand Total:', labelX + boxPadding, yPos);
+  doc.text(formatCurrency(data.grandTotal, currency), valueX - boxPadding, yPos, { align: 'right' });
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('Grand Total:', labelX, yPos);
-  doc.setTextColor(themeColor);
-  doc.text(formatCurrency(data.grandTotal, currency), valueX, yPos, { align: 'right' });
-
-  yPos += 8;
+  yPos += rowHeight + 10;
+  doc.setTextColor(0, 0, 0);
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');

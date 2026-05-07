@@ -79,8 +79,8 @@ export function InvoicePreview({
           </div>
         </div>
 
-        {/* Client & Status */}
-        <div className="mt-12 bg-slate-50/50 rounded-2xl p-8 border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-12">
+        {/* Bill To Section */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-12 px-2">
           <div>
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 flex items-center gap-2">
               <Building2 className="h-3 w-3" /> Bill To
@@ -89,21 +89,17 @@ export function InvoicePreview({
             <p className="text-sm font-bold text-slate-600 mt-1">{lead.contact_name}</p>
             <div className="mt-4 text-[12px] text-slate-500 space-y-1.5 leading-relaxed font-medium">
               {lead.address && <p className="max-w-[300px]">{lead.address}</p>}
-              <p>{lead.phone}</p>
-              <p>{lead.email}</p>
+              <p className="flex items-center gap-2"><Phone className="h-3 w-3" /> {lead.phone}</p>
+              <p className="flex items-center gap-2"><Mail className="h-3 w-3" /> {lead.email}</p>
             </div>
           </div>
           
-          <div className="flex flex-col justify-end items-end text-right">
+          <div className="flex flex-col justify-start items-end text-right">
              {invoice.payment_status === 'paid' && (
-               <div className="mb-6 flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
+               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Fully Paid
                </div>
              )}
-             <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-100 w-full md:w-auto">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Amount Due</p>
-                <p className="text-2xl font-black" style={{ color: settings.theme_color }}>{fmt(grandTotal)}</p>
-             </div>
           </div>
         </div>
 
