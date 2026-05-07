@@ -47,18 +47,7 @@ export default function BillingSettings() {
   };
 
   const validateBankDetails = () => {
-    const errors: string[] = [];
-
-    // IFSC code format: 4 letters + 0 + 6 alphanumeric
-    if (formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(formData.ifsc_code)) {
-      errors.push('IFSC code format is invalid (should be like SBIN0001234)');
-    }
-
-    // Account number: 9-18 digits
-    if (formData.account_number && !/^\d{9,18}$/.test(formData.account_number)) {
-      errors.push('Account number should be 9-18 digits');
-    }
-    return errors;
+    return []; // No longer validating specific formats for the unified block
   };
 
   const handleSave = () => {
@@ -93,32 +82,22 @@ export default function BillingSettings() {
       </div>
 
       <div className="grid gap-3">
-        {/* Banking Details */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Banking Details</CardTitle>
+            <CardTitle className="text-base">Default Payment Instructions</CardTitle>
             <CardDescription className="text-xs">
-              Bank account information for invoices
+              These details will automatically appear on all new invoices (Bank details, UPI, etc.)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 pt-3">
-            <div className="grid md:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium font-sans">Bank Name</label>
-                <Input value={formData.bank_name} onChange={e => handleChange('bank_name', e.target.value)} placeholder="State Bank of India" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium font-sans">Account Holder Name</label>
-                <Input value={formData.account_holder_name} onChange={e => handleChange('account_holder_name', e.target.value)} placeholder="Your Company Pvt Ltd" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium font-sans">Account Number</label>
-                <Input value={formData.account_number} onChange={e => handleChange('account_number', e.target.value)} placeholder="1234567890" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium font-sans">IFSC Code</label>
-                <Input value={formData.ifsc_code} onChange={e => handleChange('ifsc_code', e.target.value)} placeholder="SBIN0001234" />
-              </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium font-sans">Payment Details (to be shown on Invoice)</label>
+              <Textarea 
+                value={formData.bank_name} 
+                onChange={e => handleChange('bank_name', e.target.value)} 
+                placeholder="Bank: HDFC Bank&#10;A/c No: 502000...&#10;IFSC: HDFC000...&#10;Holder: Your Company" 
+                rows={6}
+              />
             </div>
           </CardContent>
         </Card>

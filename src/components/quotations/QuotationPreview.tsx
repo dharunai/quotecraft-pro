@@ -128,40 +128,6 @@ export function QuotationPreview({
         {/* Totals & Notes */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="space-y-8">
-            {(settings.bank_name || settings.account_number) && (
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 flex items-center gap-2">
-                  <FileText className="h-3 w-3" /> Banking Details
-                </h3>
-                <div className="grid grid-cols-2 gap-y-2 text-[11px] font-bold">
-                  {settings.bank_name && (
-                    <div>
-                      <p className="text-slate-400 uppercase tracking-widest text-[9px] mb-0.5">Bank Name</p>
-                      <p className="text-slate-900">{settings.bank_name}</p>
-                    </div>
-                  )}
-                  {settings.account_holder_name && (
-                    <div>
-                      <p className="text-slate-400 uppercase tracking-widest text-[9px] mb-0.5">Account Holder</p>
-                      <p className="text-slate-900">{settings.account_holder_name}</p>
-                    </div>
-                  )}
-                  {settings.account_number && (
-                    <div>
-                      <p className="text-slate-400 uppercase tracking-widest text-[9px] mb-0.5">Account Number</p>
-                      <p className="text-slate-900">{settings.account_number}</p>
-                    </div>
-                  )}
-                  {settings.ifsc_code && (
-                    <div>
-                      <p className="text-slate-400 uppercase tracking-widest text-[9px] mb-0.5">IFSC Code</p>
-                      <p className="text-slate-900">{settings.ifsc_code}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {quotation.notes && (
               <div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 flex items-center gap-2">

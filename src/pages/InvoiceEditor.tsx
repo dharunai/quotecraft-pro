@@ -87,6 +87,9 @@ export default function InvoiceEditor() {
       setDueDate(addDays(new Date(), defaultDueDays).toISOString().split('T')[0]);
       setTaxRate(settings.tax_rate || 18);
       setTermsConditions(settings.invoice_terms || settings.terms || '');
+      if (!paymentNotes && settings.bank_name) {
+        setPaymentNotes(settings.bank_name);
+      }
 
       if (leadIdParam) {
         setLeadId(leadIdParam);
