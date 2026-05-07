@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getAvatarUrl } from '@/lib/avatars';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -19,6 +20,7 @@ import {
   Users,
   Briefcase,
   FileText,
+  Search,
 } from 'lucide-react';
 import { format, addDays, startOfWeek, isSameDay, parseISO, setHours, isWithinInterval, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isBefore, isAfter } from 'date-fns';
 import { useMeetings } from '@/hooks/useMeetings';
@@ -50,7 +52,8 @@ export default function Meetings() {
   const [profiles, setProfiles] = useState<any[]>([]);
 
   const [date, setDate] = useState(new Date());
-  const [view, setView] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
+  const [view, setView] = useState<'Day' | 'Week' | 'Month' | 'Agenda'>('Week');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -184,37 +187,49 @@ export default function Meetings() {
 
         {/* Main Calendar Section */}
         <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          {/* Calendar Header */}
-          <div className="p-6 flex items-center justify-between border-b border-slate-100">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Calendar</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigateDate('prev')}><ChevronLeft className="h-4 w-4" /></Button>
-                <p className="text-sm font-medium text-slate-700 w-32 text-center">
+          {/* Sticky Calendar Toolbar */}
+          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-100">
+            <div className="px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900">Calendar</h1>
+                <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-0.5 border border-slate-100">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white" onClick={() => navigateDate('prev')}><ChevronLeft className="h-4 w-4" /></Button>
+                  <button onClick={() => setDate(new Date())} className="text-xs font-medium px-3 py-1 rounded-md hover:bg-white transition-colors">Today</button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white" onClick={() => navigateDate('next')}><ChevronRight className="h-4 w-4" /></Button>
+                </div>
+                <p className="text-sm font-medium text-slate-700 hidden md:block">
                   {view === 'Month' ? format(date, 'MMMM yyyy') :
-                    view === 'Day' ? format(date, 'MMM d, yyyy') :
-                      view === 'Week' ? `${format(weekStart, 'MMM d')} - ${format(addDays(weekStart, 6), 'MMM d')}` :
-                        format(date, 'yyyy')}
+                    view === 'Day' ? format(date, 'EEEE, MMM d, yyyy') :
+                      view === 'Week' ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}` :
+                        'All Upcoming'}
                 </p>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigateDate('next')}><ChevronRight className="h-4 w-4" /></Button>
               </div>
-            </div>
 
-            <div className="flex items-center gap-4">
-              <div className="bg-slate-100 p-1 rounded-full flex gap-1">
-                {['Day', 'Week', 'Month', 'Year'].map(v => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v as any)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${view === v ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
-                  >
-                    {v}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <Input
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="Search meetings…"
+                    className="h-8 w-48 pl-8 text-xs bg-slate-50 border-slate-100"
+                  />
+                </div>
+                <div className="bg-slate-100 p-0.5 rounded-lg flex gap-0.5">
+                  {(['Day', 'Week', 'Month', 'Agenda'] as const).map(v => (
+                    <button
+                      key={v}
+                      onClick={() => setView(v)}
+                      className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${view === v ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+                <Button onClick={() => setIsDialogOpen(true)} size="sm" className="h-8 rounded-lg shadow-sm">
+                  <Plus className="mr-1.5 h-4 w-4" /> Add Meeting
+                </Button>
               </div>
-              <Button onClick={() => setIsDialogOpen(true)} className="rounded-full px-5 h-9 bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 shadow-sm">
-                Add New <Plus className="ml-2 h-4 w-4" />
-              </Button>
             </div>
           </div>
 
@@ -409,13 +424,35 @@ export default function Meetings() {
               </div>
             )}
 
-            {/* --- YEAR VIEW --- */}
-            {view === 'Year' && (
-              <div className="flex-1 flex items-center justify-center text-slate-400 flex-col gap-2">
-                <CalendarIcon className="h-12 w-12 opacity-20" />
-                <span className="text-sm">Year view coming soon</span>
-              </div>
+            {/* --- AGENDA VIEW --- */}
+            {view === 'Agenda' && (
+              <ScrollArea className="flex-1">
+                <div className="p-6 space-y-3 max-w-3xl mx-auto">
+                  {sortedMeetings.length === 0 ? (
+                    <div className="text-center py-16">
+                      <CalendarIcon className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">No meetings scheduled</p>
+                    </div>
+                  ) : sortedMeetings.map(m => {
+                    let s = '', e = '';
+                    try { s = format(parseISO(m.start_time), 'EEE, MMM d · h:mm a'); e = format(parseISO(m.end_time), 'h:mm a'); } catch {}
+                    return (
+                      <div key={m.id} onClick={() => setSelectedMeetingId(m.id)} className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-sm bg-white transition-all cursor-pointer flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
+                          {meetingTypeIcon(m)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{m.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{s} – {e}</p>
+                        </div>
+                        <Badge variant="outline" className={`text-[10px] ${statusColors[m.status]}`}>{m.status}</Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             )}
+
 
           </div>
         </div>

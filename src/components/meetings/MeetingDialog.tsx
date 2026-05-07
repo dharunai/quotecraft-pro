@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMeetings } from '@/hooks/useMeetings';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Users, Briefcase, UserCircle } from 'lucide-react';
+import { Loader2, Users, Briefcase, UserCircle, Calendar as CalendarIcon, Clock, Video, MapPin, Link2, FileText, Type } from 'lucide-react';
 import { Meeting, Lead, Deal } from '@/types/database';
 
 interface MeetingDialogProps {
@@ -17,22 +17,46 @@ interface MeetingDialogProps {
   initialDate?: Date;
 }
 
+function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+        {description && <p className="text-xs text-muted-foreground/80 mt-0.5">{description}</p>}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function Field({ label, icon: Icon, required, children }: { label: string; icon?: React.ElementType; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5">
+        {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </Label>
+      {children}
+    </div>
+  );
+}
+
 export function MeetingDialog({ open, onOpenChange, onSuccess, initialDate }: MeetingDialogProps) {
   const { createMeeting } = useMeetings();
   const [loading, setLoading] = useState(false);
 
-  // Data lists
   const [leads, setLeads] = useState<Lead[]>([]);
   const [deals, setDeals] = useState<(Deal & { lead?: Lead })[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
 
-  // Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(initialDate ? initialDate.toISOString().split('T')[0] : '');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [meetingType, setMeetingType] = useState('online');
+  const [status, setStatus] = useState<'scheduled' | 'completed' | 'cancelled' | 'rescheduled'>('scheduled');
   const [location, setLocation] = useState('');
   const [participantEmail, setParticipantEmail] = useState('');
   const [linkType, setLinkType] = useState<'none' | 'lead' | 'deal'>('none');
@@ -41,7 +65,6 @@ export function MeetingDialog({ open, onOpenChange, onSuccess, initialDate }: Me
   const [conductedBy, setConductedBy] = useState<string>('');
   const [notes, setNotes] = useState('');
 
-  // Fetch leads, deals, and profiles when dialog opens
   useEffect(() => {
     if (!open) return;
     const fetchData = async () => {
@@ -64,37 +87,29 @@ export function MeetingDialog({ open, onOpenChange, onSuccess, initialDate }: Me
     const startDateTime = new Date(`${date}T${startTime}:00`).toISOString();
     const endDateTime = new Date(`${date}T${endTime}:00`).toISOString();
 
-    const meetingData = {
+    const meetingData: any = {
       title,
       description: [description, notes].filter(Boolean).join('\n---\n') || null,
       start_time: startDateTime,
       end_time: endDateTime,
       location: meetingType === 'online' ? location || 'Google Meet' : location,
       meeting_link: meetingType === 'online' ? location : null,
-      status: 'scheduled' as const,
+      status,
       organizer_id: conductedBy || null,
-      lead_id: linkType === 'lead' ? selectedLeadId || null : linkType === 'deal' ? null : null,
+      lead_id: linkType === 'lead' ? selectedLeadId || null : null,
       deal_id: linkType === 'deal' ? selectedDealId || null : null,
     };
 
-    // If linked to a deal, also set its lead_id
     if (linkType === 'deal' && selectedDealId) {
       const deal = deals.find(d => d.id === selectedDealId);
-      if (deal) {
-        meetingData.lead_id = deal.lead_id;
-      }
+      if (deal) meetingData.lead_id = deal.lead_id;
     }
 
     const participants = participantEmail
-      ? participantEmail.split(',').map(email => ({
-        name: null,
-        email: email.trim(),
-        user_id: null,
-      })).filter(p => p.email.includes('@'))
+      ? participantEmail.split(',').map(email => ({ name: null, email: email.trim(), user_id: null })).filter(p => p.email.includes('@'))
       : [];
 
     const result = await createMeeting(meetingData, participants);
-
     setLoading(false);
     if (result) {
       onOpenChange(false);
@@ -104,212 +119,146 @@ export function MeetingDialog({ open, onOpenChange, onSuccess, initialDate }: Me
   };
 
   const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setDate('');
-    setLocation('');
-    setParticipantEmail('');
-    setLinkType('none');
-    setSelectedLeadId('');
-    setSelectedDealId('');
-    setConductedBy('');
-    setNotes('');
+    setTitle(''); setDescription(''); setDate(''); setLocation('');
+    setParticipantEmail(''); setLinkType('none');
+    setSelectedLeadId(''); setSelectedDealId(''); setConductedBy(''); setNotes('');
+    setStatus('scheduled');
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[580px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold">Schedule Meeting</DialogTitle>
+      <DialogContent className="sm:max-w-[680px] max-h-[92vh] p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-border bg-muted/30">
+          <DialogTitle className="text-lg font-semibold tracking-tight">Schedule Meeting</DialogTitle>
+          <DialogDescription className="text-xs">Add details below to create a new meeting on your calendar.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
 
-          {/* Title */}
-          <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-xs font-semibold text-slate-600">Title *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Sales Follow-up Call"
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[calc(92vh-130px)]">
+          <div className="overflow-y-auto px-6 py-5 space-y-6">
 
-          {/* Date & Time Row */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">Date *</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">Start *</Label>
-              <Input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">End *</Label>
-              <Input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Type & Location Row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">Meeting Type</Label>
-              <Select value={meetingType} onValueChange={setMeetingType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="online">🖥️ Online Meeting</SelectItem>
-                  <SelectItem value="in_person">📍 In Person</SelectItem>
-                  <SelectItem value="phone">📞 Phone Call</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-600">
-                {meetingType === 'online' ? 'Meeting Link / Platform' : 'Location'}
-              </Label>
-              <Input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder={meetingType === 'online' ? 'https://meet.google.com/...' : 'Office address'}
-              />
-            </div>
-          </div>
-
-          {/* Link to Lead or Deal */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-              <Briefcase className="h-3.5 w-3.5" /> Link to Lead / Deal
-            </Label>
-            <div className="grid grid-cols-3 gap-3">
-              <Select value={linkType} onValueChange={(v: any) => { setLinkType(v); setSelectedLeadId(''); setSelectedDealId(''); }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="lead">Lead</SelectItem>
-                  <SelectItem value="deal">Deal</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {linkType === 'lead' && (
-                <div className="col-span-2">
-                  <Select value={selectedLeadId} onValueChange={setSelectedLeadId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a lead..." />
-                    </SelectTrigger>
+            <Section title="Meeting Details">
+              <Field label="Title" icon={Type} required>
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Sales Follow-up Call" required />
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Field label="Meeting Type" icon={Video}>
+                  <Select value={meetingType} onValueChange={setMeetingType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {leads.map(lead => (
-                        <SelectItem key={lead.id} value={lead.id}>
-                          {lead.company_name} — {lead.contact_name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="online">Online Meeting</SelectItem>
+                      <SelectItem value="in_person">In Person</SelectItem>
+                      <SelectItem value="phone">Phone Call</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              )}
-
-              {linkType === 'deal' && (
-                <div className="col-span-2">
-                  <Select value={selectedDealId} onValueChange={setSelectedDealId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a deal..." />
-                    </SelectTrigger>
+                </Field>
+                <Field label="Status">
+                  <Select value={status} onValueChange={v => setStatus(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {deals.map(deal => (
-                        <SelectItem key={deal.id} value={deal.id}>
-                          {deal.lead?.company_name || 'Unknown'} — {deal.stage} {deal.deal_value ? `(₹${deal.deal_value.toLocaleString()})` : ''}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="rescheduled">Rescheduled</SelectItem>
                     </SelectContent>
                   </Select>
+                </Field>
+              </div>
+            </Section>
+
+            <Section title="Date & Time">
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Date" icon={CalendarIcon} required>
+                  <Input type="date" value={date} onChange={e => setDate(e.target.value)} required />
+                </Field>
+                <Field label="Start" icon={Clock} required>
+                  <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required />
+                </Field>
+                <Field label="End" icon={Clock} required>
+                  <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} required />
+                </Field>
+              </div>
+            </Section>
+
+            <Section title="Location & Platform">
+              <Field label={meetingType === 'online' ? 'Meeting Link' : 'Location'} icon={meetingType === 'online' ? Link2 : MapPin}>
+                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder={meetingType === 'online' ? 'https://meet.google.com/…' : 'Office address or room'} />
+              </Field>
+            </Section>
+
+            <Section title="Relations & Ownership">
+              <Field label="Conducted By" icon={UserCircle}>
+                <Select value={conductedBy} onValueChange={setConductedBy}>
+                  <SelectTrigger><SelectValue placeholder="Select team member…" /></SelectTrigger>
+                  <SelectContent>
+                    {profiles.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>{p.full_name || p.email || 'Unknown'}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Link to Lead / Deal" icon={Briefcase}>
+                <div className="grid grid-cols-3 gap-3">
+                  <Select value={linkType} onValueChange={(v: any) => { setLinkType(v); setSelectedLeadId(''); setSelectedDealId(''); }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="lead">Lead</SelectItem>
+                      <SelectItem value="deal">Deal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {linkType === 'lead' && (
+                    <div className="col-span-2">
+                      <Select value={selectedLeadId} onValueChange={setSelectedLeadId}>
+                        <SelectTrigger><SelectValue placeholder="Select a lead…" /></SelectTrigger>
+                        <SelectContent>
+                          {leads.map(lead => (
+                            <SelectItem key={lead.id} value={lead.id}>{lead.company_name} — {lead.contact_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {linkType === 'deal' && (
+                    <div className="col-span-2">
+                      <Select value={selectedDealId} onValueChange={setSelectedDealId}>
+                        <SelectTrigger><SelectValue placeholder="Select a deal…" /></SelectTrigger>
+                        <SelectContent>
+                          {deals.map(deal => (
+                            <SelectItem key={deal.id} value={deal.id}>
+                              {deal.lead?.company_name || 'Unknown'} — {deal.stage} {deal.deal_value ? `(₹${deal.deal_value.toLocaleString()})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </Field>
+
+              <Field label="Guest Email(s)" icon={Users}>
+                <Input value={participantEmail} onChange={e => setParticipantEmail(e.target.value)} placeholder="email1@example.com, email2@example.com" />
+                <p className="text-[11px] text-muted-foreground mt-1">Separate multiple emails with commas. Invites will be sent automatically.</p>
+              </Field>
+            </Section>
+
+            <Section title="Description & Notes">
+              <Field label="Description" icon={FileText}>
+                <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief description of the meeting" />
+              </Field>
+              <Field label="Meeting Notes">
+                <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Agenda, talking points, actions…" rows={3} className="resize-none" />
+              </Field>
+            </Section>
           </div>
 
-          {/* Conducted By */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-              <UserCircle className="h-3.5 w-3.5" /> Conducted By
-            </Label>
-            <Select value={conductedBy} onValueChange={setConductedBy}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select team member..." />
-              </SelectTrigger>
-              <SelectContent>
-                {profiles.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.full_name || p.email || 'Unknown'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Guest Email(s) */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" /> Guest Email(s)
-            </Label>
-            <Input
-              type="text"
-              value={participantEmail}
-              onChange={(e) => setParticipantEmail(e.target.value)}
-              placeholder="email1@example.com, email2@example.com"
-            />
-            <p className="text-[10px] text-muted-foreground">Separate multiple emails with commas. Invites will be sent automatically.</p>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-slate-600">Description</Label>
-            <Input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of the meeting"
-            />
-          </div>
-
-          {/* Meeting Notes */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-slate-600">Meeting Notes</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Agenda, talking points, actions..."
-              rows={3}
-            />
-          </div>
-
-          <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="min-w-[120px]">
+          <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-border bg-muted/30 sticky bottom-0">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={loading} className="min-w-[130px]">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Schedule
+              Schedule Meeting
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
