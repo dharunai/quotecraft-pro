@@ -1,26 +1,27 @@
 import React from 'react';
-import { Quotation, QuotationItem, CompanySettings, Lead } from '@/types/database';
+import { Invoice, InvoiceItem, CompanySettings, Lead } from '@/types/database';
 import { format } from 'date-fns';
-import { MapPin, Mail, Phone, Building2, Calendar, Hash, FileText } from 'lucide-react';
+import { MapPin, Mail, Phone, Building2, Calendar, Hash, FileText, Receipt, CheckCircle2 } from 'lucide-react';
 
-interface QuotationPreviewProps {
-  quotation: Quotation;
-  items: QuotationItem[];
+interface InvoicePreviewProps {
+  invoice: Partial<Invoice>;
+  items: InvoiceItem[];
   settings: CompanySettings;
   lead: Lead;
+  isIgst?: boolean;
 }
 
-export function QuotationPreview({
-  quotation,
+export function InvoicePreview({
+  invoice,
   items,
   settings,
-  lead
-}: QuotationPreviewProps) {
+  lead,
+  isIgst = false
+}: InvoicePreviewProps) {
   const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
-  const taxRate = settings.tax_rate || 0;
-  const taxAmount = subtotal * taxRate / 100;
-  const total = subtotal + taxAmount;
-  const isIgst = quotation.is_igst || false;
+  const taxRate = invoice.tax_rate || 0;
+  const taxAmount = invoice.tax_enabled ? (subtotal * taxRate) / 100 : 0;
+  const grandTotal = subtotal + taxAmount;
   
   const fmt = (val: number) => 
     val.toLocaleString('en-IN', {
@@ -31,7 +32,7 @@ export function QuotationPreview({
 
   return (
     <div className="bg-slate-50 p-4 md:p-8 min-h-screen print:bg-white print:p-0">
-      <div className="bg-white max-w-[21cm] mx-auto shadow-2xl min-h-[29.7cm] p-8 md:p-12 text-slate-800 font-sans relative overflow-hidden print:shadow-none print:border-none" id="quotation-print">
+      <div className="bg-white max-w-[21cm] mx-auto shadow-2xl min-h-[29.7cm] p-8 md:p-12 text-slate-800 font-sans relative overflow-hidden print:shadow-none print:border-none" id="invoice-print">
         {/* Accent Bar */}
         <div className="absolute top-0 left-0 w-full h-2" style={{ backgroundColor: settings.theme_color }}></div>
         
@@ -56,31 +57,29 @@ export function QuotationPreview({
           </div>
           
           <div className="text-right flex-shrink-0">
-            <h2 className="text-5xl font-black uppercase tracking-tighter mb-6 opacity-10 absolute right-12 top-12 select-none">Quotation</h2>
-            <h2 className="text-3xl font-black uppercase tracking-tight mb-6" style={{ color: settings.theme_color }}>Quotation</h2>
+            <h2 className="text-5xl font-black uppercase tracking-tighter mb-6 opacity-10 absolute right-12 top-12 select-none">Invoice</h2>
+            <h2 className="text-3xl font-black uppercase tracking-tight mb-6" style={{ color: settings.theme_color }}>Tax Invoice</h2>
             
             <div className="space-y-3">
               <div className="flex flex-col items-end">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reference #</p>
-                <p className="text-lg font-black text-slate-900">{quotation.quote_number}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Invoice #</p>
+                <p className="text-lg font-black text-slate-900">{invoice.invoice_number || 'DRAFT'}</p>
               </div>
               <div className="grid grid-cols-2 gap-6 pt-2">
                 <div className="text-right">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Date</p>
-                  <p className="font-bold text-slate-900">{format(new Date(quotation.quote_date), 'dd MMM yyyy')}</p>
+                  <p className="font-bold text-slate-900">{invoice.invoice_date ? format(new Date(invoice.invoice_date), 'dd MMM yyyy') : '—'}</p>
                 </div>
-                {quotation.valid_until && (
-                  <div className="text-right">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Valid Until</p>
-                    <p className="font-bold text-slate-900">{format(new Date(quotation.valid_until), 'dd MMM yyyy')}</p>
-                  </div>
-                )}
+                <div className="text-right">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Due Date</p>
+                  <p className="font-bold text-slate-900">{invoice.due_date ? format(new Date(invoice.due_date), 'dd MMM yyyy') : '—'}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Client & Bill To */}
+        {/* Client & Status */}
         <div className="mt-12 bg-slate-50/50 rounded-2xl p-8 border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-12">
           <div>
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 flex items-center gap-2">
@@ -96,9 +95,14 @@ export function QuotationPreview({
           </div>
           
           <div className="flex flex-col justify-end items-end text-right">
+             {invoice.payment_status === 'paid' && (
+               <div className="mb-6 flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Fully Paid
+               </div>
+             )}
              <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-100 w-full md:w-auto">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Quote Value</p>
-                <p className="text-2xl font-black" style={{ color: settings.theme_color }}>{fmt(total)}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Amount Due</p>
+                <p className="text-2xl font-black" style={{ color: settings.theme_color }}>{fmt(grandTotal)}</p>
              </div>
           </div>
         </div>
@@ -120,7 +124,7 @@ export function QuotationPreview({
                 <tr key={item.id} className="group border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                   <td className="py-6 px-6 text-center text-slate-400 font-bold">{index + 1}</td>
                   <td className="py-6 px-6">
-                    <p className="font-black text-slate-900 text-base">{item.title}</p>
+                    <p className="font-black text-slate-900 text-base">{item.item_title}</p>
                     {item.description && <p className="text-xs text-slate-500 mt-1.5 leading-relaxed max-w-[400px]">{item.description}</p>}
                   </td>
                   <td className="py-6 px-6 text-center font-bold text-slate-700">{item.quantity}</td>
@@ -135,19 +139,19 @@ export function QuotationPreview({
         {/* Totals & Notes */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="space-y-8">
-            {quotation.notes && (
+            {invoice.payment_notes && (
               <div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 flex items-center gap-2">
-                  <FileText className="h-3 w-3" /> Special Notes
+                  <Receipt className="h-3 w-3" /> Payment Instructions
                 </h3>
-                <p className="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">{quotation.notes}</p>
+                <p className="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">{invoice.payment_notes}</p>
               </div>
             )}
             
-            {settings.terms && (
+            {invoice.terms_conditions && (
               <div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Terms & Conditions</h3>
-                <p className="text-[10px] text-slate-500 whitespace-pre-wrap leading-relaxed italic">{settings.terms}</p>
+                <p className="text-[10px] text-slate-500 whitespace-pre-wrap leading-relaxed italic">{invoice.terms_conditions}</p>
               </div>
             )}
           </div>
@@ -159,7 +163,7 @@ export function QuotationPreview({
                 <span className="text-slate-900">{fmt(subtotal)}</span>
               </div>
               
-              {taxRate > 0 && (
+              {invoice.tax_enabled && (
                 <div className="pt-4 border-t border-slate-200/50 space-y-3">
                   {isIgst ? (
                     <div className="flex justify-between text-xs font-bold">
@@ -186,8 +190,8 @@ export function QuotationPreview({
               )}
 
               <div className="pt-6 border-t-2 border-slate-200 flex justify-between items-center">
-                <span className="text-sm font-black uppercase tracking-widest text-slate-900">Total Quote</span>
-                <span className="text-3xl font-black" style={{ color: settings.theme_color }}>{fmt(total)}</span>
+                <span className="text-sm font-black uppercase tracking-widest text-slate-900">Grand Total</span>
+                <span className="text-3xl font-black" style={{ color: settings.theme_color }}>{fmt(grandTotal)}</span>
               </div>
             </div>
             
@@ -197,12 +201,8 @@ export function QuotationPreview({
           </div>
         </div>
 
-        {/* Footer Signature */}
-        <div className="mt-20 flex justify-between items-end">
-           <div className="space-y-4">
-              <div className="h-px w-48 bg-slate-200"></div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Signature</p>
-           </div>
+        {/* Footer Signature Area */}
+        <div className="mt-20 flex justify-end">
            <div className="text-right space-y-4">
               <p className="text-sm font-black text-slate-900">For {settings.company_name}</p>
               <div className="h-px w-48 bg-slate-200 ml-auto"></div>

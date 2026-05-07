@@ -20,7 +20,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Product } from '@/types/database';
 import { EmailDialog } from '@/components/email/EmailDialog';
-import { generateInvoicePDF, getPDFBase64 } from '@/lib/pdfGenerator';
+import { generateInvoicePDF, getPDFBase64, downloadPDF } from '@/lib/pdfGenerator';
+import { InvoicePreview } from '@/components/invoices/InvoicePreview';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function InvoiceEditor() {
   const { id } = useParams<{ id: string }>();
@@ -246,8 +248,33 @@ export default function InvoiceEditor() {
     });
   };
 
-  const handleDownloadPDF = () => {
-    window.print();
+  const handleDownloadPDF = async () => {
+    if (!settings || !selectedLead) return;
+
+    try {
+      const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
+      const taxAmount = taxEnabled ? (subtotal * taxRate) / 100 : 0;
+      const grandTotal = subtotal + taxAmount;
+
+      const doc = await generateInvoicePDF({
+        invoiceNumber,
+        invoiceDate,
+        dueDate,
+        items,
+        subtotal,
+        taxEnabled,
+        taxRate,
+        taxAmount,
+        grandTotal,
+        notes: notes || null,
+        termsConditions: termsConditions || null
+      }, settings, selectedLead);
+
+      downloadPDF(doc, `Invoice-${invoiceNumber || 'New'}.pdf`);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
   };
 
   const handleSendEmail = async () => {
@@ -448,10 +475,34 @@ export default function InvoiceEditor() {
           </div>
         )}
         {/* ── Main Workspace ── */}
-        <div className="max-w-[1400px] mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          
-          {/* LEFT & CENTER: Primary Workspace (2/3) */}
-          <div className="lg:col-span-2 space-y-6">
+        <Tabs defaultValue="editor" className="w-full">
+          <div className="bg-slate-50 border-b border-slate-200 sticky top-[136px] z-20">
+            <div className="max-w-[1400px] mx-auto px-6 h-12 flex items-center justify-between">
+              <TabsList className="bg-transparent border-none p-0 h-auto gap-8">
+                <TabsTrigger 
+                  value="editor" 
+                  className="px-0 py-3 h-auto text-[11px] font-bold uppercase tracking-[0.2em] rounded-none border-b-2 border-transparent data-[state=active]:border-slate-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-slate-400 data-[state=active]:text-slate-900 transition-all"
+                >
+                  Document Editor
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="preview" 
+                  className="px-0 py-3 h-auto text-[11px] font-bold uppercase tracking-[0.2em] rounded-none border-b-2 border-transparent data-[state=active]:border-slate-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-slate-400 data-[state=active]:text-slate-900 transition-all"
+                >
+                  Live Preview
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="flex items-center gap-3">
+                <p className="text-[10px] font-medium text-slate-400 hidden sm:block italic">Draft saves automatically</p>
+              </div>
+            </div>
+          </div>
+
+          <TabsContent value="editor" className="m-0 p-0">
+            <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 px-6 pt-8 pb-12">
+              {/* LEFT: Editor Workspace (2/3) */}
+              <div className="lg:col-span-2 space-y-8">
             
             {/* Invoice Details Card */}
             <Card className="border-none shadow-sm overflow-hidden bg-white">
@@ -911,6 +962,33 @@ export default function InvoiceEditor() {
             </Card>
           </div>
         </div>
+      </TabsContent>
+
+          <TabsContent value="preview" className="m-0 p-0 bg-slate-100 min-h-screen">
+            {selectedLead && settings && (
+              <InvoicePreview 
+                invoice={{
+                  invoice_number: invoiceNumber,
+                  invoice_date: invoiceDate,
+                  due_date: dueDate,
+                  tax_enabled: taxEnabled,
+                  tax_rate: taxRate,
+                  payment_notes: paymentNotes,
+                  terms_conditions: termsConditions,
+                }}
+                items={items}
+                settings={settings}
+                lead={selectedLead}
+                isIgst={isIgst}
+              />
+            )}
+            {!selectedLead && (
+              <div className="flex items-center justify-center h-[500px] text-slate-400 italic">
+                Please select a customer to see the preview
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* ── Additional Sections ── */}
         <div className="max-w-[1400px] mx-auto px-6 pb-12">
