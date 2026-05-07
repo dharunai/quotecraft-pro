@@ -21,7 +21,8 @@ import { exportToCSV, exportToExcel, flattenData, parseImportFile, downloadLeadT
 import { Checkbox } from '@/components/ui/checkbox';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 import { useRef } from 'react';
 import { useLeadScores } from '@/hooks/useAIInsights';
 function LeadScoreBadge({ leadId, scoreMap }: { leadId: string; scoreMap: Map<string, any> }) {
@@ -41,6 +42,7 @@ function LeadScoreBadge({ leadId, scoreMap }: { leadId: string; scoreMap: Map<st
 }
 
 export default function Leads() {
+  const { user, companyId } = useAuth();
   const {
     data: leads = [],
     isLoading
@@ -117,6 +119,13 @@ export default function Leads() {
         return;
       }
 
+      if (!user) {
+        toast.error('You must be logged in to import leads.');
+        return;
+      }
+
+      const effectiveCompanyId = await getEffectiveCompanyId(companyId);
+
       // Map imported data to leads table structure
       // We'll try to find common column names
       const leadsToInsert = data.map(row => ({
@@ -125,7 +134,9 @@ export default function Leads() {
         email: row.email || row.Email || '',
         phone: row.phone || row.Phone || '',
         status: row.status || row.Status || 'new',
-        is_qualified: row.is_qualified === 'Yes' || row.is_qualified === true || false
+        is_qualified: row.is_qualified === 'Yes' || row.is_qualified === true || false,
+        created_by: user.id,
+        company_id: effectiveCompanyId
       })).filter(l => l.company_name); // Only import if company name exists
 
       if (leadsToInsert.length === 0) {
