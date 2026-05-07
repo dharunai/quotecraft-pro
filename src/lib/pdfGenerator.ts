@@ -32,8 +32,8 @@ interface InvoicePDFData {
   payment_notes?: string | null;
 }
 
-function formatCurrency(amount: number, currency = '₹'): string {
-  return currency + ' ' + amount.toLocaleString('en-IN', {
+function formatCurrency(amount: number, currency = 'Rs. '): string {
+  return currency + amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -71,7 +71,7 @@ export async function generateQuotationPDF(
   const pageWidth = doc.internal.pageSize.width;
   const margin = 15;
   let yPos = 15;
-  const currency = settings.currency || '₹';
+  const currency = settings.currency === '₹' ? 'Rs. ' : (settings.currency || 'Rs. ');
   const themeColor = settings.theme_color || '#166534';
 
   // Top Accent Bar
@@ -266,6 +266,30 @@ export async function generateQuotationPDF(
   doc.setFont('helvetica', 'bold');
   doc.text(numberToWords(data.total), margin, yPos);
   
+  // Banking Details (from Settings)
+  if (settings.bank_name || settings.account_number) {
+    yPos += 5;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(180, 180, 180);
+    doc.text('BANKING DETAILS', margin, yPos);
+    yPos += 5;
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    
+    const bankDetails = [
+      settings.bank_name ? `Bank: ${settings.bank_name}` : null,
+      settings.account_holder_name ? `A/C Holder: ${settings.account_holder_name}` : null,
+      settings.account_number ? `A/C Number: ${settings.account_number}` : null,
+      settings.ifsc_code ? `IFSC: ${settings.ifsc_code}` : null,
+    ].filter(Boolean).join('  |  ');
+    
+    doc.text(bankDetails, margin, yPos);
+    yPos += 10;
+  }
+
   // Notes & Terms
   if (data.notes) {
     yPos += 10;
@@ -299,7 +323,7 @@ export async function generateInvoicePDF(
   const pageWidth = doc.internal.pageSize.width;
   const margin = 15;
   let yPos = 15;
-  const currency = settings.currency || '₹';
+  const currency = settings.currency === '₹' ? 'Rs. ' : (settings.currency || 'Rs. ');
   const themeColor = settings.theme_color || '#166534';
 
   // Top Accent Bar
@@ -491,6 +515,29 @@ export async function generateInvoicePDF(
   doc.text(numberToWords(data.grandTotal), margin, yPos);
   
   yPos += 15;
+
+  // Banking Details (from Settings)
+  if (settings.bank_name || settings.account_number) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(180, 180, 180);
+    doc.text('BANKING DETAILS', margin, yPos);
+    yPos += 5;
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    
+    const bankDetails = [
+      settings.bank_name ? `Bank: ${settings.bank_name}` : null,
+      settings.account_holder_name ? `A/C Holder: ${settings.account_holder_name}` : null,
+      settings.account_number ? `A/C Number: ${settings.account_number}` : null,
+      settings.ifsc_code ? `IFSC: ${settings.ifsc_code}` : null,
+    ].filter(Boolean).join('  |  ');
+    
+    doc.text(bankDetails, margin, yPos);
+    yPos += 10;
+  }
 
   // Footer Info
   if (data.payment_notes) {
