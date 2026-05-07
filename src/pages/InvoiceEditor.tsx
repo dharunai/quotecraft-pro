@@ -186,6 +186,45 @@ export default function InvoiceEditor() {
     });
   };
 
+  const [localItems, setLocalItems] = useState<typeof items>([]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      setLocalItems(items);
+    }
+  }, [items]);
+
+  const handleUpdateLocalItem = (itemId: string, field: string, value: unknown) => {
+    setLocalItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        const updatedItem = { ...item, [field]: value };
+        if (field === 'quantity' || field === 'unit_price') {
+          const quantity = field === 'quantity' ? Number(value) : updatedItem.quantity;
+          const unitPrice = field === 'unit_price' ? Number(value) : updatedItem.unit_price;
+          updatedItem.line_total = quantity * unitPrice;
+        }
+        return updatedItem;
+      }
+      return item;
+    }));
+  };
+
+  const handleSyncItem = (itemId: string, field: string, value: unknown) => {
+    if (!id || isLocked) return;
+    const item = localItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    const updateData: Record<string, unknown> = { [field]: value };
+
+    if (field === 'quantity' || field === 'unit_price') {
+      const quantity = field === 'quantity' ? Number(value) : item.quantity;
+      const unitPrice = field === 'unit_price' ? Number(value) : item.unit_price;
+      updateData.line_total = quantity * unitPrice;
+    }
+
+    updateItem.mutate({ id: itemId, invoice_id: id, ...updateData } as any);
+  };
+
   const handleAddItem = () => {
     if (!id || isNew || isLocked) return;
     createItem.mutate({
@@ -220,24 +259,6 @@ export default function InvoiceEditor() {
         refetchItems();
         setShowProductBrowser(false);
       },
-    });
-  };
-
-  const handleUpdateItem = (itemId: string, field: string, value: unknown) => {
-    if (!id || isLocked) return;
-    const item = items.find(i => i.id === itemId);
-    if (!item) return;
-
-    const updateData: Record<string, unknown> = { [field]: value };
-
-    if (field === 'quantity' || field === 'unit_price') {
-      const quantity = field === 'quantity' ? Number(value) : item.quantity;
-      const unitPrice = field === 'unit_price' ? Number(value) : item.unit_price;
-      updateData.line_total = quantity * unitPrice;
-    }
-
-    updateItem.mutate({ id: itemId, invoice_id: id, ...updateData } as Parameters<typeof updateItem.mutate>[0], {
-      onSuccess: () => refetchItems(),
     });
   };
 
@@ -325,7 +346,7 @@ export default function InvoiceEditor() {
   };
 
   const currency = settings?.currency || '₹';
-  const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
+  const subtotal = localItems.reduce((sum, item) => sum + item.line_total, 0);
   const taxAmount = taxEnabled ? (subtotal * taxRate) / 100 : 0;
   const grandTotal = subtotal + taxAmount;
   const balanceDue = grandTotal - amountPaid;
@@ -465,7 +486,7 @@ export default function InvoiceEditor() {
               </div>
               <div className="px-6 py-6">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5"><Hash className="h-3 w-3" /> Line Items</p>
-                <p className="text-sm font-bold text-slate-900">{items.length} items <span className="text-slate-400 font-normal">· {totalQty} qty</span></p>
+                <p className="text-sm font-bold text-slate-900">{localItems.length} items <span className="text-slate-400 font-normal">· {localItems.reduce((s, i) => s + (i.quantity || 0), 0)} qty</span></p>
               </div>
               <div className="px-6 py-6 bg-slate-50/30">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5"><IndianRupee className="h-3 w-3" /> Grand Total</p>
@@ -687,20 +708,22 @@ export default function InvoiceEditor() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {items.map((item, idx) => (
+                        {localItems.map((item, idx) => (
                           <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
                             <td className="p-4 text-xs font-medium text-slate-400">{idx + 1}</td>
                             <td className="p-4">
                               <Input
                                 value={item.item_title}
-                                onChange={(e) => handleUpdateItem(item.id, 'item_title', e.target.value)}
+                                onChange={(e) => handleUpdateLocalItem(item.id, 'item_title', e.target.value)}
+                                onBlur={(e) => handleSyncItem(item.id, 'item_title', e.target.value)}
                                 disabled={isLocked}
                                 className="h-8 text-sm font-semibold border-transparent group-hover:border-slate-200 bg-transparent px-2 -ml-2 mb-1"
                                 placeholder="Item name"
                               />
                               <Input
                                 value={item.description || ''}
-                                onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
+                                onChange={(e) => handleUpdateLocalItem(item.id, 'description', e.target.value)}
+                                onBlur={(e) => handleSyncItem(item.id, 'description', e.target.value)}
                                 disabled={isLocked}
                                 placeholder="Add a description..."
                                 className="h-7 text-[11px] border-transparent group-hover:border-slate-200 bg-transparent px-2 -ml-2 text-slate-500"
@@ -710,7 +733,8 @@ export default function InvoiceEditor() {
                               <Input
                                 type="number"
                                 value={item.quantity}
-                                onChange={(e) => handleUpdateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                onChange={(e) => handleUpdateLocalItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                onBlur={(e) => handleSyncItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                                 disabled={isLocked}
                                 className="h-8 text-sm text-right border-transparent group-hover:border-slate-200 bg-transparent px-2"
                               />
@@ -721,7 +745,8 @@ export default function InvoiceEditor() {
                                 <Input
                                   type="number"
                                   value={item.unit_price}
-                                  onChange={(e) => handleUpdateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                  onChange={(e) => handleUpdateLocalItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                  onBlur={(e) => handleSyncItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
                                   disabled={isLocked}
                                   className="h-8 text-sm text-right border-transparent group-hover:border-slate-200 bg-transparent pl-4 pr-2"
                                 />
@@ -966,21 +991,21 @@ export default function InvoiceEditor() {
 
           <TabsContent value="preview" className="m-0 p-0 bg-slate-100 min-h-screen">
             {selectedLead && settings && (
-              <InvoicePreview 
-                invoice={{
-                  invoice_number: invoiceNumber,
-                  invoice_date: invoiceDate,
-                  due_date: dueDate,
-                  tax_enabled: taxEnabled,
-                  tax_rate: taxRate,
-                  payment_notes: paymentNotes,
-                  terms_conditions: termsConditions,
-                }}
-                items={items}
-                settings={settings}
-                lead={selectedLead}
-                isIgst={isIgst}
-              />
+                <InvoicePreview 
+                  invoice={{
+                    invoice_number: invoiceNumber,
+                    invoice_date: invoiceDate,
+                    due_date: dueDate,
+                    tax_enabled: taxEnabled,
+                    tax_rate: taxRate,
+                    payment_notes: paymentNotes,
+                    terms_conditions: termsConditions,
+                  }}
+                  items={localItems}
+                  settings={settings}
+                  lead={selectedLead}
+                  isIgst={isIgst}
+                />
             )}
             {!selectedLead && (
               <div className="flex items-center justify-center h-[500px] text-slate-400 italic">

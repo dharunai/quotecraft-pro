@@ -190,18 +190,6 @@ export function QuotationPreview({
           </div>
         </div>
 
-        {/* Footer Signature */}
-        <div className="mt-20 flex justify-between items-end">
-           <div className="space-y-4">
-              <div className="h-px w-48 bg-slate-200"></div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Signature</p>
-           </div>
-           <div className="text-right space-y-4">
-              <p className="text-sm font-black text-slate-900">For {settings.company_name}</p>
-              <div className="h-px w-48 bg-slate-200 ml-auto"></div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Authorized Signatory</p>
-           </div>
-        </div>
       </div>
     </div>
   );

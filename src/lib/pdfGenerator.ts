@@ -84,7 +84,7 @@ export async function generateQuotationPDF(
       const logoBase64 = await loadImageAsBase64(settings.logo_url);
       if (logoBase64) {
         doc.addImage(logoBase64, 'PNG', margin, yPos, 25, 25);
-        yPos += 28;
+        yPos += 30; // Increased spacing slightly
       }
     } catch (e) {
       yPos += 5;
@@ -266,19 +266,11 @@ export async function generateQuotationPDF(
   doc.setFont('helvetica', 'bold');
   doc.text(numberToWords(data.total), margin, yPos);
   
-  // Signature
-  yPos = doc.internal.pageSize.height - 40;
+  // Footer
   doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`For ${settings.company_name}`, pageWidth - margin, yPos, { align: 'right' });
-  yPos += 15;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(pageWidth - margin - 50, yPos, pageWidth - margin, yPos);
-  yPos += 5;
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text('Authorized Signatory', pageWidth - margin, yPos, { align: 'right' });
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(100, 100, 100);
+  doc.text('Thank you for your business!', pageWidth / 2, yPos, { align: 'center' });
 
   return doc;
 }
@@ -305,7 +297,7 @@ export async function generateInvoicePDF(
       const logoBase64 = await loadImageAsBase64(settings.logo_url);
       if (logoBase64) {
         doc.addImage(logoBase64, 'PNG', margin, yPos, 25, 25);
-        yPos += 28;
+        yPos += 30; // Increased spacing slightly
       }
     } catch (e) {
       yPos += 5;
@@ -510,20 +502,6 @@ export async function generateInvoicePDF(
     const termsLines = doc.splitTextToSize(data.termsConditions, pageWidth - margin * 2);
     doc.text(termsLines, margin, yPos);
   }
-
-  // Signature
-  yPos = doc.internal.pageSize.height - 40;
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`For ${settings.company_name}`, pageWidth - margin, yPos, { align: 'right' });
-  yPos += 15;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(pageWidth - margin - 50, yPos, pageWidth - margin, yPos);
-  yPos += 5;
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text('Authorized Signatory', pageWidth - margin, yPos, { align: 'right' });
 
   return doc;
 }

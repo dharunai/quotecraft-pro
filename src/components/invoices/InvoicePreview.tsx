@@ -197,14 +197,6 @@ export function InvoicePreview({
           </div>
         </div>
 
-        {/* Footer Signature Area */}
-        <div className="mt-20 flex justify-end">
-           <div className="text-right space-y-4">
-              <p className="text-sm font-black text-slate-900">For {settings.company_name}</p>
-              <div className="h-px w-48 bg-slate-200 ml-auto"></div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Authorized Signatory</p>
-           </div>
-        </div>
       </div>
     </div>
   );
