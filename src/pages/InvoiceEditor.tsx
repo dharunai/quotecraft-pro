@@ -75,7 +75,6 @@ export default function InvoiceEditor() {
       setPaymentNotes(invoice.payment_notes || '');
       setNotes(invoice.notes || '');
       setTermsConditions(invoice.terms_conditions || '');
-      setIsIgst(invoice.is_igst || false);
       setIsLocked(invoice.is_locked);
     }
   }, [invoice]);
@@ -125,7 +124,6 @@ export default function InvoiceEditor() {
         payment_notes: null,
         terms_conditions: termsConditions || null,
         notes: notes || null,
-        is_igst: isIgst,
         is_locked: false,
         created_by: null,
       });
@@ -173,7 +171,6 @@ export default function InvoiceEditor() {
       payment_notes: paymentNotes || null,
       terms_conditions: termsConditions || null,
       notes: notes || null,
-      is_igst: isIgst,
     });
   };
 
