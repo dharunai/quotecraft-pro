@@ -424,13 +424,35 @@ export default function Meetings() {
               </div>
             )}
 
-            {/* --- YEAR VIEW --- */}
-            {view === 'Year' && (
-              <div className="flex-1 flex items-center justify-center text-slate-400 flex-col gap-2">
-                <CalendarIcon className="h-12 w-12 opacity-20" />
-                <span className="text-sm">Year view coming soon</span>
-              </div>
+            {/* --- AGENDA VIEW --- */}
+            {view === 'Agenda' && (
+              <ScrollArea className="flex-1">
+                <div className="p-6 space-y-3 max-w-3xl mx-auto">
+                  {sortedMeetings.length === 0 ? (
+                    <div className="text-center py-16">
+                      <CalendarIcon className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">No meetings scheduled</p>
+                    </div>
+                  ) : sortedMeetings.map(m => {
+                    let s = '', e = '';
+                    try { s = format(parseISO(m.start_time), 'EEE, MMM d · h:mm a'); e = format(parseISO(m.end_time), 'h:mm a'); } catch {}
+                    return (
+                      <div key={m.id} onClick={() => setSelectedMeetingId(m.id)} className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-sm bg-white transition-all cursor-pointer flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
+                          {meetingTypeIcon(m)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{m.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{s} – {e}</p>
+                        </div>
+                        <Badge variant="outline" className={`text-[10px] ${statusColors[m.status]}`}>{m.status}</Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             )}
+
 
           </div>
         </div>
