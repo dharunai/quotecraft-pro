@@ -58,7 +58,9 @@ export function wrapInTemplate(body: string, companyName: string = 'The Genworks
 <body>
     <div class="container">
         <div class="content">
-            ${body.replace(/\n/g, '<br>')}
+            ${body.includes('<p>') || body.includes('<br>') || body.includes('</div>') 
+                ? body 
+                : body.replace(/\n/g, '<br>')}
         </div>
         <div class="footer">
             <p>© ${year} ${companyName}. All rights reserved.</p>

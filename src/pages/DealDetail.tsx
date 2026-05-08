@@ -16,6 +16,8 @@ import { ArrowLeft, Trash2, Plus, FileText, TrendingUp, Mail, Phone, ExternalLin
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
+import { InteractionLogSection } from '@/components/activity/InteractionLogSection';
+import { EmailDialog } from '@/components/email/EmailDialog';
 import { cn } from '@/lib/utils';
 
 const STAGES = [
@@ -86,6 +88,7 @@ export default function DealDetail() {
   const [probability, setProbability] = useState(25);
   const [expectedCloseDate, setExpectedCloseDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   useEffect(() => {
     if (deal) {
@@ -268,10 +271,17 @@ export default function DealDetail() {
               </div>
             </div>
 
+            {/* Interaction Logs (Follow-up Notes) */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-5">
+                <InteractionLogSection entityType="deal" entityId={id!} />
+              </div>
+            </div>
+
             {/* Notes */}
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-100">
-                <h2 className="text-sm font-bold text-slate-800">Notes</h2>
+                <h2 className="text-sm font-bold text-slate-800">Internal Deal Notes</h2>
               </div>
               <div className="p-5">
                 <textarea value={notes} onChange={e => setNotes(e.target.value)}
@@ -302,16 +312,6 @@ export default function DealDetail() {
                     <p className="text-slate-700">{value}</p>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Activity */}
-            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-slate-100">
-                <h2 className="text-sm font-bold text-slate-800">Activity History</h2>
-              </div>
-              <div className="p-5">
-                <ActivityTimeline entityType="deal" entityId={id!} />
               </div>
             </div>
           </div>
@@ -387,10 +387,10 @@ export default function DealDetail() {
                   </button>
                 )}
                 {deal.lead?.email && (
-                  <a href={`mailto:${deal.lead.email}`}
+                  <button onClick={() => setShowEmailDialog(true)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-sky-50 hover:text-sky-700 text-sm text-slate-600 transition-colors group">
                     <Mail className="h-4 w-4 text-slate-400 group-hover:text-sky-500" />Email {deal.lead.company_name}
-                  </a>
+                  </button>
                 )}
                 {deal.lead?.phone && (
                   <a href={`tel:${deal.lead.phone}`}
@@ -404,8 +404,19 @@ export default function DealDetail() {
                 </button>
               </div>
             </div>
+
+            {/* Activity History */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100">
+                <h2 className="text-sm font-bold text-slate-800">Activity History</h2>
+              </div>
+              <div className="p-5">
+                <ActivityTimeline entityType="deal" entityId={id!} />
+              </div>
+            </div>
           </div>
         </div>
+
       </div>
 
       {/* Lost reason dialog */}
@@ -437,6 +448,19 @@ export default function DealDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <EmailDialog
+        open={showEmailDialog}
+        onClose={() => setShowEmailDialog(false)}
+        type="general"
+        entityId={id!}
+        defaultRecipient={{
+          email: deal.lead?.email || '',
+          name: deal.lead?.contact_name || '',
+          company_name: deal.lead?.company_name || ''
+        }}
+        defaultSubject={`Following up on our deal - ${settings?.company_name || 'The Genworks CRM'}`}
+        defaultBody={`<p>Hi ${deal.lead?.contact_name || 'there'},</p>`}
+      />
     </AppLayout>
   );
 }

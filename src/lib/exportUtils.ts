@@ -35,6 +35,9 @@ export function downloadLeadTemplate() {
         'Contact Name': 'John Doe',
         'Email': 'john@example.com',
         'Phone': '+1234567890',
+        'Website': 'https://www.example.com',
+        'Lead Source': 'Website',
+        'Customer Requirement': 'Looking for a cloud-based CRM solution with AI capabilities.',
         'Status': 'new',
         'Is Qualified': 'No'
     }];
@@ -84,6 +87,9 @@ export function flattenData(data: any[], entityType: 'leads' | 'quotations' | 'i
                     'Contact Name': item.contact_name,
                     'Email': item.email || '',
                     'Phone': item.phone || '',
+                    'Website': item.website || '',
+                    'Lead Source': item.lead_source || '',
+                    'Customer Requirement': item.customer_requirement || '',
                     'Status': item.status,
                     'Created At': format(new Date(item.created_at), 'yyyy-MM-dd HH:mm'),
                     'Is Qualified': item.is_qualified ? 'Yes' : 'No'

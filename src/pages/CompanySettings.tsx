@@ -33,7 +33,8 @@ export default function CompanySettings() {
     // PDF settings
     show_logo_on_pdf: true,
     include_hsn_sac: true,
-    pdf_footer_text: ''
+    pdf_footer_text: '',
+    email_signature: ''
   });
 
   useEffect(() => {
@@ -52,7 +53,8 @@ export default function CompanySettings() {
         // PDF settings
         show_logo_on_pdf: settings.show_logo_on_pdf ?? true,
         include_hsn_sac: settings.include_hsn_sac ?? true,
-        pdf_footer_text: settings.pdf_footer_text || ''
+        pdf_footer_text: settings.pdf_footer_text || '',
+        email_signature: settings.email_signature || ''
       });
     }
   }, [settings]);

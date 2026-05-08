@@ -40,6 +40,7 @@ import Meetings from "./pages/Meetings";
 import Hierarchy from "./pages/settings/Hierarchy";
 import TaskSettings from "./pages/TaskSettings";
 import IntegrationsSettings from "./pages/IntegrationsSettings";
+import SentEmails from "./pages/SentEmails";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/settings/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
             <Route path="/settings/workflows/:id" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
             <Route path="/settings/integrations" element={<ProtectedRoute><IntegrationsSettings /></ProtectedRoute>} />
+            <Route path="/sent-emails" element={<ProtectedRoute><SentEmails /></ProtectedRoute>} />
             <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useLeads, useCreateLead, useDeleteLead } from '@/hooks/useLeads';
@@ -109,48 +110,121 @@ export default function Leads() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('[Import] handleImport fired');
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('[Import] No file selected');
+      return;
+    }
+    console.log('[Import] File selected:', file.name, 'size:', file.size, 'type:', file.type);
+
+    // Reset input so the same file can be re-imported
+    if (fileInputRef.current) fileInputRef.current.value = '';
 
     try {
       const data = await parseImportFile(file);
+      console.log('[Import] Parsed data rows:', data?.length, 'First row keys:', data?.[0] ? Object.keys(data[0]) : 'none');
+      console.log('[Import] First row sample:', data?.[0]);
+
       if (!data || data.length === 0) {
         toast.error('No data found in the file.');
         return;
       }
 
       if (!user) {
+        console.log('[Import] No user found');
         toast.error('You must be logged in to import leads.');
         return;
       }
+      console.log('[Import] User ID:', user.id, 'companyId from context:', companyId);
 
       const effectiveCompanyId = await getEffectiveCompanyId(companyId);
+      console.log('[Import] Effective company ID:', effectiveCompanyId);
 
-      // Map imported data to leads table structure
-      // We'll try to find common column names
+      // Helper: case-insensitive key lookup
+      const getField = (row: any, ...keys: string[]): string => {
+        for (const key of keys) {
+          if (row[key] !== undefined && row[key] !== null && row[key] !== '') return String(row[key]);
+        }
+        const rowKeys = Object.keys(row);
+        for (const key of keys) {
+          const found = rowKeys.find(k => k.toLowerCase().trim() === key.toLowerCase().trim());
+          if (found && row[found] !== undefined && row[found] !== null && row[found] !== '') return String(row[found]);
+        }
+        return '';
+      };
+
+      // Valid statuses allowed by DB check constraint
+      const VALID_STATUSES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'];
+
+      // Map common external status names to valid DB statuses
+      const STATUS_MAP: Record<string, string> = {
+        'enquiry': 'new',
+        'inquiry': 'new',
+        'fresh': 'new',
+        'open': 'new',
+        'active': 'contacted',
+        'follow up': 'contacted',
+        'followup': 'contacted',
+        'follow-up': 'contacted',
+        'in progress': 'contacted',
+        'responded': 'contacted',
+        'interested': 'qualified',
+        'hot': 'qualified',
+        'warm': 'contacted',
+        'cold': 'new',
+        'converted': 'won',
+        'closed won': 'won',
+        'closed lost': 'lost',
+        'closed': 'lost',
+        'rejected': 'lost',
+        'dead': 'lost',
+        'junk': 'lost',
+        'quote sent': 'proposal',
+        'quotation': 'proposal',
+        'negotiation': 'proposal',
+      };
+
+      const normalizeStatus = (raw: string): string => {
+        const lower = raw.toLowerCase().trim();
+        if (VALID_STATUSES.includes(lower)) return lower;
+        return STATUS_MAP[lower] || 'new';
+      };
+
       const leadsToInsert = data.map(row => ({
-        company_name: row.company_name || row['Company Name'] || row.Company || '',
-        contact_name: row.contact_name || row['Contact Name'] || row.Contact || '',
-        email: row.email || row.Email || '',
-        phone: row.phone || row.Phone || '',
-        status: row.status || row.Status || 'new',
-        is_qualified: row.is_qualified === 'Yes' || row.is_qualified === true || row['Is Qualified'] === 'Yes' || row['Qualified'] === 'Yes' || false,
+        company_name: getField(row, 'company_name', 'Company Name', 'Company', 'company', 'CompanyName', 'Firm', 'firm', 'Organization', 'organization', 'org'),
+        contact_name: getField(row, 'contact_name', 'Contact Name', 'Contact', 'contact', 'ContactName', 'Name', 'name', 'Contact Person', 'contact_person', 'Person'),
+        email: getField(row, 'email', 'Email', 'EMAIL', 'E-mail', 'e-mail', 'Email Address', 'email_address', 'Mail', 'mail'),
+        phone: getField(row, 'phone', 'Phone', 'PHONE', 'Phone Number', 'phone_number', 'Mobile', 'mobile', 'Tel', 'tel', 'Telephone', 'Contact Number'),
+        website: getField(row, 'website', 'Website', 'URL', 'Web', 'Site', 'domain'),
+        lead_source: getField(row, 'lead_source', 'Lead Source', 'Source', 'Origin', 'lead-source') || 'Website',
+        customer_requirement: getField(row, 'customer_requirement', 'Customer Requirement', 'Requirements', 'Needs', 'Requirement'),
+        status: normalizeStatus(getField(row, 'status', 'Status', 'STATUS', 'Lead Status') || 'new'),
+        is_qualified: (['yes', 'true', '1'].includes(
+          getField(row, 'is_qualified', 'Is Qualified', 'Qualified', 'qualified', 'IsQualified').toLowerCase()
+        )),
         created_by: user.id,
         company_id: effectiveCompanyId
-      })).filter(l => l.company_name); // Only import if company name exists
+      })).filter(l => l.company_name);
+
+      console.log('[Import] Leads to insert:', leadsToInsert.length, 'Sample:', leadsToInsert[0]);
 
       if (leadsToInsert.length === 0) {
+        console.log('[Import] All rows filtered out - no company_name found');
         toast.error('No valid leads found (Company Name is required).');
         return;
       }
 
-      const { error } = await supabase.from('leads').insert(leadsToInsert);
+      console.log('[Import] Inserting into Supabase...');
+      const { data: insertedData, error } = await supabase.from('leads').insert(leadsToInsert).select();
+      console.log('[Import] Supabase response - data:', insertedData, 'error:', error);
+
       if (error) throw error;
 
       toast.success(`${leadsToInsert.length} leads imported successfully`);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
-      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
+      console.error('[Import] ERROR:', err);
       toast.error('Error importing file: ' + err.message);
     }
   };
@@ -262,6 +336,7 @@ export default function Leads() {
                 <th>Contact name</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Source</th>
                 <th>Status</th>
                 <th>AI Score</th>
                 <th>Created</th>
@@ -280,6 +355,7 @@ export default function Leads() {
                 <td>{lead.contact_name}</td>
                 <td className="text-muted-foreground">{lead.email || '-'}</td>
                 <td className="text-muted-foreground">{lead.phone || '-'}</td>
+                <td className="text-xs text-muted-foreground">{lead.lead_source || 'Website'}</td>
                 <td>
                   <LeadStatusBadge status={lead.status} />
                 </td>

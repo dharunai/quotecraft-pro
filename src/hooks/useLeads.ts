@@ -141,6 +141,7 @@ export function useUpdateLead() {
     },
     onSuccess: async ({ updated, previous }) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', updated.id] });
       toast.success('Lead updated successfully');
 
       // Check if lead was just qualified

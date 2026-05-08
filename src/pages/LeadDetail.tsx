@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads';
 import { useQuotations, useCreateQuotation, useGenerateQuoteNumber } from '@/hooks/useQuotations';
 import { useCreateDeal } from '@/hooks/useDeals';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
 import { QuotationStatusBadge } from '@/components/quotations/QuotationStatusBadge';
 import { handleAutomationEvent } from '@/lib/automationEngine';
@@ -17,8 +18,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, addDays } from 'date-fns';
-import { ArrowLeft, Trash2, Plus, TrendingUp, Mail, Phone, MapPin, Building2, User, FileText, Save, Edit2, Check, X, ExternalLink, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, TrendingUp, Mail, Phone, MapPin, Building2, User, FileText, Save, Edit2, Check, X, ExternalLink, ChevronDown, Tag } from 'lucide-react';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
+import { InteractionLogSection } from '@/components/activity/InteractionLogSection';
+import { EmailDialog } from '@/components/email/EmailDialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -27,7 +30,7 @@ function InlineField({ label, value, onChange, onSave, type = 'text', placeholde
   label: string;
   value: string;
   onChange: (v: string) => void;
-  onSave: () => void;
+  onSave: (v: string) => void;
   type?: string;
   placeholder?: string;
   icon?: React.ComponentType<any>;
@@ -43,7 +46,7 @@ function InlineField({ label, value, onChange, onSave, type = 'text', placeholde
   const commit = () => {
     onChange(draft);
     setEditing(false);
-    onSave();
+    onSave(draft);
   };
   const cancel = () => { setDraft(value); setEditing(false); };
 
@@ -55,19 +58,19 @@ function InlineField({ label, value, onChange, onSave, type = 'text', placeholde
 
   return (
     <div className={cn('group relative', fullWidth ? 'col-span-2' : '')}>
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-        {Icon && <Icon className="h-3 w-3" />}{label}
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5 leading-none">
+        {Icon && <Icon className="h-3 w-3 opacity-70" />}{label}
       </p>
       {editing ? (
-        <div className="flex items-start gap-1">
+        <div className="flex flex-col gap-2">
           {type === 'textarea' ? (
             <textarea
               ref={inputRef as any}
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={handleKey}
-              rows={3}
-              className="w-full text-sm border border-blue-400 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white resize-none"
+              rows={4}
+              className="w-full text-sm border-2 border-blue-500 rounded-lg px-3 py-2.5 focus:outline-none bg-white shadow-lg z-10 transition-all"
             />
           ) : (
             <input
@@ -76,19 +79,27 @@ function InlineField({ label, value, onChange, onSave, type = 'text', placeholde
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={handleKey}
-              className="w-full text-sm border border-blue-400 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+              className="w-full text-sm border-2 border-blue-500 rounded-lg px-3 py-1.5 focus:outline-none bg-white shadow-lg z-10"
             />
           )}
-          <button onClick={commit} className="mt-1 p-1 rounded bg-blue-600 text-white hover:bg-blue-700"><Check className="h-3.5 w-3.5" /></button>
-          <button onClick={cancel} className="mt-1 p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50"><X className="h-3.5 w-3.5" /></button>
+          <div className="flex items-center justify-end gap-2 px-1">
+            <Button size="sm" variant="outline" onClick={cancel} className="h-8 text-xs gap-1.5 border-slate-200">
+              <X className="h-3.5 w-3.5" /> Cancel
+            </Button>
+            <Button size="sm" onClick={commit} className="h-8 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700">
+              <Check className="h-3.5 w-3.5" /> Save Changes
+            </Button>
+          </div>
         </div>
       ) : (
         <div
           onClick={() => setEditing(true)}
-          className="cursor-pointer group/field flex items-center gap-2 min-h-[28px] rounded px-2 py-1 -mx-2 hover:bg-blue-50 hover:ring-1 hover:ring-blue-200 transition-all"
+          className="cursor-pointer group/field flex items-start gap-2 min-h-[32px] rounded-lg px-2.5 py-2 -mx-2.5 hover:bg-blue-50/80 hover:ring-1 hover:ring-blue-100 transition-all"
         >
-          <span className={cn('text-sm flex-1', value ? 'text-slate-800' : 'text-slate-400 italic')}>{value || placeholder}</span>
-          <Edit2 className="h-3 w-3 text-slate-300 opacity-0 group-hover/field:opacity-100 transition-opacity flex-shrink-0" />
+          <span className={cn('text-sm flex-1 leading-relaxed', value ? 'text-slate-800' : 'text-slate-400 italic font-normal')}>
+            {value || placeholder}
+          </span>
+          <Edit2 className="h-3.5 w-3.5 text-slate-300 opacity-0 group-hover/field:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
         </div>
       )}
     </div>
@@ -115,6 +126,7 @@ export default function LeadDetail() {
   const createQuotation = useCreateQuotation();
   const generateQuoteNumber = useGenerateQuoteNumber();
   const createDeal = useCreateDeal();
+  const { data: settings } = useCompanySettings();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
@@ -128,6 +140,10 @@ export default function LeadDetail() {
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<string>('new');
+  const [leadSource, setLeadSource] = useState('');
+  const [website, setWebsite] = useState('');
+  const [customerRequirement, setCustomerRequirement] = useState('');
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   const [dealValue, setDealValue] = useState('');
   const [expectedCloseDate, setExpectedCloseDate] = useState(
@@ -143,6 +159,9 @@ export default function LeadDetail() {
       setAddress(lead.address || '');
       setNotes(lead.notes || '');
       setStatus(lead.status || 'new');
+      setLeadSource(lead.lead_source || 'Website');
+      setWebsite(lead.website || '');
+      setCustomerRequirement(lead.customer_requirement || '');
       setIsDirty(false);
     }
   }, [lead]);
@@ -288,14 +307,41 @@ export default function LeadDetail() {
                   <User className="h-4 w-4 text-blue-500" />
                   Contact Information
                 </h2>
-                <span className="text-xs text-slate-400">Click any field to edit · Enter to save · Esc to cancel</span>
               </div>
-              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                <InlineField label="Company Name" value={companyName} onChange={setCompanyName} onSave={() => saveField({ company_name: companyName })} icon={Building2} placeholder="Enter company name" />
-                <InlineField label="Contact Name" value={contactName} onChange={setContactName} onSave={() => saveField({ contact_name: contactName })} icon={User} placeholder="Enter contact name" />
-                <InlineField label="Email Address" value={email} onChange={setEmail} onSave={() => saveField({ email })} type="email" icon={Mail} placeholder="email@company.com" />
-                <InlineField label="Phone Number" value={phone} onChange={setPhone} onSave={() => saveField({ phone })} type="tel" icon={Phone} placeholder="+91 98765 43210" />
-                <InlineField label="Office Address" value={address} onChange={setAddress} onSave={() => saveField({ address })} icon={MapPin} placeholder="Street, City, State — PIN" fullWidth />
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <InlineField label="Company Name" value={companyName} onChange={setCompanyName} onSave={(v) => saveField({ company_name: v })} icon={Building2} placeholder="Enter company name" />
+                <InlineField label="Contact Name" value={contactName} onChange={setContactName} onSave={(v) => saveField({ contact_name: v })} icon={User} placeholder="Enter contact name" />
+                <InlineField label="Email Address" value={email} onChange={setEmail} onSave={(v) => saveField({ email: v })} type="email" icon={Mail} placeholder="email@company.com" />
+                <InlineField label="Website" value={website} onChange={setWebsite} onSave={(v) => saveField({ website: v })} type="url" icon={ExternalLink} placeholder="https://www.example.com" />
+                <InlineField label="Phone Number" value={phone} onChange={setPhone} onSave={(v) => saveField({ phone: v })} type="tel" icon={Phone} placeholder="+91 98765 43210" />
+                <InlineField label="Office Address" value={address} onChange={setAddress} onSave={(v) => saveField({ address: v })} icon={MapPin} placeholder="Street, City, State — PIN" fullWidth />
+                <div className="col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                    <Tag className="h-3 w-3" />Lead Source
+                  </p>
+                  <Select value={leadSource} onValueChange={(v) => { setLeadSource(v); saveField({ lead_source: v }); }}>
+                    <SelectTrigger className="h-9 text-sm bg-white border-slate-200 focus:ring-blue-500 rounded-md">
+                      <SelectValue placeholder="Select Source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Website">Website</SelectItem>
+                      <SelectItem value="Referral">Referral</SelectItem>
+                      <SelectItem value="Cold Call">Cold Call</SelectItem>
+                      <SelectItem value="Social Media">Social Media</SelectItem>
+                      <SelectItem value="Event">Event</SelectItem>
+                      <SelectItem value="Advertising">Advertising</SelectItem>
+                      <SelectItem value="Partner">Partner</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Interaction Logs (Follow-up Notes) */}
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-5">
+                <InteractionLogSection entityType="lead" entityId={id!} />
               </div>
             </div>
 
@@ -304,11 +350,13 @@ export default function LeadDetail() {
               <div className="px-5 py-3.5 border-b border-slate-100">
                 <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <FileText className="h-4 w-4 text-blue-500" />
-                  Notes
+                  Internal Notes
                 </h2>
               </div>
-              <div className="p-5">
-                <InlineField label="Internal Notes" value={notes} onChange={setNotes} onSave={() => saveField({ notes })} type="textarea" placeholder="Add notes about this lead..." fullWidth />
+              <div className="p-5 space-y-6">
+                <InlineField label="Customer Requirement" value={customerRequirement} onChange={setCustomerRequirement} onSave={(v) => saveField({ customer_requirement: v })} type="textarea" placeholder="What is the customer looking for?..." fullWidth />
+                <div className="h-px bg-slate-100" />
+                <InlineField label="Internal Notes" value={notes} onChange={setNotes} onSave={(v) => saveField({ notes: v })} type="textarea" placeholder="Add notes about this lead..." fullWidth />
               </div>
             </div>
 
@@ -320,6 +368,7 @@ export default function LeadDetail() {
               <div className="p-5 grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 text-sm">
                 {[
                   { label: 'Lead ID', value: `#${id?.slice(0,8).toUpperCase()}` },
+                  { label: 'Source', value: lead.lead_source || 'Website' },
                   { label: 'Created', value: lead.created_at ? format(new Date(lead.created_at), 'dd MMM yyyy') : '—' },
                   { label: 'Last Updated', value: lead.updated_at ? format(new Date(lead.updated_at), 'dd MMM yyyy') : '—' },
                   { label: 'Quotations', value: String(leadQuotations.length) },
@@ -389,11 +438,11 @@ export default function LeadDetail() {
                   Create Quotation
                 </button>
                 {email && (
-                  <a href={`mailto:${email}`}
+                  <button onClick={() => setShowEmailDialog(true)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-sky-50 hover:text-sky-700 text-sm text-slate-600 transition-colors group">
                     <Mail className="h-4 w-4 text-slate-400 group-hover:text-sky-500" />
                     Send Email
-                  </a>
+                  </button>
                 )}
                 {phone && (
                   <a href={`tel:${phone}`}
@@ -465,6 +514,19 @@ export default function LeadDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <EmailDialog
+        open={showEmailDialog}
+        onClose={() => setShowEmailDialog(false)}
+        type="general"
+        entityId={id!}
+        defaultRecipient={{
+          email: email || '',
+          name: contactName || '',
+          company_name: companyName || ''
+        }}
+        defaultSubject={`Following up from ${settings?.company_name || 'The Genworks CRM'}`}
+        defaultBody={`<p>Hi ${contactName || 'there'},</p>`}
+      />
     </AppLayout>
   );
 }

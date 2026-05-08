@@ -47,6 +47,13 @@ export interface Lead {
   status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
   notes: string | null;
   is_qualified: boolean;
+  lead_source: string | null;
+  website: string | null;
+  industry: string | null;
+  secondary_email: string | null;
+  secondary_phone: string | null;
+  designation: string | null;
+  customer_requirement: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

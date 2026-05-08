@@ -67,9 +67,43 @@ export function useQuotationItems(quotationId: string | undefined) {
 export function useGenerateQuoteNumber() {
   return useMutation({
     mutationFn: async (): Promise<string> => {
+      let quoteNumber: string;
+      let isUnique = false;
+      let attempts = 0;
+
+      // 1. Try to get number from RPC
       const { data, error } = await supabase.rpc('generate_quote_number');
-      if (error) throw error;
-      return data;
+      
+      // If RPC fails or returns nothing, use date-based fallback
+      if (error || !data) {
+        quoteNumber = `QT-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+      } else {
+        quoteNumber = data;
+      }
+
+      // 2. ALWAYS append a 3-character random suffix to ensure uniqueness 
+      // even if RLS prevents us from seeing other users' quotes.
+      const suffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+      quoteNumber = `${quoteNumber}-${suffix}`;
+
+      // 3. Quick check just in case (though suffix makes collision extremely unlikely)
+      while (!isUnique && attempts < 5) {
+        const { data: existing } = await supabase
+          .from('quotations')
+          .select('id')
+          .eq('quote_number', quoteNumber)
+          .maybeSingle();
+
+        if (!existing) {
+          isUnique = true;
+        } else {
+          attempts++;
+          const newSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+          quoteNumber = `${quoteNumber.split('-').slice(0, -1).join('-')}-${newSuffix}`;
+        }
+      }
+      
+      return quoteNumber;
     },
   });
 }

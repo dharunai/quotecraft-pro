@@ -65,22 +65,21 @@ app.post('/api/send-email', async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
-      // @ts-ignore
-      console.error('Resend API error:', data);
-      return res.status(400).json({
+      console.error('Detailed Resend API error:', JSON.stringify(data, null, 2));
+      return res.status(response.status).json({
         success: false,
-        // @ts-ignore
-        error: data.message || data.error?.message || 'Failed to send email'
+        error: (data as any).message || 'Failed to send email via Resend',
+        details: data
       });
     }
 
     console.log('Email sent successfully:', (data as any).id);
-    res.json({ success: true, messageId: (data as any).id });
-  } catch (error) {
-    console.error('Error sending email:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Server error'
+    return res.json({ success: true, id: (data as any).id });
+  } catch (error: any) {
+    console.error('Server error during email sending:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Internal server error' 
     });
   }
 });

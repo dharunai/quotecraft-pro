@@ -162,7 +162,32 @@ export function ActivityTimeline({ entityType, entityId, maxItems = 50 }: Activi
                         {getActionIcon(activity.action)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{activity.description}</p>
+                          {activity.action === 'email_sent' ? (
+                            <div className="space-y-1">
+                              <p className="font-medium text-slate-800">{activity.description}</p>
+                              {activity.new_value && typeof activity.new_value === 'string' && (
+                                <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 mt-1">
+                                  {(() => {
+                                    try {
+                                      const val = JSON.parse(activity.new_value);
+                                      return (
+                                        <>
+                                          {val.subject && <p><strong>Subject:</strong> {val.subject}</p>}
+                                          {val.attachments?.length > 0 && (
+                                            <p className="mt-1"><strong>Attachments:</strong> {val.attachments.join(', ')}</p>
+                                          )}
+                                        </>
+                                      );
+                                    } catch (e) {
+                                      return null;
+                                    }
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-slate-600">{activity.description}</p>
+                          )}
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                           {activity.performed_by_name && (
                             <>
