@@ -28,13 +28,13 @@ import { useRef } from 'react';
 import { useLeadScores } from '@/hooks/useAIInsights';
 function LeadScoreBadge({ leadId, scoreMap }: { leadId: string; scoreMap: Map<string, any> }) {
   const score = scoreMap.get(leadId);
-  if (!score) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!score) return <span className="text-[10px] text-muted-foreground">—</span>;
   const color =
     score.label === 'Hot' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
       score.label === 'Warm' ? 'bg-amber-100 text-amber-700 border-amber-200' :
         'bg-slate-100 text-slate-600 border-slate-200';
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>
+    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${score.label === 'Hot' ? 'bg-emerald-500' : score.label === 'Warm' ? 'bg-amber-500' : 'bg-slate-400'
         }`} />
       {score.label} {score.score}
@@ -256,7 +256,7 @@ export default function Leads() {
   return <AppLayout>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Leads</h1>
+        <h1 className="text-xl font-bold">Leads</h1>
         <div className="flex items-center gap-2">
           <Link to="/business-card-scanner">
             <Button variant="outline">
@@ -355,7 +355,7 @@ export default function Leads() {
                 <td>{lead.contact_name}</td>
                 <td className="text-muted-foreground">{lead.email || '-'}</td>
                 <td className="text-muted-foreground">{lead.phone || '-'}</td>
-                <td className="text-xs text-muted-foreground">{lead.lead_source || 'Website'}</td>
+                <td className="text-[11px] text-muted-foreground">{lead.lead_source || 'Website'}</td>
                 <td>
                   <LeadStatusBadge status={lead.status} />
                 </td>

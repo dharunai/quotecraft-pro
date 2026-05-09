@@ -54,10 +54,10 @@ export default function Contacts() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
-            <p className="text-muted-foreground text-sm">Manage the people at your customer companies.</p>
+            <h1 className="text-xl font-bold tracking-tight">Contacts</h1>
+            <p className="text-muted-foreground text-xs">Manage the people at your customer companies.</p>
           </div>
-          <Button onClick={() => setIsFormOpen(true)} size="sm" className="h-8 text-xs bg-black text-white hover:bg-slate-800">
+          <Button onClick={() => setIsFormOpen(true)} size="sm" className="h-8 text-[10px] bg-black text-white hover:bg-slate-800">
             <Plus className="h-4 w-4 mr-1.5" />
             Add Contact
           </Button>
@@ -103,13 +103,13 @@ export default function Contacts() {
                       <td className="pl-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+                            <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-bold">
                               {contact.first_name[0]}{contact.last_name[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-bold">{contact.first_name} {contact.last_name}</div>
-                            <div className="text-[10px] text-muted-foreground uppercase tracking-tight font-medium">
+                            <div className="font-bold text-[11px]">{contact.first_name} {contact.last_name}</div>
+                            <div className="text-[9px] text-muted-foreground uppercase tracking-tight font-medium">
                               {contact.department || 'No Department'}
                             </div>
                           </div>
@@ -125,7 +125,7 @@ export default function Contacts() {
                             {contact.account.name}
                           </Link>
                         ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
+                          <span className="text-muted-foreground text-[10px]">—</span>
                         )}
                       </td>
                       <td>
@@ -144,7 +144,7 @@ export default function Contacts() {
                           </div>
                         ) : '—'}
                       </td>
-                      <td className="text-muted-foreground text-sm">
+                      <td className="text-muted-foreground text-xs">
                         {contact.job_title || '—'}
                       </td>
                       <td>

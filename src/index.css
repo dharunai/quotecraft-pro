@@ -147,19 +147,19 @@
   }
 
   h1 {
-    @apply text-xl;
-  }
-
-  h2 {
     @apply text-lg;
   }
 
-  h3 {
+  h2 {
     @apply text-base;
   }
 
+  h3 {
+    @apply text-sm;
+  }
+
   p {
-    @apply text-xs;
+    @apply text-[11px] leading-relaxed;
   }
 }
 
@@ -171,11 +171,11 @@
   }
 
   .crm-table th {
-    @apply bg-table-header text-left px-4 py-2 text-[10px] font-bold text-muted-foreground border-b border-table-border uppercase tracking-wider;
+    @apply bg-table-header text-left px-4 py-2 text-[9px] font-bold text-muted-foreground border-b border-table-border uppercase tracking-wider;
   }
  
   .crm-table td {
-    @apply px-4 py-2 text-[11px] border-b border-table-border text-slate-600;
+    @apply px-4 py-2 text-[10px] border-b border-table-border text-slate-600;
   }
 
   .crm-table tr:hover td {
@@ -184,7 +184,7 @@
 
   /* Status Badge Styles */
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium;
   }
 
   .status-new {
@@ -247,11 +247,11 @@
   }
 
   .stat-value {
-    @apply text-2xl font-bold text-foreground;
+    @apply text-xl font-bold text-foreground;
   }
 
   .stat-label {
-    @apply text-xs text-muted-foreground mt-1;
+    @apply text-[10px] text-muted-foreground mt-1;
   }
 }
 

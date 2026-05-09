@@ -61,7 +61,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={getAvatarUrl(user?.email || 'user')} alt={user?.email || 'User'} />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-medium">
                             {userInitials}
                         </AvatarFallback>
                     </Avatar>
@@ -71,17 +71,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-2 p-2">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={getAvatarUrl(user?.email || 'user')} alt={user?.email || 'User'} />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-[10px]">
                             {userInitials}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-medium truncate">{user?.email}</span>
-                        <span className="text-xs text-muted-foreground">Account</span>
+                        <span className="text-xs font-medium truncate">{user?.email}</span>
+                        <span className="text-[10px] text-muted-foreground">Account</span>
                     </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Navigation Layout</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground font-normal">Navigation Layout</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => switchNavMode('sidebar')} className={navMode === 'sidebar' ? 'bg-accent' : ''}>
                     <PanelLeft className="mr-2 h-4 w-4" />
                     Sidebar View
@@ -122,7 +122,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                     <Building2 className="h-4 w-4 text-primary-foreground" />
                                 </div>
                             )}
-                            <span className="font-semibold text-foreground truncate text-sm md:text-base">{companyName}</span>
+                            <span className="font-semibold text-foreground truncate text-xs md:text-sm">{companyName}</span>
                         </Link>
                         <div className="flex-1 max-w-xl mx-auto hidden sm:block">
                             <GlobalSearch />
