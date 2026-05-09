@@ -39,6 +39,14 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { useEmailActions } from '@/hooks/useEmailActions';
 import { ComposeEmailModal } from '@/components/emails/ComposeEmailModal';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 export default function SentEmails() {
   const { data: emails = [], isLoading, refetch } = useSentEmails();
@@ -144,12 +152,12 @@ export default function SentEmails() {
 
             <nav className="flex-1 px-2 space-y-0.5">
               {[
-                { id: 'inbox', name: 'Inbox', icon: Inbox, count: emails.filter(e => e.folder === 'inbox').length },
-                { id: 'starred', name: 'Starred', icon: Star, count: emails.filter(e => e.is_starred).length },
-                { id: 'snoozed', name: 'Snoozed', icon: Clock3, count: emails.filter(e => e.is_snoozed).length },
-                { id: 'sent', name: 'Sent', icon: Send, count: emails.filter(e => e.folder === 'sent').length },
-                { id: 'drafts', name: 'Drafts', icon: FileText, count: emails.filter(e => e.folder === 'drafts').length },
-                { id: 'trash', name: 'Trash', icon: Trash, count: emails.filter(e => e.folder === 'trash').length },
+                { id: 'inbox', name: 'Inbox', icon: Inbox, count: emails?.filter(e => e?.folder === 'inbox')?.length || 0 },
+                { id: 'starred', name: 'Starred', icon: Star, count: emails?.filter(e => e?.is_starred)?.length || 0 },
+                { id: 'snoozed', name: 'Snoozed', icon: Clock3, count: emails?.filter(e => e?.is_snoozed)?.length || 0 },
+                { id: 'sent', name: 'Sent', icon: Send, count: emails?.filter(e => e?.folder === 'sent')?.length || 0 },
+                { id: 'drafts', name: 'Drafts', icon: FileText, count: emails?.filter(e => e?.folder === 'drafts')?.length || 0 },
+                { id: 'trash', name: 'Trash', icon: Trash, count: emails?.filter(e => e?.folder === 'trash')?.length || 0 },
               ].map((folder) => (
                 <button
                   key={folder.id}
@@ -213,7 +221,7 @@ export default function SentEmails() {
                     <div className="flex items-start justify-between mb-8">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 uppercase">
-                          {selectedEmail.recipient_email[0]}
+                          {selectedEmail.recipient_email?.[0] || '?'}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
