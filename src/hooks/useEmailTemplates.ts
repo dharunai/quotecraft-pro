@@ -3,7 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getEffectiveCompanyId } from '@/lib/auth-utils';
 import { toast } from 'sonner';
-import { EmailTemplate, DEFAULT_TEMPLATES } from '@/lib/emailTemplates';
+
+export interface EmailTemplate {
+  id: string;
+  company_id: string;
+  name: string;
+  subject: string | null;
+  body_html: string;
+  category: string;
+  created_at: string;
+}
 
 export function useEmailTemplates() {
   const { companyId } = useAuth();
@@ -16,23 +25,21 @@ export function useEmailTemplates() {
       const { data, error } = await supabase
         .from('email_templates')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('company_id', currentCompanyId)
+        .order('name');
 
       if (error) throw error;
-      
-      // Combine user templates with defaults
-      const userTemplates = (data || []) as EmailTemplate[];
-      return [...userTemplates, ...DEFAULT_TEMPLATES];
+      return data as EmailTemplate[];
     },
   });
 }
 
 export function useCreateEmailTemplate() {
   const queryClient = useQueryClient();
-  const { companyId } = useAuth();
+  const { user, companyId } = useAuth();
 
   return useMutation({
-    mutationFn: async (template: Omit<EmailTemplate, 'id'>) => {
+    mutationFn: async (template: Omit<EmailTemplate, 'id' | 'created_at' | 'company_id'>) => {
       const currentCompanyId = await getEffectiveCompanyId(companyId);
       
       const { data, error } = await supabase
@@ -40,6 +47,7 @@ export function useCreateEmailTemplate() {
         .insert({
           ...template,
           company_id: currentCompanyId,
+          created_by: user?.id,
         })
         .select()
         .single();
@@ -49,10 +57,7 @@ export function useCreateEmailTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
-      toast.success('Template saved successfully');
-    },
-    onError: (error: Error) => {
-      toast.error('Failed to save template: ' + error.message);
+      toast.success('Template created successfully');
     },
   });
 }

@@ -16,7 +16,10 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://anqdcadmweehttbmmd
 const connectionString = `postgresql://postgres:[YOUR_POSTGRES_PASSWORD]@${projectId}.postgres.supabase.co:5432/postgres`;
 
 const migrations = [
-  '20260509_accounts_contacts.sql'
+  '20260509_accounts_contacts.sql',
+  '20260509_email_functionality.sql',
+  '20260509_email_templates.sql',
+  '20260509_seed_templates.sql'
 ];
 
 async function runMigrations() {

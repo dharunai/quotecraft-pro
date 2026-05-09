@@ -16,6 +16,13 @@ export interface SentEmail {
   entity_type?: string;
   entity_id?: string;
   created_at: string;
+  // New fields
+  folder: 'inbox' | 'sent' | 'drafts' | 'trash' | 'starred' | 'snoozed';
+  is_starred: boolean;
+  is_snoozed: boolean;
+  snoozed_until?: string | null;
+  is_read: boolean;
+  labels: string[];
 }
 
 export function useSentEmails() {
