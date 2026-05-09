@@ -75,8 +75,79 @@ export function useEmailActions() {
     }
   });
 
+  const saveDraft = useMutation({
+    mutationFn: async (payload: {
+      id?: string;
+      to: string;
+      subject: string;
+      body: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentCompanyId = await getEffectiveCompanyId();
+
+      if (payload.id) {
+        const { data, error } = await supabase
+          .from('sent_emails')
+          .update({
+            recipient_email: payload.to,
+            subject: payload.subject,
+            body_html: payload.body,
+            folder: 'drafts',
+            is_read: true,
+          })
+          .eq('id', payload.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('sent_emails')
+          .insert({
+            company_id: currentCompanyId,
+            sender_id: user?.id,
+            recipient_email: payload.to,
+            subject: payload.subject,
+            body_html: payload.body,
+            folder: 'drafts',
+            is_read: true,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sent-emails'] });
+    }
+  });
+
+  const snoozeEmail = useMutation({
+    mutationFn: async ({ id, until }: { id: string, until: string }) => {
+      const { data, error } = await supabase
+        .from('sent_emails')
+        .update({
+          is_snoozed: true,
+          snoozed_until: until,
+          folder: 'snoozed'
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sent-emails'] });
+      toast.success('Email snoozed');
+    }
+  });
+
   return {
     updateEmailStatus,
-    sendEmail
+    sendEmail,
+    saveDraft,
+    snoozeEmail
   };
 }

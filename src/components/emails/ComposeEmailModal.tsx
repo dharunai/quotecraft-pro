@@ -48,21 +48,37 @@ interface ComposeEmailModalProps {
   onClose: () => void;
   defaultTo?: string;
   defaultSubject?: string;
+  defaultBody?: string;
+  draftId?: string;
 }
 
-export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject }: ComposeEmailModalProps) {
-  const { sendEmail } = useEmailActions();
+export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject, defaultBody, draftId: initialDraftId }: ComposeEmailModalProps) {
+  const { sendEmail, saveDraft } = useEmailActions();
   const { data: templates = [] } = useEmailTemplates();
   const { data: settings } = useCompanySettings();
+  const [draftId, setDraftId] = React.useState<string | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
   
   const form = useForm<ComposeFormData>({
     resolver: zodResolver(composeSchema),
     defaultValues: {
       to: defaultTo || '',
       subject: defaultSubject || '',
-      body: '',
+      body: defaultBody || '',
     },
   });
+
+  useEffect(() => {
+    if (initialDraftId) setDraftId(initialDraftId);
+  }, [initialDraftId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (defaultTo) form.setValue('to', defaultTo);
+      if (defaultSubject) form.setValue('subject', defaultSubject);
+      if (defaultBody) form.setValue('body', defaultBody);
+    }
+  }, [isOpen, defaultTo, defaultSubject, defaultBody]);
 
   // Handle signature and defaults
   useEffect(() => {
@@ -81,11 +97,40 @@ export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject }
       body: data.body,
     }, {
       onSuccess: () => {
+        // If we were editing a draft, we should probably delete it or mark it as sent.
+        // For simplicity, we just mark it as sent or delete the draft record.
+        if (draftId) {
+          // You could delete the draft here if you want to replace it with the sent email
+        }
         form.reset();
+        setDraftId(null);
         onClose();
       }
     });
   };
+
+  // Auto-save logic
+  const watchAll = form.watch();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isOpen && (watchAll.to || watchAll.subject || watchAll.body)) {
+        setIsSaving(true);
+        saveDraft.mutate({
+          id: draftId || undefined,
+          to: watchAll.to,
+          subject: watchAll.subject,
+          body: watchAll.body
+        }, {
+          onSuccess: (data: any) => {
+            if (!draftId) setDraftId(data.id);
+            setIsSaving(false);
+          },
+          onError: () => setIsSaving(false)
+        });
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [watchAll.to, watchAll.subject, watchAll.body, isOpen]);
 
   const applyTemplate = (template: EmailTemplate) => {
     form.setValue('subject', template.subject || '');
@@ -101,6 +146,8 @@ export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject }
         <div className="bg-[#404040] text-white px-4 py-2.5 flex items-center justify-between">
           <span className="text-sm font-bold">New Message</span>
           <div className="flex items-center gap-1">
+            {isSaving && <span className="text-[10px] text-white/50 mr-2 italic">Draft saving...</span>}
+            {!isSaving && draftId && <span className="text-[10px] text-white/50 mr-2 italic">Saved</span>}
             <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10">
               <Minimize2 className="h-4 w-4" />
             </Button>

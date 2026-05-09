@@ -42,12 +42,27 @@ import { toast } from 'sonner';
 
 export default function SentEmails() {
   const { data: emails = [], isLoading, refetch } = useSentEmails();
-  const { updateEmailStatus } = useEmailActions();
+  const { updateEmailStatus, snoozeEmail } = useEmailActions();
   const [selectedEmail, setSelectedEmail] = useState<SentEmail | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [activeFolder, setActiveFolder] = useState('sent');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeData, setComposeData] = useState<{ id?: string, to?: string, subject?: string, body?: string } | null>(null);
+
+  const handleEmailClick = (email: SentEmail) => {
+    if (email.folder === 'drafts') {
+      setComposeData({
+        id: email.id,
+        to: email.recipient_email,
+        subject: email.subject,
+        body: email.body_html.replace(/<[^>]*>/g, '') // Simple text conversion
+      });
+      setIsComposeOpen(true);
+    } else {
+      setSelectedEmail(email);
+    }
+  };
 
   const filteredEmails = emails.filter(email => {
     const matchesSearch = email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -95,6 +110,17 @@ export default function SentEmails() {
       onSuccess: () => {
         if (selectedEmail?.id === id) setSelectedEmail(null);
         toast.success('Email archived');
+      }
+    });
+  };
+
+  const handleSnooze = (id: string, days: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const until = new Date();
+    until.setDate(until.getDate() + days);
+    snoozeEmail.mutate({ id, until: until.toISOString() }, {
+      onSuccess: () => {
+        if (selectedEmail?.id === id) setSelectedEmail(null);
       }
     });
   };
@@ -299,7 +325,7 @@ export default function SentEmails() {
                             selectedEmails.includes(email.id) ? "bg-blue-50" : "",
                             !email.is_read ? "bg-white" : "bg-slate-50/30"
                           )}
-                          onClick={() => setSelectedEmail(email)}
+                          onClick={() => handleEmailClick(email)}
                         >
                           <div className="flex items-center gap-3 w-12 flex-shrink-0" onClick={e => e.stopPropagation()}>
                             <Checkbox 
@@ -342,9 +368,21 @@ export default function SentEmails() {
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100" onClick={e => { e.stopPropagation(); }}>
                               <MailOpen className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100" onClick={e => { e.stopPropagation(); }}>
-                              <Clock3 className="h-4 w-4" />
-                            </Button>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100" onClick={e => e.stopPropagation()}>
+                                  <Clock3 className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuLabel>Snooze until...</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={(e) => handleSnooze(email.id, 0.25, e)}>Later today (6h)</DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => handleSnooze(email.id, 1, e)}>Tomorrow</DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => handleSnooze(email.id, 7, e)}>Next week</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       ))}
@@ -359,7 +397,11 @@ export default function SentEmails() {
 
       <ComposeEmailModal 
         isOpen={isComposeOpen} 
-        onClose={() => setIsComposeOpen(false)} 
+        onClose={() => { setIsComposeOpen(false); setComposeData(null); }} 
+        defaultTo={composeData?.to}
+        defaultSubject={composeData?.subject}
+        defaultBody={composeData?.body}
+        draftId={composeData?.id}
       />
     </AppLayout>
   );
