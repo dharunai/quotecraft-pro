@@ -175,7 +175,7 @@
   }
  
   .crm-table td {
-    @apply px-4 py-2 text-[10px] border-b border-table-border text-slate-600;
+    @apply px-4 py-2 text-[11px] border-b border-table-border text-slate-600;
   }
 
   .crm-table tr:hover td {

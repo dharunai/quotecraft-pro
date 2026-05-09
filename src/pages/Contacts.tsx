@@ -125,7 +125,7 @@ export default function Contacts() {
                             {contact.account.name}
                           </Link>
                         ) : (
-                          <span className="text-muted-foreground text-[10px]">—</span>
+                          <span className="text-muted-foreground text-[11px]">—</span>
                         )}
                       </td>
                       <td>
@@ -144,7 +144,7 @@ export default function Contacts() {
                           </div>
                         ) : '—'}
                       </td>
-                      <td className="text-muted-foreground text-xs">
+                      <td className="text-muted-foreground text-[11px]">
                         {contact.job_title || '—'}
                       </td>
                       <td>
