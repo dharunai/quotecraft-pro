@@ -18,7 +18,8 @@ import {
     ChevronRight,
     Building2,
     Workflow,
-    Send
+    Send,
+    User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,8 @@ const navigation = [
     { name: 'Tasks', href: '/tasks', icon: CheckSquare },
     { name: 'Meetings', href: '/meetings', icon: Calendar },
     { name: 'Leads', href: '/leads', icon: Users },
+    { name: 'Accounts', href: '/accounts', icon: Building2 },
+    { name: 'Contacts', href: '/contacts', icon: User },
     { name: 'Deals', href: '/deals', icon: Handshake },
     { name: 'Pipeline', href: '/pipeline', icon: GitBranch },
     { name: 'Sent Emails', href: '/sent-emails', icon: Send },

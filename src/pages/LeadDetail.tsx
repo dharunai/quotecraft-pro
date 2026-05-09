@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads';
+import { useLead, useUpdateLead, useDeleteLead, useConvertLead } from '@/hooks/useLeads';
 import { useQuotations, useCreateQuotation, useGenerateQuoteNumber } from '@/hooks/useQuotations';
 import { useCreateDeal } from '@/hooks/useDeals';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -127,6 +127,7 @@ export default function LeadDetail() {
   const generateQuoteNumber = useGenerateQuoteNumber();
   const createDeal = useCreateDeal();
   const { data: settings } = useCompanySettings();
+  const convertLead = useConvertLead();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
@@ -217,6 +218,17 @@ export default function LeadDetail() {
     });
   };
 
+  const handleConvert = () => {
+    if (!id) return;
+    if (!confirm('This will convert this lead into a permanent Account and Contact. All history will be moved. Proceed?')) return;
+    
+    convertLead.mutate(id, {
+      onSuccess: (data) => {
+        navigate(`/accounts/${data.account.id}`);
+      }
+    });
+  };
+
   const currentStatusConfig = STATUS_OPTIONS.find(s => s.value === status);
 
   if (isLoading) return <AppLayout><p className="text-muted-foreground p-8">Loading lead...</p></AppLayout>;
@@ -272,6 +284,15 @@ export default function LeadDetail() {
                   Qualify
                 </Button>
               )}
+
+              <Button 
+                size="sm" 
+                onClick={handleConvert} 
+                disabled={convertLead.isPending}
+                className="h-8 bg-black hover:bg-slate-800 text-white text-xs rounded-full px-4"
+              >
+                {convertLead.isPending ? 'Converting...' : 'Convert to Account'}
+              </Button>
 
               <Button size="sm" onClick={handleCreateQuotation} variant="outline" className="h-8 text-xs rounded-full px-4 border-slate-200">
                 <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -432,6 +453,11 @@ export default function LeadDetail() {
                     Qualify & Create Deal
                   </button>
                 )}
+                <button onClick={handleConvert} disabled={convertLead.isPending}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-emerald-50 hover:text-emerald-700 text-sm text-slate-600 transition-colors group">
+                  <TrendingUp className="h-4 w-4 text-slate-400 group-hover:text-emerald-500" />
+                  {convertLead.isPending ? 'Converting...' : 'Convert to Account & Contact'}
+                </button>
                 <button onClick={handleCreateQuotation}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-blue-50 hover:text-blue-700 text-sm text-slate-600 transition-colors group">
                   <FileText className="h-4 w-4 text-slate-400 group-hover:text-blue-500" />

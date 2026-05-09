@@ -16,18 +16,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://anqdcadmweehttbmmd
 const connectionString = `postgresql://postgres:[YOUR_POSTGRES_PASSWORD]@${projectId}.postgres.supabase.co:5432/postgres`;
 
 const migrations = [
-  '20260216170900_add_multi_tenancy.sql',
-  'final_fix.sql',
-  'add_join_company_flow.sql',
-  'check_rls.sql',
-  'get_rls_json.sql',
-  'cleanup_old_policies.sql',
-  '20260216_company_hierarchy.sql',
-  '20260216_fix_profiles_rls.sql',
-  '20260216_fix_departments.sql',
-  '20260216_fix_profiles_rls_v2.sql',
-  '20260216_fix_rls_final.sql',
-  '20260217_fix_tasks_fk.sql'
+  '20260509_accounts_contacts.sql'
 ];
 
 async function runMigrations() {

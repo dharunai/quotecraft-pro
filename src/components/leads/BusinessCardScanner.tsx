@@ -98,6 +98,8 @@ export const BusinessCardScanner: React.FC<BusinessCardScannerProps> = ({
     try {
       setError(null);
       setProcessing(true);
+      
+      // We'll still do a quick Tesseract run for immediate feedback/fallback
       const { createWorker } = await import('tesseract.js');
       const worker = await createWorker();
       await worker.loadLanguage('eng');
@@ -106,7 +108,9 @@ export const BusinessCardScanner: React.FC<BusinessCardScannerProps> = ({
       const text = result.data.text;
       await worker.terminate();
       setOcrText(text);
-      await extractLeadInfo(text);
+      
+      // Now call server with both text and image for maximum accuracy
+      await extractLeadInfo(text, capturedImage);
     } catch {
       setError('Could not extract text. Please try a clearer image.');
     } finally {
@@ -114,16 +118,21 @@ export const BusinessCardScanner: React.FC<BusinessCardScannerProps> = ({
     }
   };
 
-  const extractLeadInfo = async (text: string) => {
+  const extractLeadInfo = async (text: string, image?: string) => {
     try {
       const response = await fetch('/api/ocr/extract-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ocrText: text, useGemini: false }),
+        body: JSON.stringify({ 
+          ocrText: text, 
+          image: image,
+          useGemini: true 
+        }),
       });
       if (!response.ok) throw new Error();
       const data = await response.json();
       setExtractedLead(data.lead);
+      if (data.rawText) setOcrText(data.rawText);
     } catch {
       setError('Failed to extract lead information.');
     }

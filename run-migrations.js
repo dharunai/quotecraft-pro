@@ -37,12 +37,12 @@ Or set it as environment variable:
 }
 
 const client = new Client({
-  host: `${projectId}.postgres.supabase.co`,
+  host: `aws-0-ap-south-1.pooler.supabase.com`,
   port: 5432,
   database: 'postgres',
-  user: 'postgres',
+  user: `postgres.${projectId}`,
   password: dbPassword,
-  ssl: 'require'
+  ssl: { rejectUnauthorized: false }
 });
 
 const migrations = [
@@ -56,7 +56,8 @@ const migrations = [
   '20260124_tasks.sql',
   '20260124000000_team_members.sql',
   '20260124000100_search_indexes.sql',
-  '20260124000200_auto_admin.sql'
+  '20260124000200_auto_admin.sql',
+  '20260509_accounts_contacts.sql'
 ];
 
 async function runMigrations() {

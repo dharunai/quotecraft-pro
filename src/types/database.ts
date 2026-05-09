@@ -59,10 +59,48 @@ export interface Lead {
   updated_at: string;
 }
 
+export interface Account {
+  id: string;
+  company_id?: string;
+  name: string;
+  industry: string | null;
+  website: string | null;
+  phone: string | null;
+  billing_address: string | null;
+  shipping_address: string | null;
+  description: string | null;
+  annual_revenue: number | null;
+  employees_count: number | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Contact {
+  id: string;
+  company_id?: string;
+  account_id: string | null;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  mobile: string | null;
+  job_title: string | null;
+  department: string | null;
+  description: string | null;
+  mailing_address: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  account?: Account;
+}
+
 export interface Deal {
   id: string;
   company_id?: string; // Multi-tenancy
   lead_id: string;
+  account_id?: string | null;
+  contact_id?: string | null;
   deal_value: number | null;
   stage: 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
   probability: number;
@@ -75,6 +113,8 @@ export interface Deal {
   created_at: string;
   updated_at: string;
   lead?: Lead;
+  account?: Account;
+  contact?: Contact;
 }
 
 export interface ProductCategory {
@@ -112,6 +152,8 @@ export interface Quotation {
   company_id?: string; // Multi-tenancy
   quote_number: string;
   lead_id: string;
+  account_id?: string | null;
+  contact_id?: string | null;
   deal_id: string | null;
   invoice_id: string | null;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
@@ -127,6 +169,8 @@ export interface Quotation {
   updated_at: string;
   lead?: Lead;
   deal?: Deal;
+  account?: Account;
+  contact?: Contact;
 }
 
 export interface QuotationItem {
@@ -148,6 +192,8 @@ export interface Invoice {
   deal_id: string | null;
   quotation_id: string | null;
   lead_id: string;
+  account_id?: string | null;
+  contact_id?: string | null;
   invoice_date: string;
   due_date: string;
   subtotal: number;
@@ -167,6 +213,8 @@ export interface Invoice {
   lead?: Lead;
   deal?: Deal;
   quotation?: Quotation;
+  account?: Account;
+  contact?: Contact;
 }
 
 export interface InvoiceItem {

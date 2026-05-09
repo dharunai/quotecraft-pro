@@ -12,10 +12,11 @@ export interface ExtractedLeadInfo {
 
 // Basic regex-based extraction (fallback)
 export function parseLeadInfoBasic(text: string): ExtractedLeadInfo {
+  console.log('Starting basic parsing for text length:', text.length);
   const lines = text
     .split('\n')
     .map(line => line.trim())
-    .filter(line => line.length > 0);
+    .filter(line => line.length > 1); // Skip single-char noise
 
   const result: ExtractedLeadInfo = {
     Name: 'Not found',
@@ -26,88 +27,79 @@ export function parseLeadInfoBasic(text: string): ExtractedLeadInfo {
     Website: 'Not found',
   };
 
-  const companyKeywords = /\b(inc|ltd|llp|pvt|private|limited|corp|technologies|solutions|systems|enterprises|group|industries|co\.?)\b/i;
+  // 1. Precise Extraction (Email, Website, Phone)
+  // More lenient email regex for messy OCR (A MARSHALL@SQUAREDUPSTUDIOS COM m)
+  const emailRegex = /[A-Za-z0-9._%+-]+(?:\s*@\s*|[^\w\s]@)[A-Za-z0-9.-]+(?:\s*\.\s*|\s+)[A-Za-z]{2,}/;
+  const websiteRegex = /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?)/i;
+  const phoneRegex = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3,4}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
 
-  // Extract Email
   for (const line of lines) {
     if (result.Email === 'Not found') {
-      const emailMatch = line.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
-      if (emailMatch) {
-        result.Email = emailMatch[0];
+      const match = line.match(emailRegex);
+      if (match) {
+        result.Email = match[0].replace(/\s+/g, '.').replace(/\.@\./, '@');
       }
     }
-  }
-
-  // Extract Website
-  for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (result.Website === 'Not found' && (lower.includes('www') || lower.includes('.com') || lower.includes('.in'))) {
-      const websiteMatch = line.match(/(?:https?:\/\/)?(?:www\.)?[^\s,]+\.[a-z]{2,}(?:\/[^\s]*)? /i);
-      if (websiteMatch) {
-        result.Website = websiteMatch[0].trim();
-      }
+    if (result.Website === 'Not found') {
+      const match = line.match(websiteRegex);
+      if (match) result.Website = match[0];
     }
-  }
-
-  // Extract Phone
-  for (const line of lines) {
     if (result.Phone === 'Not found') {
-      const digits = line.replace(/\D/g, '');
-      if (digits.length >= 10) {
-        result.Phone = digits;
-      }
+      const match = line.match(phoneRegex);
+      if (match) result.Phone = match[0];
     }
   }
 
-  // Extract Address
+  // 2. Identify Company (Keywords and Legal Suffixes)
+  const companySuffixes = /\b(inc|ltd|llp|pvt|private|limited|corp|technologies|solutions|systems|enterprises|group|industries|foundation|ventures|consulting|studios|designs|agency|co\.?)\b/i;
+  const companyCandidates: string[] = [];
+
   for (const line of lines) {
-    if (result.Address === 'Not found') {
-      const lower = line.toLowerCase();
-      if ([' po', ' road', ' street', ' st ', ' kerala', ' india', '/'].some(tok => lower.includes(tok))) {
-        result.Address = line;
-      }
+    if (companySuffixes.test(line)) {
+      companyCandidates.push(line);
     }
   }
 
-  // Extract Company
-  for (const line of lines.slice(0, 6)) {
-    if (companyKeywords.test(line)) {
-      result.Company = line;
-      break;
-    }
+  if (companyCandidates.length > 0) {
+    // Prefer the shortest line containing a suffix (usually the brand name)
+    result.Company = companyCandidates.sort((a, b) => a.length - b.length)[0];
   }
 
-  if (result.Company === 'Not found') {
-    for (const line of lines.slice(0, 6)) {
-      if (line.toUpperCase() === line && line.split(' ').length >= 1 && line.split(' ').length <= 4) {
-        result.Company = line;
+  // 3. Identify Address (Keywords and Patterns)
+  const addressKeywords = /\b(road|street|st|ave|avenue|blvd|lane|ln|floor|fl|building|bldg|sector|phase|kerala|india|chennai|bangalore|mumbai|delhi|ny|ca|zip|pincode)\b/i;
+  const addressLines: string[] = [];
+  
+  for (const line of lines) {
+    const isAlreadyMatched = [result.Email, result.Phone, result.Website, result.Company].some(v => v !== 'Not found' && line.includes(v));
+    if (!isAlreadyMatched && (addressKeywords.test(line) || /\d{3,6}/.test(line))) {
+      addressLines.push(line);
+    }
+  }
+  
+  if (addressLines.length > 0) {
+    result.Address = addressLines.join(', ');
+  }
+
+  // 4. Identify Name (Remaining candidates)
+  const nameCandidates = lines.filter(line => 
+    ![result.Email, result.Phone, result.Website, result.Company].some(v => v !== 'Not found' && line.includes(v)) &&
+    !addressLines.includes(line) &&
+    line.split(' ').length >= 2 && 
+    line.split(' ').length <= 5
+  );
+
+  if (nameCandidates.length > 0) {
+    for (const cand of nameCandidates) {
+      const words = cand.split(/\s+/).filter(w => w.length > 0);
+      if (words.length >= 2 && words.every(word => word[0] && word[0] === word[0].toUpperCase())) {
+        result.Name = cand;
         break;
       }
     }
+    if (result.Name === 'Not found') result.Name = nameCandidates[0];
   }
 
-  if (result.Company === 'Not found') {
-    for (const line of lines.slice(0, 6)) {
-      const words = line.split(' ');
-      if (words.length > 0 && words.every(w => w.length > 0 && w[0] === w[0].toUpperCase())) {
-        result.Company = line;
-        break;
-      }
-    }
-  }
-
-  // Extract Name (remaining text that isn't other fields)
-  for (const line of lines) {
-    if (
-      result.Name === 'Not found' &&
-      !Object.values(result).some(val => val !== 'Not found' && line.includes(val)) &&
-      !['@', 'www', '/', '.com'].some(x => line.includes(x))
-    ) {
-      result.Name = line;
-      break;
-    }
-  }
-
+  console.log('Parsing complete:', JSON.stringify(result));
   return result;
 }
 

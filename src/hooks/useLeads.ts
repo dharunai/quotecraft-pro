@@ -188,3 +188,92 @@ export function useDeleteLead() {
     },
   });
 }
+
+export function useConvertLead() {
+  const queryClient = useQueryClient();
+  const { companyId } = useAuth();
+
+  return useMutation({
+    mutationFn: async (leadId: string) => {
+      const { data: lead, error: fetchError } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', leadId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentCompanyId = await getEffectiveCompanyId(companyId);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // 1. Create Account
+      const { data: account, error: accountError } = await supabase
+        .from('accounts')
+        .insert({
+          name: lead.company_name,
+          website: lead.website,
+          industry: lead.industry,
+          billing_address: lead.address,
+          phone: lead.phone,
+          company_id: currentCompanyId,
+          created_by: user?.id
+        })
+        .select()
+        .single();
+
+      if (accountError) throw accountError;
+
+      // 2. Create Contact
+      const [firstName, ...lastNameParts] = lead.contact_name.split(' ');
+      const lastName = lastNameParts.join(' ') || '.';
+
+      const { data: contact, error: contactError } = await supabase
+        .from('contacts')
+        .insert({
+          account_id: account.id,
+          first_name: firstName,
+          last_name: lastName,
+          email: lead.email,
+          phone: lead.phone,
+          mailing_address: lead.address,
+          job_title: lead.designation,
+          company_id: currentCompanyId,
+          created_by: user?.id
+        })
+        .select()
+        .single();
+
+      if (contactError) throw contactError;
+
+      // 3. Update related entities (Deals, Quotations, Invoices) if they exist
+      // Note: In some workflows, deals might already exist for the lead
+      await supabase.from('deals').update({ account_id: account.id, contact_id: contact.id }).eq('lead_id', leadId);
+      await supabase.from('quotations').update({ account_id: account.id, contact_id: contact.id }).eq('lead_id', leadId);
+      await supabase.from('invoices').update({ account_id: account.id, contact_id: contact.id }).eq('lead_id', leadId);
+
+      // 4. Update Lead status to 'won' or delete it? 
+      // Zoho usually keeps the lead but marks it converted, or deletes it.
+      // We'll mark it as won and keep it for history, or just delete it if requested.
+      // For now, let's just delete it to keep it clean.
+      const { error: deleteError } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', leadId);
+
+      if (deleteError) throw deleteError;
+
+      return { account, contact };
+    },
+    onSuccess: (data) => {
+      console.log('[Hook] useConvertLead onSuccess - Lead converted:', data.account.id, data.contact.id);
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast.success('Lead converted to Account and Contact successfully!');
+    },
+    onError: (error: Error) => {
+      console.error('[Hook] useConvertLead onError:', error);
+      toast.error('Failed to convert lead: ' + error.message);
+    },
+  });
+}

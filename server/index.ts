@@ -87,12 +87,36 @@ app.post('/api/send-email', async (req, res) => {
 // OCR Business Card Extraction Endpoint
 app.post('/api/ocr/extract-lead', async (req, res) => {
   try {
-    const { ocrText, useGemini = false } = req.body;
+    const { ocrText, image, useGemini = false } = req.body;
 
-    if (!ocrText || typeof ocrText !== 'string') {
+    let text = ocrText;
+
+    // If image is provided, get text from AI service
+    if (image) {
+      console.log('Image provided, calling AI service for OCR...');
+      try {
+        const aiResponse = await fetch('http://localhost:8000/api/ocr/process-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image }),
+        });
+        
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json() as { text: string };
+          text = aiData.text;
+          console.log('AI Service OCR complete');
+        } else {
+          console.warn('AI Service OCR failed, falling back to client text if available');
+        }
+      } catch (err) {
+        console.error('Error calling AI service:', err);
+      }
+    }
+
+    if (!text || typeof text !== 'string') {
       return res.status(400).json({
         success: false,
-        error: 'OCR text is required'
+        error: 'OCR text or image is required'
       });
     }
 
@@ -100,17 +124,16 @@ app.post('/api/ocr/extract-lead', async (req, res) => {
 
     if (useGemini && process.env.GEMINI_API_KEY) {
       console.log('Using Gemini for lead extraction');
-      extractedLead = await parseLeadInfoGemini(ocrText);
-      // extractedLead = {}; // Placeholder
+      extractedLead = await parseLeadInfoGemini(text);
     } else {
       console.log('Using basic regex for lead extraction');
-      extractedLead = parseLeadInfoBasic(ocrText);
-      // extractedLead = {}; // Placeholder
+      extractedLead = parseLeadInfoBasic(text);
     }
 
     res.json({
       success: true,
-      lead: extractedLead
+      lead: extractedLead,
+      rawText: text
     });
   } catch (error) {
     console.error('Error extracting lead from OCR:', error);

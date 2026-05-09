@@ -231,6 +231,27 @@ def pipeline_health(payload: InsightsPayload):
     return result
 
 
+# ─────────────────────────────────────────────
+# Endpoint 8: OCR Business Card Extraction
+# ─────────────────────────────────────────────
+
+class OCRPayload(BaseModel):
+    image: str  # base64 encoded image
+
+@app.post("/api/ocr/process-image")
+def process_image_ocr(payload: OCRPayload):
+    """
+    Processes a business card image using EasyOCR and returns the extracted text.
+    """
+    try:
+        from ocr_engine import get_engine
+        engine = get_engine()
+        text = engine.extract_text(payload.image)
+        return {"success": True, "text": text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
