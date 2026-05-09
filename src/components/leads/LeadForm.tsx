@@ -97,16 +97,16 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pr-3 -mr-3 space-y-8 py-4">
+        <div className="flex-1 overflow-y-auto pr-3 -mr-3 space-y-6 py-2">
           {/* Identity preview - Interactive Header */}
-          <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-gradient-to-r from-muted/50 to-transparent shadow-sm group">
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-gradient-to-r from-muted/50 to-transparent shadow-sm group">
             <div 
-              className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-lg font-bold shadow-md cursor-pointer hover:ring-4 hover:ring-primary/10 transition-all relative overflow-hidden"
+              className="h-10 w-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-base font-bold shadow-md cursor-pointer hover:ring-4 hover:ring-primary/10 transition-all relative overflow-hidden"
               onClick={() => document.getElementById('company_name_input')?.focus()}
             >
               {initials}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <ImagePlus className="h-4 w-4 text-white" />
+                <ImagePlus className="h-3 w-3 text-white" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
@@ -135,9 +135,9 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
             {/* Business Details */}
-            <div className="space-y-5">
+            <div className="space-y-4">
               <SectionHeader 
                 icon={Building2} 
                 title="Business" 
@@ -146,25 +146,25 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
               />
               <div className="space-y-4 px-1">
                 <FormField control={form.control} name="company_name" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Company Name *</FormLabel>
-                    <FormControl><Input id="company_name_input" placeholder="Acme Corp" className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input id="company_name_input" placeholder="Acme Corp" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="website" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Website</FormLabel>
-                    <FormControl><Input placeholder="https://www.acme.com" className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input placeholder="https://www.acme.com" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="status" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90 flex items-center gap-1.5">Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none">
+                        <SelectTrigger className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
@@ -181,11 +181,11 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="lead_source" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Lead Source</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none">
+                        <SelectTrigger className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none">
                           <SelectValue placeholder="Select source" />
                         </SelectTrigger>
                       </FormControl>
@@ -216,16 +216,16 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
               />
               <div className="space-y-4 px-1">
                 <FormField control={form.control} name="contact_name" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Full Name *</FormLabel>
-                    <FormControl><Input id="contact_name_input" placeholder="Jane Doe" className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input id="contact_name_input" placeholder="Jane Doe" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="email" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90 flex items-center gap-1.5">Work Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="jane@acme.com" className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input type="email" placeholder="jane@acme.com" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -233,24 +233,24 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
             </div>
 
             {/* Phone & Address */}
-            <div className="space-y-5 md:col-span-2 border-t pt-8 border-border/40">
+            <div className="space-y-4 md:col-span-2 border-t pt-6 border-border/40">
               <SectionHeader 
                 icon={MapPin} 
                 title="Contact Details & Location" 
                 color="bg-amber-600/10 text-amber-600"
               />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-1 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 px-1 mt-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Phone Number</FormLabel>
-                    <FormControl><Input placeholder="+91 98765 43210" className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input placeholder="+91 98765 43210" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="address" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Physical Address</FormLabel>
-                    <FormControl><Input placeholder="City, Country" className="h-10 text-sm bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input placeholder="City, Country" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -258,21 +258,21 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
             </div>
 
             {/* Requirements & Notes */}
-            <div className="space-y-5 md:col-span-2 border-t pt-8 border-border/40">
+            <div className="space-y-4 md:col-span-2 border-t pt-6 border-border/40">
               <SectionHeader 
                 icon={FileText} 
                 title="Requirements & Notes" 
                 color="bg-emerald-600/10 text-emerald-600"
               />
-              <div className="space-y-6 px-1 mt-6">
+              <div className="space-y-4 px-1 mt-4">
                 <FormField control={form.control} name="customer_requirement" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Customer Requirement</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Specific requirements or needs mentioned by the customer…" 
-                        rows={3} 
-                        className="bg-background border-border/60 text-sm focus:border-primary transition-colors shadow-none resize-none" 
+                        placeholder="Specific requirements mentioned by customer…" 
+                        rows={2} 
+                        className="bg-background border-border/60 text-xs focus:border-primary transition-colors shadow-none resize-none" 
                         {...field} 
                       />
                     </FormControl>
@@ -280,13 +280,13 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="notes" render={({ field }) => (
-                  <FormItem className="space-y-1.5">
+                  <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Internal Notes</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Context, requirements, or deal background…" 
-                        rows={3} 
-                        className="bg-background border-border/60 text-sm focus:border-primary transition-colors shadow-none resize-none" 
+                        placeholder="Add internal context here…" 
+                        rows={2} 
+                        className="bg-background border-border/60 text-xs focus:border-primary transition-colors shadow-none resize-none" 
                         {...field} 
                       />
                     </FormControl>

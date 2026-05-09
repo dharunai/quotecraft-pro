@@ -224,8 +224,10 @@ export function useConvertLead() {
       if (accountError) throw accountError;
 
       // 2. Create Contact
-      const [firstName, ...lastNameParts] = lead.contact_name.split(' ');
-      const lastName = lastNameParts.join(' ') || '.';
+      const fullContactName = lead.contact_name || 'Prospect';
+      const nameParts = fullContactName.split(' ');
+      const firstName = nameParts[0] || 'Prospect';
+      const lastName = nameParts.slice(1).join(' ') || '.';
 
       const { data: contact, error: contactError } = await supabase
         .from('contacts')

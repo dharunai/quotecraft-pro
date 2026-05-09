@@ -171,11 +171,11 @@
   }
 
   .crm-table th {
-    @apply bg-table-header text-left px-4 py-3 text-xs font-medium text-muted-foreground border-b border-table-border;
+    @apply bg-table-header text-left px-4 py-2 text-[10px] font-bold text-muted-foreground border-b border-table-border uppercase tracking-wider;
   }
-
+ 
   .crm-table td {
-    @apply px-4 py-3 text-xs border-b border-table-border;
+    @apply px-4 py-2 text-[11px] border-b border-table-border text-slate-600;
   }
 
   .crm-table tr:hover td {

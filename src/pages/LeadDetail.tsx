@@ -94,12 +94,12 @@ function InlineField({ label, value, onChange, onSave, type = 'text', placeholde
       ) : (
         <div
           onClick={() => setEditing(true)}
-          className="cursor-pointer group/field flex items-start gap-2 min-h-[32px] rounded-lg px-2.5 py-2 -mx-2.5 hover:bg-blue-50/80 hover:ring-1 hover:ring-blue-100 transition-all"
+          className="cursor-pointer group/field flex items-start gap-1.5 min-h-[28px] rounded px-1.5 py-1 -mx-1.5 hover:bg-blue-50/80 hover:ring-1 hover:ring-blue-100 transition-all"
         >
-          <span className={cn('text-sm flex-1 leading-relaxed', value ? 'text-slate-800' : 'text-slate-400 italic font-normal')}>
+          <span className={cn('text-[11px] flex-1 leading-relaxed', value ? 'text-slate-800' : 'text-slate-400 italic font-normal')}>
             {value || placeholder}
           </span>
-          <Edit2 className="h-3.5 w-3.5 text-slate-300 opacity-0 group-hover/field:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
+          <Edit2 className="h-2.5 w-2.5 text-slate-300 opacity-0 group-hover/field:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
         </div>
       )}
     </div>
@@ -253,8 +253,8 @@ export default function LeadDetail() {
                   {lead.company_name?.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base font-bold text-slate-900 truncate leading-tight">{lead.company_name}</h1>
-                  <p className="text-xs text-slate-500 leading-tight">{lead.contact_name}</p>
+                  <h1 className="text-sm font-bold text-slate-900 truncate leading-tight">{lead.company_name}</h1>
+                  <p className="text-[10px] text-slate-500 leading-tight">{lead.contact_name}</p>
                 </div>
               </div>
             </div>

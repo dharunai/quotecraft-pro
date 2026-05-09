@@ -60,9 +60,9 @@ function InlineField({ label, value, onChange, onSave, type = 'text', placeholde
           <button onClick={cancel} className="p-1 rounded border border-slate-200 text-slate-500 hover:bg-slate-50 flex-shrink-0"><X className="h-3.5 w-3.5" /></button>
         </div>
       ) : (
-        <div onClick={() => setEditing(true)} className="cursor-pointer flex items-center gap-2 min-h-[28px] rounded px-2 py-1 -mx-2 hover:bg-blue-50 hover:ring-1 hover:ring-blue-200 transition-all group/f">
-          <span className={cn('text-sm flex-1', draft ? 'text-slate-800' : 'text-slate-400 italic')}>{draft || placeholder}</span>
-          <Edit2 className="h-3 w-3 text-slate-300 opacity-0 group-hover/f:opacity-100 transition-opacity flex-shrink-0" />
+        <div onClick={() => setEditing(true)} className="cursor-pointer flex items-center gap-2 min-h-[26px] rounded px-2 py-1 -mx-2 hover:bg-blue-50 hover:ring-1 hover:ring-blue-200 transition-all group/f">
+          <span className={cn('text-[11px] flex-1', draft ? 'text-slate-800' : 'text-slate-400 italic')}>{draft || placeholder}</span>
+          <Edit2 className="h-2.5 w-2.5 text-slate-300 opacity-0 group-hover/f:opacity-100 transition-opacity flex-shrink-0" />
         </div>
       )}
     </div>
@@ -168,8 +168,8 @@ export default function DealDetail() {
                   {deal.lead?.company_name?.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base font-bold text-slate-900 truncate leading-tight">{deal.lead?.company_name}</h1>
-                  <p className="text-xs text-slate-500 leading-tight">{deal.lead?.contact_name}</p>
+                  <h1 className="text-sm font-bold text-slate-900 truncate leading-tight">{deal.lead?.company_name}</h1>
+                  <p className="text-[10px] text-slate-500 leading-tight">{deal.lead?.contact_name}</p>
                 </div>
               </div>
             </div>
