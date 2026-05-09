@@ -9,7 +9,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from '@/components/email/RichTextEditor';
 import { useEmailActions } from '@/hooks/useEmailActions';
 import { useEmailTemplates, EmailTemplate } from '@/hooks/useEmailTemplates';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -85,7 +85,7 @@ export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject, 
     if (isOpen) {
       const currentBody = form.getValues('body');
       if (!currentBody && settings?.email_signature) {
-        form.setValue('body', '\n\n' + settings.email_signature.replace(/<[^>]*>/g, ''));
+        form.setValue('body', `<br><br><div class="signature">${settings.email_signature}</div>`);
       }
     }
   }, [isOpen, settings, form]);
@@ -134,9 +134,11 @@ export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject, 
 
   const applyTemplate = (template: EmailTemplate) => {
     form.setValue('subject', template.subject || '');
-    // Strip HTML for textarea (simple approach)
-    const plainBody = template.body_html.replace(/<[^>]*>/g, '');
-    form.setValue('body', plainBody + (settings?.email_signature ? '\n\n' + settings.email_signature.replace(/<[^>]*>/g, '') : ''));
+    let fullBody = template.body_html || '';
+    if (settings?.email_signature) {
+      fullBody += `<br><br><div class="signature">${settings.email_signature}</div>`;
+    }
+    form.setValue('body', fullBody);
   };
 
   return (
@@ -226,9 +228,9 @@ export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject, 
               render={({ field }) => (
                 <FormItem className="flex-1 flex flex-col space-y-0">
                   <FormControl>
-                    <Textarea 
-                      {...field} 
-                      className="flex-1 border-none shadow-none focus-visible:ring-0 text-sm min-h-[350px] resize-none px-6 py-6 bg-transparent leading-relaxed" 
+                    <RichTextEditor 
+                      content={field.value} 
+                      onChange={field.onChange} 
                       placeholder="Write your message here..." 
                     />
                   </FormControl>
@@ -248,18 +250,9 @@ export function ComposeEmailModal({ isOpen, onClose, defaultTo, defaultSubject, 
                   {sendEmail.isPending ? 'Sending...' : 'Send'}
                 </Button>
                 
-                {/* Formatting Toolbar */}
+                {/* Formatting hints or status */}
                 <div className="flex items-center px-1 py-1 rounded-md bg-slate-50/50">
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm"><Bold className="h-4 w-4" /></Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm"><Italic className="h-4 w-4" /></Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm"><Underline className="h-4 w-4" /></Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm text-[12px] font-bold">A</Button>
-                  <Separator orientation="vertical" className="h-4 mx-1" />
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm"><Link className="h-4 w-4" /></Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm"><Smile className="h-4 w-4" /></Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm"><ImageIcon className="h-4 w-4" /></Button>
-                  <Separator orientation="vertical" className="h-4 mx-1" />
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:bg-white hover:shadow-sm"><List className="h-4 w-4" /></Button>
+                  <span className="text-[10px] text-slate-400 px-2 italic">Rich text enabled</span>
                 </div>
                 
                 <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:bg-slate-100 hover:text-slate-600">

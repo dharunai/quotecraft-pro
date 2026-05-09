@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLogSentEmail } from './useSentEmails';
 import { toast } from 'sonner';
+import { getEffectiveCompanyId } from '@/lib/auth-utils';
 
 export function useEmailActions() {
   const queryClient = useQueryClient();
@@ -12,11 +13,10 @@ export function useEmailActions() {
         .from('sent_emails')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      return data?.[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sent-emails'] });
@@ -96,10 +96,10 @@ export function useEmailActions() {
             is_read: true,
           })
           .eq('id', payload.id)
-          .select()
-          .single();
+          .select();
+          
         if (error) throw error;
-        return data;
+        return data?.[0];
       } else {
         const { data, error } = await supabase
           .from('sent_emails')
@@ -112,10 +112,10 @@ export function useEmailActions() {
             folder: 'drafts',
             is_read: true,
           })
-          .select()
-          .single();
+          .select();
+          
         if (error) throw error;
-        return data;
+        return data?.[0];
       }
     },
     onSuccess: () => {
@@ -133,10 +133,10 @@ export function useEmailActions() {
           folder: 'snoozed'
         })
         .eq('id', id)
-        .select()
-        .single();
+        .select();
+        
       if (error) throw error;
-      return data;
+      return data?.[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sent-emails'] });
