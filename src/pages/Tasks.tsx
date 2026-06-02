@@ -554,70 +554,64 @@ export default function Tasks() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 font-sans">
+      <div className="space-y-5 font-sans pb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Task Overview</h1>
-            <p className="text-xs text-muted-foreground mt-1">
-              Review details of your recent projects and tasks.
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Tasks</h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              Manage and track your tasks.
             </p>
           </div>
-          <Button onClick={openNewDialog} size="sm" className="h-9 gap-2">
-            <Plus className="h-4 w-4" />
-            Create Task
+          <Button onClick={openNewDialog} size="sm" className="h-8 gap-1.5 text-xs shadow-sm bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-3.5 w-3.5" />
+            Add Task
           </Button>
         </div>
 
         {/* Stats Row */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card className="rounded-none border-none shadow-sm bg-white relative overflow-hidden">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Upcoming Tasks</p>
-                <div className="flex items-center gap-2">
-                  <CheckSquare className="h-5 w-5 text-slate-400" />
-                  <span className="text-3xl font-bold text-slate-900">{pendingTasksCount}</span>
-                </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="dashboard-card overflow-hidden dashboard-stagger">
+            <div className="h-[3px] bg-blue-500" />
+            <div className="p-4 flex items-start justify-between gap-2">
+              <div className="space-y-0.5 min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Upcoming</p>
+                <p className="text-[22px] font-bold tracking-tight text-foreground leading-tight">{pendingTasksCount}</p>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </CardContent>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-slate-900" />
-          </Card>
+              <div className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                <CheckSquare className="h-4 w-4" />
+              </div>
+            </div>
+          </div>
 
-          <Card className="rounded-none border-none shadow-sm bg-white relative overflow-hidden">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tasks Completed</p>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-slate-400" />
-                  <span className="text-3xl font-bold text-slate-900">{completedTasksCount}</span>
-                </div>
+          <div className="dashboard-card overflow-hidden dashboard-stagger" style={{ animationDelay: '60ms' }}>
+            <div className="h-[3px] bg-emerald-500" />
+            <div className="p-4 flex items-start justify-between gap-2">
+              <div className="space-y-0.5 min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Completed</p>
+                <p className="text-[22px] font-bold tracking-tight text-foreground leading-tight">{completedTasksCount}</p>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </CardContent>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-teal-500" />
-          </Card>
+              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                <Clock className="h-4 w-4" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
           {/* Main Content - Task Table */}
-          <div className="lg:col-span-8 space-y-6">
-            <Card className="rounded-none border-none shadow-sm bg-white">
-              <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-slate-50">
+          <div className="lg:col-span-8 space-y-5">
+            <div className="dashboard-card overflow-hidden dashboard-stagger" style={{ animationDelay: '120ms' }}>
+              <div className="dashboard-card-header bg-muted/20">
                 <div>
-                  <CardTitle className="text-base font-bold text-slate-900">Tasks</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <h3 className="text-[13px] font-semibold text-foreground">Task List</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''} found
                   </p>
                 </div>
-              </CardHeader>
+              </div>
 
               {/* Filter Tabs */}
-              <div className="px-6 pt-3 pb-2 flex gap-1 flex-wrap border-b border-slate-100">
+              <div className="px-5 py-3 flex gap-1 flex-wrap border-b border-border/50">
                 {filterTabs.map(tab => (
                   <Button
                     key={tab.key}
@@ -631,15 +625,15 @@ export default function Tasks() {
                 ))}
               </div>
 
-              <CardContent className="p-0">
+              <div className="p-0 overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-slate-50/50">
-                    <TableRow className="hover:bg-transparent border-slate-50">
-                      <TableHead className="w-[35%] text-xs font-semibold text-slate-500 pl-6 h-10">Task / Assignee</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-500 h-10">Due Date</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-500 h-10">Status</TableHead>
-                      <TableHead className="text-xs font-semibold text-slate-500 h-10">Collaborators</TableHead>
-                      <TableHead className="text-right text-xs font-semibold text-slate-500 pr-6 h-10">Actions</TableHead>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow className="hover:bg-transparent border-border/50">
+                      <TableHead className="w-[35%] text-[11px] font-semibold text-muted-foreground pl-5 h-9">Task / Assignee</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-muted-foreground h-9">Due Date</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-muted-foreground h-9">Status</TableHead>
+                      <TableHead className="text-[11px] font-semibold text-muted-foreground h-9">Collaborators</TableHead>
+                      <TableHead className="text-right text-[11px] font-semibold text-muted-foreground pr-5 h-9">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -656,10 +650,10 @@ export default function Tasks() {
                         const showDelegate = canDelegate(task);
                         const showReassign = canReassign(task);
                         return (
-                          <TableRow key={task.id} className="group border-slate-50 hover:bg-slate-50/50 transition-colors">
-                            <TableCell className="pl-6 py-3">
+                          <TableRow key={task.id} className="group border-border/50 hover:bg-muted/30 transition-colors">
+                            <TableCell className="pl-5 py-3">
                               <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8 bg-slate-100 border border-slate-200">
+                                <Avatar className="h-7 w-7 bg-muted border border-border">
                                   {task.assigned_to ? (
                                     <>
                                       <AvatarImage src={getAvatarUrl(assigneeName || task.assigned_to)} />
@@ -810,17 +804,22 @@ export default function Tasks() {
                     )}
                   </TableBody>
                 </Table>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Sidebar - Task Summary */}
-          <div className="lg:col-span-4 space-y-6">
-            <Card className="rounded-none border-none shadow-sm bg-white">
-              <CardHeader className="py-4 px-6 border-b border-slate-50">
-                <CardTitle className="text-sm font-bold text-slate-900">Task Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-5">
+          <div className="lg:col-span-4 space-y-5">
+            <div className="dashboard-card overflow-hidden dashboard-stagger" style={{ animationDelay: '180ms' }}>
+              <div className="dashboard-card-header">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-muted/60 flex-shrink-0">
+                    <CheckSquare className="h-3.5 w-3.5 text-blue-500" />
+                  </div>
+                  <h3 className="text-[13px] font-semibold text-foreground">Task Summary</h3>
+                </div>
+              </div>
+              <div className="dashboard-card-body space-y-5">
                 {/* Priority Breakdown */}
                 <div>
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">By Priority</p>
@@ -873,27 +872,27 @@ export default function Tasks() {
                     return d.toDateString() === now.toDateString();
                   }).length;
                   return (
-                    <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <div className="pt-2 border-t border-border/50 space-y-2">
                       {overdueCount > 0 && (
-                        <div className="flex items-center justify-between bg-red-50 rounded-md px-3 py-2">
-                          <span className="text-xs text-red-700">Overdue</span>
-                          <span className="text-xs font-bold text-red-700">{overdueCount}</span>
+                        <div className="flex items-center justify-between bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30 rounded-md px-3 py-2">
+                          <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400">Overdue</span>
+                          <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400">{overdueCount}</span>
                         </div>
                       )}
                       {dueTodayCount > 0 && (
-                        <div className="flex items-center justify-between bg-amber-50 rounded-md px-3 py-2">
-                          <span className="text-xs text-amber-700">Due Today</span>
-                          <span className="text-xs font-bold text-amber-700">{dueTodayCount}</span>
+                        <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30 rounded-md px-3 py-2">
+                          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">Due Today</span>
+                          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">{dueTodayCount}</span>
                         </div>
                       )}
                       {overdueCount === 0 && dueTodayCount === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-1">No urgent deadlines</p>
+                        <p className="text-[11px] text-muted-foreground text-center py-1">No urgent deadlines</p>
                       )}
                     </div>
                   );
                 })()}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
 

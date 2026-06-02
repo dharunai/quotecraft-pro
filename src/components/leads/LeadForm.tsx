@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,6 +23,10 @@ const leadSchema = z.object({
   lead_source: z.string().optional(),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
   customer_requirement: z.string().max(2000).optional(),
+  city: z.string().max(200).optional(),
+  district: z.string().max(200).optional(),
+  state: z.string().max(200).optional(),
+  country: z.string().max(200).optional(),
 });
 
 type LeadFormData = z.infer<typeof leadSchema>;
@@ -42,6 +46,104 @@ const statusBadgeClass: Record<string, string> = {
   won: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   lost: 'bg-red-50 text-red-700 border-red-200',
 };
+
+// Hierarchical geographic database for India, US, UAE
+const GEOGRAPHIC_DATA: Record<string, Record<string, string[]>> = {
+  'India': {
+    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Salem', 'Madurai', 'Trichy', 'Tirunelveli', 'Vellore', 'Erode', 'Thoothukudi', 'Dindigul', 'Thanjavur', 'Virudhunagar', 'Karur', 'Nilgiris', 'Kanyakumari', 'Namakkal'],
+    'Karnataka': ['Bengaluru', 'Mysuru', 'Hubballi', 'Mangaluru', 'Belagavi', 'Kalaburagi', 'Davanagere', 'Ballari', 'Vijayapura', 'Shivamogga'],
+    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Nashik', 'Aurangabad', 'Navi Mumbai', 'Kalyan', 'Solapur', 'Kolhapur'],
+    'Kerala': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kollam', 'Alappuzha', 'Palakkad', 'Kottayam', 'Malappuram'],
+    'Delhi': ['New Delhi', 'North Delhi', 'South Delhi', 'East Delhi', 'West Delhi'],
+  },
+  'United States': {
+    'California': ['Los Angeles County', 'San Diego County', 'Orange County', 'Santa Clara County', 'Alameda County', 'Sacramento County'],
+    'Texas': ['Harris County', 'Dallas County', 'Tarrant County', 'Bexar County', 'Travis County'],
+    'New York': ['New York County', 'Kings County', 'Queens County', 'Bronx County', 'Nassau County'],
+  },
+  'United Arab Emirates': {
+    'Abu Dhabi': ['Abu Dhabi', 'Al Ain', 'Al Dhafra'],
+    'Dubai': ['Dubai City', 'Hatta'],
+    'Sharjah': ['Sharjah', 'Khor Fakkan', 'Kalba'],
+  }
+};
+
+// Searchable Autocomplete Combobox
+function SearchableSelect({
+  label,
+  value,
+  onChange,
+  placeholder,
+  options,
+  disabled = false
+}: {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+  options: string[];
+  disabled?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState(value);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setSearch(value);
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearch(value);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [value]);
+
+  const filteredOptions = options.filter(opt =>
+    opt.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div ref={containerRef} className="space-y-1 relative w-full">
+      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">{label}</label>
+      <Input
+        placeholder={placeholder}
+        value={search}
+        disabled={disabled}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => {
+          if (!disabled) setIsOpen(true);
+        }}
+        className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none"
+      />
+      {isOpen && !disabled && filteredOptions.length > 0 && (
+        <div className="absolute left-0 right-0 top-full mt-1 max-h-40 overflow-y-auto bg-popover text-popover-foreground border border-border rounded-md shadow-lg z-[200] divide-y divide-border/40">
+          {filteredOptions.map((opt) => (
+            <div
+              key={opt}
+              onClick={() => {
+                onChange(opt);
+                setSearch(opt);
+                setIsOpen(false);
+              }}
+              className="px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+            >
+              {opt}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SectionHeader({ icon: Icon, title, description, color = "bg-primary/10 text-primary" }: { icon: React.ElementType; title: string; description?: string; color?: string }) {
   return (
@@ -71,8 +173,25 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
       lead_source: lead?.lead_source || 'Website',
       website: lead?.website || '',
       customer_requirement: lead?.customer_requirement || '',
+      city: lead?.city || '',
+      district: lead?.district || '',
+      state: lead?.state || '',
+      country: lead?.country || '',
     },
   });
+
+  const countryWatch = form.watch('country') || '';
+  const stateWatch = form.watch('state') || '';
+
+  const stateOptions = useMemo(() => {
+    return GEOGRAPHIC_DATA[countryWatch] ? Object.keys(GEOGRAPHIC_DATA[countryWatch]) : [];
+  }, [countryWatch]);
+
+  const districtOptions = useMemo(() => {
+    return (GEOGRAPHIC_DATA[countryWatch] && GEOGRAPHIC_DATA[countryWatch][stateWatch])
+      ? GEOGRAPHIC_DATA[countryWatch][stateWatch]
+      : [];
+  }, [countryWatch, stateWatch]);
 
   const { allProfiles } = useTeamHierarchy();
 
@@ -250,10 +369,77 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
                 <FormField control={form.control} name="address" render={({ field }) => (
                   <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">Physical Address</FormLabel>
-                    <FormControl><Input placeholder="City, Country" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input placeholder="Street, Area, landmark..." className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
+
+                {/* Cascading Geographic Autocomplete Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 col-span-2 mt-2">
+                  <FormField control={form.control} name="country" render={({ field }) => (
+                    <FormItem className="space-y-1">
+                      <FormControl>
+                        <SearchableSelect
+                          label="Country"
+                          placeholder="Select/Type Country"
+                          value={field.value || ''}
+                          onChange={(val) => {
+                            field.onChange(val);
+                            form.setValue('state', '');
+                            form.setValue('district', '');
+                          }}
+                          options={Object.keys(GEOGRAPHIC_DATA)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="state" render={({ field }) => (
+                    <FormItem className="space-y-1">
+                      <FormControl>
+                        <SearchableSelect
+                          label="State / Region"
+                          placeholder="Select/Type State"
+                          value={field.value || ''}
+                          disabled={!countryWatch}
+                          onChange={(val) => {
+                            field.onChange(val);
+                            form.setValue('district', '');
+                          }}
+                          options={stateOptions}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="district" render={({ field }) => (
+                    <FormItem className="space-y-1">
+                      <FormControl>
+                        <SearchableSelect
+                          label="District"
+                          placeholder="Select/Type District"
+                          value={field.value || ''}
+                          disabled={!stateWatch}
+                          onChange={field.onChange}
+                          options={districtOptions}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="city" render={({ field }) => (
+                    <FormItem className="space-y-1">
+                      <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90">City (Manual)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter City" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
               </div>
             </div>
 

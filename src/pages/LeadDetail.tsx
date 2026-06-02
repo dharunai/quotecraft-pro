@@ -145,6 +145,10 @@ export default function LeadDetail() {
   const [website, setWebsite] = useState('');
   const [customerRequirement, setCustomerRequirement] = useState('');
   const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
+  const [stateVal, setStateVal] = useState('');
+  const [country, setCountry] = useState('');
 
   const [dealValue, setDealValue] = useState('');
   const [expectedCloseDate, setExpectedCloseDate] = useState(
@@ -163,6 +167,10 @@ export default function LeadDetail() {
       setLeadSource(lead.lead_source || 'Website');
       setWebsite(lead.website || '');
       setCustomerRequirement(lead.customer_requirement || '');
+      setCity(lead.city || '');
+      setDistrict(lead.district || '');
+      setStateVal(lead.state || '');
+      setCountry(lead.country || '');
       setIsDirty(false);
     }
   }, [lead]);
@@ -335,7 +343,11 @@ export default function LeadDetail() {
                 <InlineField label="Email Address" value={email} onChange={setEmail} onSave={(v) => saveField({ email: v })} type="email" icon={Mail} placeholder="email@company.com" />
                 <InlineField label="Website" value={website} onChange={setWebsite} onSave={(v) => saveField({ website: v })} type="url" icon={ExternalLink} placeholder="https://www.example.com" />
                 <InlineField label="Phone Number" value={phone} onChange={setPhone} onSave={(v) => saveField({ phone: v })} type="tel" icon={Phone} placeholder="+91 98765 43210" />
-                <InlineField label="Office Address" value={address} onChange={setAddress} onSave={(v) => saveField({ address: v })} icon={MapPin} placeholder="Street, City, State — PIN" fullWidth />
+                <InlineField label="Office Address" value={address} onChange={setAddress} onSave={(v) => saveField({ address: v })} icon={MapPin} placeholder="Street, landmark, area..." fullWidth />
+                <InlineField label="Country" value={country} onChange={setCountry} onSave={(v) => saveField({ country: v })} icon={MapPin} placeholder="Enter Country" />
+                <InlineField label="State / Region" value={stateVal} onChange={setStateVal} onSave={(v) => saveField({ state: v })} icon={MapPin} placeholder="Enter State" />
+                <InlineField label="District" value={district} onChange={setDistrict} onSave={(v) => saveField({ district: v })} icon={MapPin} placeholder="Enter District" />
+                <InlineField label="City" value={city} onChange={setCity} onSave={(v) => saveField({ city: v })} icon={MapPin} placeholder="Enter City" />
                 <div className="col-span-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
                     <Tag className="h-3 w-3" />Lead Source

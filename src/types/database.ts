@@ -57,6 +57,10 @@ export interface Lead {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  city: string | null;
+  district: string | null;
+  state: string | null;
+  country: string | null;
 }
 
 export interface Account {
