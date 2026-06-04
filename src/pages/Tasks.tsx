@@ -38,6 +38,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { TaskDetailSheet } from '@/components/tasks/TaskDetailSheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 const priorityColors: Record<string, string> = {
   low: 'bg-slate-100 text-slate-700 hover:bg-slate-200',
@@ -58,6 +59,7 @@ type FilterType = 'all' | 'assigned_to_me' | 'created_by_me' | 'my_team' | 'watc
 export default function Tasks() {
   const { user } = useAuth();
   const { data: tasks = [], isLoading } = useTasks();
+  const confirm = useConfirm();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -499,7 +501,7 @@ export default function Tasks() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this task?')) {
+    if (await confirm('Are you sure you want to delete this task?')) {
       await deleteTask.mutateAsync(id);
     }
   };

@@ -24,6 +24,7 @@ import { InteractionLogSection } from '@/components/activity/InteractionLogSecti
 import { EmailDialog } from '@/components/email/EmailDialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 // ── Inline field component ──────────────────────────────────────────────────
 function InlineField({ label, value, onChange, onSave, type = 'text', placeholder = '—', icon: Icon, fullWidth = false }: {
@@ -119,6 +120,7 @@ const STATUS_OPTIONS: { value: string; label: string; color: string }[] = [
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const { data: lead, isLoading } = useLead(id);
   const { data: quotations = [] } = useQuotations();
   const updateLead = useUpdateLead();
@@ -226,9 +228,9 @@ export default function LeadDetail() {
     });
   };
 
-  const handleConvert = () => {
+  const handleConvert = async () => {
     if (!id) return;
-    if (!confirm('This will convert this lead into a permanent Account and Contact. All history will be moved. Proceed?')) return;
+    if (!await confirm('This will convert this lead into a permanent Account and Contact. All history will be moved. Proceed?')) return;
     
     convertLead.mutate(id, {
       onSuccess: (data) => {

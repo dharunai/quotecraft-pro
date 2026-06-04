@@ -14,6 +14,7 @@ import { Zap, Plus, Trash2, Edit, Play, Pause, Clock, ArrowRight, Mail, Bell, Ta
 import { useAutomationRules, useCreateAutomationRule, useUpdateAutomationRule, useDeleteAutomationRule, useToggleAutomationRule } from '@/hooks/useAutomation';
 import { AutomationRule } from '@/types/database';
 import { format } from 'date-fns';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 const triggerEvents = [
   { value: 'lead_created', label: 'Lead Created', icon: Plus },
@@ -36,6 +37,7 @@ const actionTypes = [
 ];
 
 export default function AutomationSettings() {
+  const confirm = useConfirm();
   const { data: rules = [], isLoading } = useAutomationRules();
   const createRule = useCreateAutomationRule();
   const updateRule = useUpdateAutomationRule();
@@ -114,7 +116,7 @@ export default function AutomationSettings() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this automation rule?')) {
+    if (await confirm('Are you sure you want to delete this automation rule?')) {
       await deleteRule.mutateAsync(id);
     }
   };

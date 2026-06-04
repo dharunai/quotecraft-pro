@@ -36,6 +36,7 @@ interface LeadFormProps {
   onSubmit: (data: LeadFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  disableEmailField?: boolean;
 }
 
 const statusBadgeClass: Record<string, string> = {
@@ -159,7 +160,7 @@ function SectionHeader({ icon: Icon, title, description, color = "bg-primary/10 
   );
 }
 
-export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps) {
+export function LeadForm({ lead, onSubmit, onCancel, isLoading, disableEmailField }: LeadFormProps) {
   const form = useForm<LeadFormData>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
@@ -344,7 +345,7 @@ export function LeadForm({ lead, onSubmit, onCancel, isLoading }: LeadFormProps)
                 <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem className="space-y-1">
                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/90 flex items-center gap-1.5">Work Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="jane@acme.com" className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
+                    <FormControl><Input type="email" placeholder="jane@acme.com" disabled={disableEmailField} className="h-8 text-xs bg-background border-border/60 focus:border-primary transition-colors shadow-none" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

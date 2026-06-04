@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getEffectiveCompanyId } from '@/lib/auth-utils';
 import { useRef } from 'react';
 import { useLeadScores } from '@/hooks/useAIInsights';
+import { useConfirm } from '@/contexts/ConfirmContext';
 function LeadScoreBadge({ leadId, scoreMap }: { leadId: string; scoreMap: Map<string, any> }) {
   const score = scoreMap.get(leadId);
   if (!score) return <span className="text-[10px] text-muted-foreground">—</span>;
@@ -44,6 +45,7 @@ function LeadScoreBadge({ leadId, scoreMap }: { leadId: string; scoreMap: Map<st
 
 export default function Leads() {
   const { user, companyId } = useAuth();
+  const confirm = useConfirm();
   const {
     data: leads = [],
     isLoading
@@ -91,7 +93,7 @@ export default function Leads() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedIds.length} leads?`)) return;
+    if (!await confirm(`Are you sure you want to delete ${selectedIds.length} leads?`)) return;
 
     // In a real app, use a proper backend function or Promise.all.
     // For now, looping to simulate.

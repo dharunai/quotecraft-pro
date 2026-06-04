@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useDealWinPredictions } from '@/hooks/useAIInsights';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 function WinProbBar({ dealId, predMap }: { dealId: string; predMap: Map<string, any> }) {
     const pred = predMap.get(dealId);
@@ -37,6 +38,7 @@ function WinProbBar({ dealId, predMap }: { dealId: string; predMap: Map<string, 
 export default function Deals() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const confirm = useConfirm();
     const { data: deals = [], isLoading } = useDeals();
     const { data: settings } = useCompanySettings();
     const deleteDeal = useDeleteDeal();
@@ -99,7 +101,7 @@ export default function Deals() {
     };
 
     const handleBulkDelete = async () => {
-        if (!confirm(`Are you sure you want to delete ${selectedIds.length} deals?`)) return;
+        if (!await confirm(`Are you sure you want to delete ${selectedIds.length} deals?`)) return;
         try {
             const { error } = await supabase.from('deals').delete().in('id', selectedIds);
             if (error) throw error;

@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 interface InteractionLogSectionProps {
   entityType: 'lead' | 'deal';
@@ -38,6 +39,7 @@ const INTERACTION_COLORS = {
 };
 
 export function InteractionLogSection({ entityType, entityId }: InteractionLogSectionProps) {
+  const confirm = useConfirm();
   const { data: logs = [], isLoading } = useInteractionLogs(entityType, entityId);
   const createLog = useCreateInteractionLog();
   const deleteLog = useDeleteInteractionLog();
@@ -66,8 +68,8 @@ export function InteractionLogSection({ entityType, entityId }: InteractionLogSe
     setType('call');
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this note?')) {
+  const handleDelete = async (id: string) => {
+    if (await confirm('Are you sure you want to delete this note?')) {
       deleteLog.mutate({ id, entityType, entityId });
     }
   };

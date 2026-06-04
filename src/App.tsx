@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -50,53 +51,55 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner position="top-right" />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-            <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
-            <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
-            <Route path="/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
-            <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
-            <Route path="/accounts/:id" element={<ProtectedRoute><AccountDetail /></ProtectedRoute>} />
-            <Route path="/contacts" element={<ProtectedRoute><Contacts /></ProtectedRoute>} />
-            <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetail /></ProtectedRoute>} />
-            <Route path="/business-card-scanner" element={<ProtectedRoute><BusinessCardScannerPage /></ProtectedRoute>} />
-            <Route path="/quotations" element={<ProtectedRoute><Quotations /></ProtectedRoute>} />
-            <Route path="/quotations/:id" element={<ProtectedRoute><QuotationEditor /></ProtectedRoute>} />
-            <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
-            <Route path="/deals" element={<ProtectedRoute><Deals /></ProtectedRoute>} />
-            <Route path="/deals/:id" element={<ProtectedRoute><DealDetail /></ProtectedRoute>} />
-            <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-            <Route path="/products/categories" element={<ProtectedRoute><ProductCategories /></ProtectedRoute>} />
-            <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
-            <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceEditor /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/settings/company" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
-            <Route path="/settings/hierarchy" element={<ProtectedRoute><Hierarchy /></ProtectedRoute>} />
-            <Route path="/settings/email" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
-            <Route path="/settings/billing" element={<ProtectedRoute><BillingSettings /></ProtectedRoute>} />
-            <Route path="/settings/notifications-config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
-            <Route path="/settings/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
-            <Route path="/settings/automation" element={<ProtectedRoute><AutomationSettings /></ProtectedRoute>} />
-            <Route path="/settings/automation/diagnostics" element={<ProtectedRoute><AutomationDiagnostics /></ProtectedRoute>} />
-            <Route path="/settings/notifications" element={<ProtectedRoute><NotificationPreferences /></ProtectedRoute>} />
-            <Route path="/settings/tasks" element={<ProtectedRoute><TaskSettings /></ProtectedRoute>} />
-            <Route path="/settings/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
-            <Route path="/settings/workflows/:id" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
-            <Route path="/settings/integrations" element={<ProtectedRoute><IntegrationsSettings /></ProtectedRoute>} />
-            <Route path="/sent-emails" element={<ProtectedRoute><SentEmails /></ProtectedRoute>} />
-            <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <ConfirmProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner position="top-center" />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+              <Route path="/meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
+              <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
+              <Route path="/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
+              <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+              <Route path="/accounts/:id" element={<ProtectedRoute><AccountDetail /></ProtectedRoute>} />
+              <Route path="/contacts" element={<ProtectedRoute><Contacts /></ProtectedRoute>} />
+              <Route path="/contacts/:id" element={<ProtectedRoute><ContactDetail /></ProtectedRoute>} />
+              <Route path="/business-card-scanner" element={<ProtectedRoute><BusinessCardScannerPage /></ProtectedRoute>} />
+              <Route path="/quotations" element={<ProtectedRoute><Quotations /></ProtectedRoute>} />
+              <Route path="/quotations/:id" element={<ProtectedRoute><QuotationEditor /></ProtectedRoute>} />
+              <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
+              <Route path="/deals" element={<ProtectedRoute><Deals /></ProtectedRoute>} />
+              <Route path="/deals/:id" element={<ProtectedRoute><DealDetail /></ProtectedRoute>} />
+              <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+              <Route path="/products/categories" element={<ProtectedRoute><ProductCategories /></ProtectedRoute>} />
+              <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+              <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceEditor /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/settings/company" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+              <Route path="/settings/hierarchy" element={<ProtectedRoute><Hierarchy /></ProtectedRoute>} />
+              <Route path="/settings/email" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
+              <Route path="/settings/billing" element={<ProtectedRoute><BillingSettings /></ProtectedRoute>} />
+              <Route path="/settings/notifications-config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
+              <Route path="/settings/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
+              <Route path="/settings/automation" element={<ProtectedRoute><AutomationSettings /></ProtectedRoute>} />
+              <Route path="/settings/automation/diagnostics" element={<ProtectedRoute><AutomationDiagnostics /></ProtectedRoute>} />
+              <Route path="/settings/notifications" element={<ProtectedRoute><NotificationPreferences /></ProtectedRoute>} />
+              <Route path="/settings/tasks" element={<ProtectedRoute><TaskSettings /></ProtectedRoute>} />
+              <Route path="/settings/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
+              <Route path="/settings/workflows/:id" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
+              <Route path="/settings/integrations" element={<ProtectedRoute><IntegrationsSettings /></ProtectedRoute>} />
+              <Route path="/sent-emails" element={<ProtectedRoute><SentEmails /></ProtectedRoute>} />
+              <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ConfirmProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
