@@ -19,6 +19,8 @@ import {
     syncGmail,
     saveGoogleConfig
 } from '@/lib/googleIntegration';
+import { ZohoCRMCard } from '@/components/integrations/ZohoCRMCard';
+import { HubSpotCard } from '@/components/integrations/HubSpotCard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface IntegrationStatus {
@@ -376,6 +378,21 @@ export default function IntegrationsSettings() {
                             <Separator className="flex-1" />
                         </h2>
                         <GoogleWorkspaceCard />
+                    </div>
+
+                    {/* CRM Platforms */}
+                    <div className="space-y-4">
+                        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                            CRM Platforms
+                            <Separator className="flex-1" />
+                        </h2>
+                        <p className="text-xs text-muted-foreground -mt-2">
+                            Push and pull deals between QuoteCraft Pro and your external CRM.
+                        </p>
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <ZohoCRMCard />
+                            <HubSpotCard />
+                        </div>
                     </div>
 
                     {/* Upcoming */}

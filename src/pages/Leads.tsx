@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useLeads, useCreateLead, useDeleteLead } from '@/hooks/useLeads';
 import { LeadStatusBadge } from '@/components/leads/LeadStatusBadge';
 import { LeadForm } from '@/components/leads/LeadForm';
+import { ZohoLeadForm } from '@/components/leads/ZohoLeadForm';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -46,6 +48,9 @@ function LeadScoreBadge({ leadId, scoreMap }: { leadId: string; scoreMap: Map<st
 export default function Leads() {
   const { user, companyId } = useAuth();
   const confirm = useConfirm();
+  const navigate = useNavigate();
+  const createLead = useCreateLead();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const {
     data: leads = [],
     isLoading
@@ -230,24 +235,16 @@ export default function Leads() {
       toast.error('Error importing file: ' + err.message);
     }
   };
-  const createLead = useCreateLead();
   const deleteLead = useDeleteLead();
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   React.useEffect(() => {
     if (searchParams.get('new') === 'true') {
-      setIsFormOpen(true);
+      setIsCreateOpen(true);
       setSearchParams({}); // Clear the parameter after opening
     }
   }, [searchParams, setSearchParams]);
-
-  const handleCreate = (data: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
-    createLead.mutate(data, {
-      onSuccess: () => setIsFormOpen(false)
-    });
-  };
   const handleDelete = () => {
     if (deleteId) {
       deleteLead.mutate(deleteId, {
@@ -281,7 +278,7 @@ export default function Leads() {
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
-          <Button onClick={() => setIsFormOpen(true)}>
+          <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Lead
           </Button>
@@ -319,7 +316,7 @@ export default function Leads() {
 
       {isLoading ? <p className="text-muted-foreground">Loading leads...</p> : filteredLeads.length === 0 ? <div className="text-center py-12 bg-card rounded-lg border border-border">
         <p className="text-muted-foreground mb-4">No leads found</p>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button onClick={() => setIsCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Your First Lead
         </Button>
@@ -387,17 +384,32 @@ export default function Leads() {
         </div>
       </div>}
 
-      {/* Create Lead Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl h-[90vh] p-0 overflow-hidden flex flex-col border-none shadow-2xl">
-          <DialogHeader className="px-6 pt-6 pb-4 bg-muted/20 border-b shrink-0">
-            <DialogTitle className="text-xl font-bold tracking-tight">Create New Lead</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden px-6 flex flex-col min-h-0">
-            <LeadForm onSubmit={handleCreate} onCancel={() => setIsFormOpen(false)} isLoading={createLead.isPending} />
+      {/* Create Lead Sheet */}
+      <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <SheetContent className="sm:max-w-[750px] w-full p-0 flex flex-col border-l border-slate-200">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0 bg-slate-50/50">
+            <SheetTitle className="text-lg font-bold text-slate-800">Create Lead</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden min-h-0 bg-slate-50/30">
+            <ZohoLeadForm 
+              onSubmit={(payload, isSaveAndNew) => {
+                createLead.mutate(payload, {
+                  onSuccess: () => {
+                    if (!isSaveAndNew) {
+                      setIsCreateOpen(false);
+                    }
+                  },
+                  onError: (err: any) => {
+                    toast.error('Failed to create lead: ' + err.message);
+                  }
+                });
+              }}
+              onCancel={() => setIsCreateOpen(false)}
+              isLoading={createLead.isPending}
+            />
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
